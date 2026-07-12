@@ -1,27 +1,22 @@
 import { z } from 'zod';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 
 const envSchema = z.object({
   PORT: z.coerce.number().default(5000),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  MONGODB_URI: z.string().default('mongodb://127.0.0.1:27017/stockora'),
-  REDIS_URL: z.string().default('redis://127.0.0.1:6379'),
-  JWT_SECRET: z.string().default('development-fallback-secret-do-not-use-in-production'),
-  JWT_REFRESH_SECRET: z.string().default('development-fallback-refresh-do-not-use-in-production'),
+  MONGODB_URI: z.string({ required_error: 'MONGODB_URI is required' }),
+  REDIS_URL: z.string({ required_error: 'REDIS_URL is required' }),
+  JWT_SECRET: z.string({ required_error: 'JWT_SECRET is required' }),
+  JWT_REFRESH_SECRET: z.string({ required_error: 'JWT_REFRESH_SECRET is required' }),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
-}).refine((data) => {
-  if (data.NODE_ENV === 'production') {
-    return data.JWT_SECRET !== 'development-fallback-secret-do-not-use-in-production' &&
-           data.JWT_REFRESH_SECRET !== 'development-fallback-refresh-do-not-use-in-production';
-  }
-  return true;
-}, {
-  message: "Production environment requires custom and secure JWT_SECRET and JWT_REFRESH_SECRET variables.",
 });
 
 let parsedEnv: z.infer<typeof envSchema>;
 
 try {
-  // Use process.env if available, otherwise default to empty object so defaults take place
   const envSource = typeof process !== 'undefined' ? process.env : {};
   parsedEnv = envSchema.parse(envSource);
 } catch (error) {
@@ -31,8 +26,8 @@ try {
   } else {
     console.error('Unexpected environment validation error:', error);
   }
-  // Provide fallback to avoid blocking compiler or server start during minor configuration slips
-  parsedEnv = envSchema.parse({});
+  // Fail-fast to ensure no operation runs without explicit configurations
+  process.exit(1);
 }
 
 export const config = {
