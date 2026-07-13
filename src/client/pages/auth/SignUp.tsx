@@ -60,6 +60,9 @@ export default function SignUp() {
       >
         <Card sx={{ width: 400, boxShadow: '0 8px 32px rgba(139, 92, 246, 0.15)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
           <CardContent sx={{ p: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
+              <img src="/logo.png" alt="Stockora Logo" style={{ height: 60, objectFit: 'contain' }} />
+            </Box>
             <Typography variant="h4" sx={{ fontWeight: 800, textAlign: 'center', color: 'primary.main' }}>
               Create Account
             </Typography>
