@@ -6,6 +6,19 @@ import Dashboard from './pages/Dashboard.tsx';
 import POS from './pages/POS.tsx';
 import Inventory from './pages/Inventory.tsx';
 import { socket } from './socket.ts';
+import SignIn from './pages/auth/SignIn.tsx';
+import SignUp from './pages/auth/SignUp.tsx';
+import ForgotPassword from './pages/auth/ForgotPassword.tsx';
+import ResetPassword from './pages/auth/ResetPassword.tsx';
+import VerifyEmail from './pages/auth/VerifyEmail.tsx';
+import AccessDenied from './pages/auth/AccessDenied.tsx';
+import SessionExpired from './pages/auth/SessionExpired.tsx';
+import Profile from './pages/auth/Profile.tsx';
+import CompanySettings from './pages/admin/CompanySettings.tsx';
+import BranchList from './pages/admin/BranchList.tsx';
+import MasterDataList from './pages/admin/MasterDataList.tsx';
+import { ProtectedRoute } from './routes/ProtectedRoute.tsx';
+
 
 function App() {
   useEffect(() => {
@@ -58,10 +71,24 @@ function App() {
         }}
       />
       <Routes>
+        <Route path="/login" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/session-expired" element={<SessionExpired />} />
+        <Route path="/access-denied" element={<AccessDenied />} />
+
         <Route path="/" element={<Layout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="pos" element={<POS />} />
-          <Route path="inventory" element={<Inventory />} />
+          <Route element={<ProtectedRoute />}>
+            <Route index element={<Dashboard />} />
+            <Route path="pos" element={<POS />} />
+            <Route path="inventory" element={<Inventory />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="company" element={<CompanySettings />} />
+            <Route path="branches" element={<BranchList />} />
+            <Route path="master-data" element={<MasterDataList />} />
+          </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

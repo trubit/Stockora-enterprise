@@ -2,6 +2,9 @@ import { Router } from 'express';
 import mongoose from 'mongoose';
 import type { Product, Transaction } from '../../shared/types.js';
 import { SocketManager } from '../sockets/manager.js';
+import { authRouter } from './auth.routes.js';
+import { userRouter } from './user.routes.js';
+import { orgRouter } from './org.routes.js';
 
 const io = SocketManager.getInstance();
 
@@ -169,3 +172,7 @@ apiRouter.post('/transactions', (req, res) => {
 
   res.status(201).json(newTransaction);
 });
+
+apiRouter.use('/auth', authRouter);
+apiRouter.use('/users', userRouter);
+apiRouter.use('/org', orgRouter);
