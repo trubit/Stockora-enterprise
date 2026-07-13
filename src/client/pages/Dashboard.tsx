@@ -1,6 +1,6 @@
 import { useEffect, Fragment } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+import { apiClient } from '../api/client.ts';
 import {
   Grid,
   Card,
@@ -32,12 +32,12 @@ import type { Product, Transaction } from '../../shared/types.js';
 
 // Query functions
 const fetchProducts = async (): Promise<Product[]> => {
-  const { data } = await axios.get('/api/products');
+  const { data } = await apiClient.get<Product[]>('/products');
   return data;
 };
 
 const fetchTransactions = async (): Promise<Transaction[]> => {
-  const { data } = await axios.get('/api/transactions');
+  const { data } = await apiClient.get<Transaction[]>('/transactions');
   return data;
 };
 

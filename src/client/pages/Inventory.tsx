@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+import { apiClient } from '../api/client.ts';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -42,7 +42,7 @@ const productSchema = z.object({
 type ProductFormInputs = z.infer<typeof productSchema>;
 
 const fetchProducts = async (): Promise<Product[]> => {
-  const { data } = await axios.get('/api/products');
+  const { data } = await apiClient.get<Product[]>('/products');
   return data;
 };
 
@@ -79,7 +79,7 @@ export default function Inventory() {
 
   const createProductMutation = useMutation({
     mutationFn: async (newProduct: ProductFormInputs) => {
-      const { data } = await axios.post('/api/products', newProduct);
+      const { data } = await apiClient.post<Product>('/products', newProduct);
       return data;
     },
     onSuccess: () => {

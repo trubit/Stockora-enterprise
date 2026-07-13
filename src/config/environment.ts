@@ -12,6 +12,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string({ required_error: 'JWT_SECRET is required' }),
   JWT_REFRESH_SECRET: z.string({ required_error: 'JWT_REFRESH_SECRET is required' }),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
+  UPLOAD_MAX_SIZE: z.coerce.number().default(5242880),
 });
 
 let parsedEnv: z.infer<typeof envSchema>;
@@ -26,7 +27,6 @@ try {
   } else {
     console.error('Unexpected environment validation error:', error);
   }
-  // Fail-fast to ensure no operation runs without explicit configurations
   process.exit(1);
 }
 
@@ -38,6 +38,7 @@ export const config = {
   jwtSecret: parsedEnv.JWT_SECRET,
   jwtRefreshSecret: parsedEnv.JWT_REFRESH_SECRET,
   corsOrigin: parsedEnv.CORS_ORIGIN,
+  uploadMaxSize: parsedEnv.UPLOAD_MAX_SIZE,
   isProduction: parsedEnv.NODE_ENV === 'production',
   isDevelopment: parsedEnv.NODE_ENV === 'development',
   isTest: parsedEnv.NODE_ENV === 'test',

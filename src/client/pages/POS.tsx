@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import type { ChangeEvent, FormEvent, SyntheticEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+import { apiClient } from '../api/client.ts';
 import {
   Grid,
   Card,
@@ -28,12 +28,12 @@ import SearchIcon from '@mui/icons-material/Search';
 import ScanIcon from '@mui/icons-material/QrCodeScanner';
 import CheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
 import { toast } from 'react-hot-toast';
-import type { Product, TransactionItem } from '../../shared/types.js';
+import type { Product, TransactionItem, Transaction } from '../../shared/types.js';
 
 type CartItem = TransactionItem;
 
 const fetchProducts = async (): Promise<Product[]> => {
-  const { data } = await axios.get('/api/products');
+  const { data } = await apiClient.get<Product[]>('/products');
   return data;
 };
 
@@ -56,7 +56,7 @@ export default function POS() {
   // Mutation to handle transaction checkout
   const checkoutMutation = useMutation({
     mutationFn: async (transactionData: unknown) => {
-      const { data } = await axios.post('/api/transactions', transactionData);
+      const { data } = await apiClient.post<Transaction>('/transactions', transactionData);
       return data;
     },
     onSuccess: () => {
