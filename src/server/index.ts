@@ -9,6 +9,7 @@ import { SocketManager } from './sockets/manager.js';
 import { QueueManager } from './queue/bullmq.js';
 import { apiRouter } from './routes/api.js';
 import { notFoundHandler, errorHandler } from './errors/handlers.js';
+import { seedRolesIfEmpty } from './database/seeder.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -94,6 +95,7 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 // Start Database & Server
 async function startServer() {
   await dbManager.connect();
+  await seedRolesIfEmpty();
 
   httpServer.listen(config.port, () => {
     logger.info(
