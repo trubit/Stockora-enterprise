@@ -17,7 +17,7 @@ export const theme = createTheme({
     },
     background: {
       default: '#0b0f19', // Deep dark slate
-      paper: '#111827',   // Slate secondary
+      paper: '#111827', // Slate secondary
     },
     text: {
       primary: '#f3f4f6',

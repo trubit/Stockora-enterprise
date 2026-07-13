@@ -3,7 +3,7 @@
 declare module '@mui/icons-material' {
   import { ComponentType } from 'react';
   import { SvgIconProps } from '@mui/material';
-  
+
   export const Menu: ComponentType<SvgIconProps>;
   export const Dashboard: ComponentType<SvgIconProps>;
   export const PointOfSale: ComponentType<SvgIconProps>;

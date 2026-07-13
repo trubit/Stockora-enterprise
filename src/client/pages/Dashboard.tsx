@@ -91,21 +91,27 @@ export default function Dashboard() {
   const lowStockItems = products.filter((p) => p.quantity <= p.lowStockAlert);
 
   // Group transactions for Recharts (last 7 days or mock sequence)
-  const chartData = transactions.length > 0
-    ? transactions.map(t => ({
-        name: new Date(t.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        Sales: t.total,
-        Subtotal: t.subtotal,
-      })).reverse()
-    : [
-        { name: '09:00', Sales: 0, Subtotal: 0 },
-        { name: '10:00', Sales: 120, Subtotal: 100 },
-        { name: '11:00', Sales: 340, Subtotal: 300 },
-        { name: '12:00', Sales: 210, Subtotal: 190 },
-        { name: '13:00', Sales: 580, Subtotal: 510 },
-        { name: '14:00', Sales: 420, Subtotal: 390 },
-        { name: '15:00', Sales: 690, Subtotal: 620 },
-      ];
+  const chartData =
+    transactions.length > 0
+      ? transactions
+          .map((t) => ({
+            name: new Date(t.createdAt).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
+            Sales: t.total,
+            Subtotal: t.subtotal,
+          }))
+          .reverse()
+      : [
+          { name: '09:00', Sales: 0, Subtotal: 0 },
+          { name: '10:00', Sales: 120, Subtotal: 100 },
+          { name: '11:00', Sales: 340, Subtotal: 300 },
+          { name: '12:00', Sales: 210, Subtotal: 190 },
+          { name: '13:00', Sales: 580, Subtotal: 510 },
+          { name: '14:00', Sales: 420, Subtotal: 390 },
+          { name: '15:00', Sales: 690, Subtotal: 620 },
+        ];
 
   // Category levels data
   const categoryStats = products.reduce((acc: { [key: string]: number }, p) => {
@@ -161,9 +167,15 @@ export default function Dashboard() {
         {metrics.map((m) => (
           <Grid item xs={12} sm={6} md={3} key={m.title}>
             <Card className="glass-panel">
-              <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <CardContent
+                sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+              >
                 <Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontWeight: 600, mb: 0.5 }}
+                  >
                     {m.title}
                   </Typography>
                   <Typography variant="h4" sx={{ fontWeight: 750, mb: 0.5 }}>
@@ -194,18 +206,28 @@ export default function Dashboard() {
                 <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                   <XAxis dataKey="name" stroke="#9ca3af" fontSize={11} />
                   <YAxis stroke="#9ca3af" fontSize={11} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#111827', borderColor: 'rgba(255,255,255,0.1)' }}
+                    contentStyle={{
+                      backgroundColor: '#111827',
+                      borderColor: 'rgba(255,255,255,0.1)',
+                    }}
                     labelStyle={{ color: '#fff' }}
                   />
-                  <Area type="monotone" dataKey="Sales" stroke="#8b5cf6" strokeWidth={2} fillOpacity={1} fill="url(#colorSales)" />
+                  <Area
+                    type="monotone"
+                    dataKey="Sales"
+                    stroke="#8b5cf6"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorSales)"
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             </Box>
@@ -224,7 +246,10 @@ export default function Dashboard() {
                   <XAxis dataKey="name" stroke="#9ca3af" fontSize={11} />
                   <YAxis stroke="#9ca3af" fontSize={11} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#111827', borderColor: 'rgba(255,255,255,0.1)' }}
+                    contentStyle={{
+                      backgroundColor: '#111827',
+                      borderColor: 'rgba(255,255,255,0.1)',
+                    }}
                   />
                   <Bar dataKey="Stock" fill="#10b981" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -293,11 +318,17 @@ export default function Dashboard() {
                         secondary={`${t.items.length} items • ${t.paymentMethod} • Cashier: ${t.cashierName}`}
                       />
                       <Box sx={{ textAlign: 'right' }}>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'secondary.light' }}>
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: 700, color: 'secondary.light' }}
+                        >
                           +${t.total.toFixed(2)}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {new Date(t.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(t.createdAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
                         </Typography>
                       </Box>
                     </ListItem>

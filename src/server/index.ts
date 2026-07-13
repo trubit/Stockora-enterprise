@@ -31,7 +31,7 @@ const mockProducts: Product[] = [
     description: 'Fresh organic imported Fuji apples.',
     category: 'Produce',
     price: 4.99,
-    cost: 2.20,
+    cost: 2.2,
     quantity: 150,
     lowStockAlert: 20,
     barcode: '40012011',
@@ -46,7 +46,7 @@ const mockProducts: Product[] = [
     description: 'Pasteurized homogenized whole milk.',
     category: 'Dairy',
     price: 2.49,
-    cost: 1.10,
+    cost: 1.1,
     quantity: 80,
     lowStockAlert: 15,
     barcode: '40012022',
@@ -61,7 +61,7 @@ const mockProducts: Product[] = [
     description: 'Freshly baked artisanal sourdough bread.',
     category: 'Bakery',
     price: 3.99,
-    cost: 1.80,
+    cost: 1.8,
     quantity: 12,
     lowStockAlert: 10,
     barcode: '40012033',
@@ -76,14 +76,14 @@ const mockProducts: Product[] = [
     description: 'Medium roast Arabica coffee beans.',
     category: 'Pantry',
     price: 12.99,
-    cost: 6.50,
+    cost: 6.5,
     quantity: 45,
     lowStockAlert: 8,
     barcode: '40012044',
     isActive: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-  }
+  },
 ];
 
 const mockTransactions: Transaction[] = [];
@@ -91,7 +91,7 @@ const mockTransactions: Transaction[] = [];
 // Socket connections handler
 io.on('connection', (socket) => {
   logger.info(`Client connected to WebSocket: ${socket.id}`);
-  
+
   socket.on('disconnect', () => {
     logger.info(`Client disconnected from WebSocket: ${socket.id}`);
   });
@@ -131,7 +131,7 @@ app.get('/api/products', (req: Request, res: Response) => {
 
 app.post('/api/products', (req: Request, res: Response) => {
   const { name, SKU, price, cost, quantity, category, lowStockAlert, barcode } = req.body;
-  
+
   if (!name || !price || !quantity) {
     res.status(400).json({ error: 'Missing required parameters: name, price, quantity' });
     return;
@@ -153,16 +153,17 @@ app.post('/api/products', (req: Request, res: Response) => {
   };
 
   mockProducts.push(newProduct);
-  
+
   // Real-time notification to all connected clients
   io.emit('product:created', newProduct);
-  
+
   res.status(201).json(newProduct);
 });
 
 // 3. Transactions / POS Checkout Endpoint
 app.post('/api/transactions', (req: Request, res: Response) => {
-  const { items, paymentMethod, discount, tax, subtotal, total, cashierName, branchName } = req.body;
+  const { items, paymentMethod, discount, tax, subtotal, total, cashierName, branchName } =
+    req.body;
 
   if (!items || !Array.isArray(items) || items.length === 0) {
     res.status(400).json({ error: 'Invalid transaction: must contain items.' });
@@ -171,13 +172,13 @@ app.post('/api/transactions', (req: Request, res: Response) => {
 
   // Deduct inventory quantities (Local/In-Memory logic for instantaneous feedback)
   for (const item of items) {
-    const product = mockProducts.find(p => p.id === item.productId || p.sku === item.sku);
+    const product = mockProducts.find((p) => p.id === item.productId || p.sku === item.sku);
     if (product) {
       product.quantity = Math.max(0, product.quantity - item.quantity);
-      
+
       // Real-time notify clients of inventory level drop
       io.emit('product:stock-updated', { productId: product.id, quantity: product.quantity });
-      
+
       // Stock warning check
       if (product.quantity <= product.lowStockAlert) {
         io.emit('notification:low-stock', {
@@ -210,7 +211,7 @@ app.post('/api/transactions', (req: Request, res: Response) => {
   };
 
   mockTransactions.push(newTransaction);
-  
+
   // Notify client dashboards of new sale
   io.emit('transaction:completed', newTransaction);
 
@@ -225,7 +226,7 @@ app.get('/api/transactions', (req: Request, res: Response) => {
 if (config.isProduction) {
   const distPath = path.join(process.cwd(), 'dist');
   app.use(express.static(distPath));
-  
+
   app.get('*', (req: Request, res: Response) => {
     res.sendFile(path.join(distPath, 'index.html'));
   });
@@ -233,12 +234,13 @@ if (config.isProduction) {
   // Graceful welcome message for API root in development
   app.get('/', (req: Request, res: Response) => {
     res.json({
-      message: 'Welcome to the Stockora Enterprise API Server (Development Mode). Please navigate to the frontend port.',
+      message:
+        'Welcome to the Stockora Enterprise API Server (Development Mode). Please navigate to the frontend port.',
       endpoints: {
         health: '/api/health',
         products: '/api/products',
         transactions: '/api/transactions',
-      }
+      },
     });
   });
 }
@@ -247,22 +249,24 @@ if (config.isProduction) {
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
   logger.error(`Server Error: ${err.message || err}`);
-  
+
   // Prevent stack traces from leaking to clients in production
   res.status(err.status || 500).json({
     error: {
       message: config.isProduction ? 'An unexpected server error occurred.' : err.message,
       status: err.status || 500,
-    }
+    },
   });
 });
 
 // Start Database & Server
 async function startServer() {
   await connectDB();
-  
+
   httpServer.listen(config.port, () => {
-    logger.info(`Stockora Server running in [${config.env}] mode on http://localhost:${config.port}`);
+    logger.info(
+      `Stockora Server running in [${config.env}] mode on http://localhost:${config.port}`
+    );
   });
 }
 

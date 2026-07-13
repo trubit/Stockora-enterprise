@@ -7,7 +7,9 @@ export async function connectDB(): Promise<void> {
     const conn = await mongoose.connect(config.mongodbUri);
     logger.info(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    logger.error(`MongoDB Connection Error: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(
+      `MongoDB Connection Error: ${error instanceof Error ? error.message : String(error)}`
+    );
     // In production, we might want the server to fail-fast.
     // In development, we degrade gracefully so compilation/testing can continue.
     if (config.isProduction) {

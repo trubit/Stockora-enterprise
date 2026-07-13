@@ -52,9 +52,7 @@ transports.push(
     format: winston.format.combine(
       winston.format.colorize({ all: true }),
       winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
-      winston.format.printf(
-        (info) => `[${info.timestamp}] [${info.level}]: ${info.message}`
-      )
+      winston.format.printf((info) => `[${info.timestamp}] [${info.level}]: ${info.message}`)
     ),
   })
 );

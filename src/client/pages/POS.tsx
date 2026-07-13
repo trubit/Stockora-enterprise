@@ -194,7 +194,16 @@ export default function POS() {
       <Grid container spacing={3}>
         {/* Product Catalog Pane */}
         <Grid item xs={12} lg={8}>
-          <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box
+            sx={{
+              mb: 3,
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 2,
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
             <Box>
               <Typography variant="h4" sx={{ fontWeight: 800 }}>
                 POS Checkout
@@ -259,7 +268,12 @@ export default function POS() {
                     indicatorColor="secondary"
                   >
                     {categories.map((cat) => (
-                      <Tab key={cat} label={cat} value={cat} sx={{ fontWeight: 600, fontSize: '0.85rem' }} />
+                      <Tab
+                        key={cat}
+                        label={cat}
+                        value={cat}
+                        sx={{ fontWeight: 600, fontSize: '0.85rem' }}
+                      />
                     ))}
                   </Tabs>
                 </Grid>
@@ -295,7 +309,11 @@ export default function POS() {
                         <Chip
                           label={p.category}
                           size="small"
-                          sx={{ fontSize: '0.7rem', fontWeight: 600, bgcolor: 'rgba(255,255,255,0.03)' }}
+                          sx={{
+                            fontSize: '0.7rem',
+                            fontWeight: 600,
+                            bgcolor: 'rgba(255,255,255,0.03)',
+                          }}
                         />
                         <Typography
                           variant="caption"
@@ -305,13 +323,25 @@ export default function POS() {
                           {p.quantity} in stock
                         </Typography>
                       </Box>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5, lineHeight: 1.2 }}>
+                      <Typography
+                        variant="subtitle1"
+                        sx={{ fontWeight: 700, mb: 0.5, lineHeight: 1.2 }}
+                      >
                         {p.name}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1.5 }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                        sx={{ mb: 1.5 }}
+                      >
                         SKU: {p.sku}
                       </Typography>
-                      <Typography variant="h6" color="primary.light" sx={{ fontWeight: 800, mt: 'auto' }}>
+                      <Typography
+                        variant="h6"
+                        color="primary.light"
+                        sx={{ fontWeight: 800, mt: 'auto' }}
+                      >
                         ${p.price.toFixed(2)}
                       </Typography>
                     </CardContent>
@@ -324,12 +354,32 @@ export default function POS() {
 
         {/* Checkout Cart Pane */}
         <Grid item xs={12} lg={4}>
-          <Card className="glass-panel" sx={{ position: 'sticky', top: 88, display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 120px)' }}>
-            <Box sx={{ p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Card
+            className="glass-panel"
+            sx={{
+              position: 'sticky',
+              top: 88,
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: 'calc(100vh - 120px)',
+            }}
+          >
+            <Box
+              sx={{
+                p: 2.5,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
               <Typography variant="h6" sx={{ fontWeight: 800 }}>
                 Shopping Cart
               </Typography>
-              <Chip label={`${cart.reduce((sum, i) => sum + i.quantity, 0)} Items`} size="small" color="primary" />
+              <Chip
+                label={`${cart.reduce((sum, i) => sum + i.quantity, 0)} Items`}
+                size="small"
+                color="primary"
+              />
             </Box>
             <Divider />
 
@@ -347,7 +397,12 @@ export default function POS() {
                     <ListItem
                       key={item.productId}
                       secondaryAction={
-                        <IconButton edge="end" color="error" size="small" onClick={() => removeItem(item.productId)}>
+                        <IconButton
+                          edge="end"
+                          color="error"
+                          size="small"
+                          onClick={() => removeItem(item.productId)}
+                        >
                           <DeleteIcon fontSize="small" />
                         </IconButton>
                       }
@@ -403,7 +458,9 @@ export default function POS() {
                     type="number"
                     size="small"
                     value={discount || ''}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setDiscount(Math.max(0, Number(e.target.value)))}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      setDiscount(Math.max(0, Number(e.target.value)))
+                    }
                     fullWidth
                   />
                 </Grid>
@@ -413,7 +470,9 @@ export default function POS() {
                     label="Payment Method"
                     size="small"
                     value={paymentMethod}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setPaymentMethod(e.target.value as 'CASH' | 'CARD' | 'MOBILE')}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      setPaymentMethod(e.target.value as 'CASH' | 'CARD' | 'MOBILE')
+                    }
                     fullWidth
                   >
                     <MenuItem value="CASH">Cash</MenuItem>
@@ -424,22 +483,36 @@ export default function POS() {
               </Grid>
 
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="body2" color="text.secondary">Subtotal</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>${subtotal.toFixed(2)}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Subtotal
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  ${subtotal.toFixed(2)}
+                </Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="body2" color="text.secondary">Sales Tax (8%)</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>${tax.toFixed(2)}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Sales Tax (8%)
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  ${tax.toFixed(2)}
+                </Typography>
               </Box>
               {discount > 0 && (
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2" color="error">Discount</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.light' }}>-${discount.toFixed(2)}</Typography>
+                  <Typography variant="body2" color="error">
+                    Discount
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.light' }}>
+                    -${discount.toFixed(2)}
+                  </Typography>
                 </Box>
               )}
               <Divider sx={{ my: 1.5 }} />
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2.5 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Total</Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  Total
+                </Typography>
                 <Typography variant="h5" color="secondary.light" sx={{ fontWeight: 800 }}>
                   ${total.toFixed(2)}
                 </Typography>

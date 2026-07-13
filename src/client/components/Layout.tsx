@@ -58,7 +58,9 @@ export default function Layout() {
   ];
 
   const drawerContent = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: 'background.paper' }}>
+    <Box
+      sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: 'background.paper' }}
+    >
       {/* Brand Header */}
       <Box sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Avatar
@@ -71,7 +73,10 @@ export default function Layout() {
           }}
         />
         <Box>
-          <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '0.05em', lineHeight: 1.2 }}>
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: 800, letterSpacing: '0.05em', lineHeight: 1.2 }}
+          >
             STOCKORA
           </Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
@@ -103,12 +108,17 @@ export default function Layout() {
                   },
                 }}
               >
-                <ListItemIcon sx={{ color: isActive ? 'primary.light' : 'text.secondary', minWidth: 40 }}>
+                <ListItemIcon
+                  sx={{ color: isActive ? 'primary.light' : 'text.secondary', minWidth: 40 }}
+                >
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText
                   primary={item.text}
-                  primaryTypographyProps={{ fontSize: '0.925rem', fontWeight: isActive ? 600 : 500 }}
+                  primaryTypographyProps={{
+                    fontSize: '0.925rem',
+                    fontWeight: isActive ? 600 : 500,
+                  }}
                 />
               </ListItemButton>
             </ListItem>
@@ -159,7 +169,12 @@ export default function Layout() {
             </IconButton>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <BranchIcon sx={{ color: 'primary.light' }} />
-              <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
+              <Typography
+                variant="h6"
+                noWrap
+                component="div"
+                sx={{ fontWeight: 700, fontSize: '1.1rem' }}
+              >
                 Main Branch (HQ)
               </Typography>
             </Box>
@@ -168,7 +183,11 @@ export default function Layout() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
             {/* System Status Indicators */}
             <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 2 }}>
-              <Tooltip title={isOnline ? 'System Online (Vite/Server Connection Stable)' : 'Offline Mode Active'}>
+              <Tooltip
+                title={
+                  isOnline ? 'System Online (Vite/Server Connection Stable)' : 'Offline Mode Active'
+                }
+              >
                 <Badge
                   variant="dot"
                   color={isOnline ? 'success' : 'error'}
@@ -190,10 +209,21 @@ export default function Layout() {
               </Typography>
             </Box>
 
-            <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' } }} />
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{ display: { xs: 'none', sm: 'block' } }}
+            />
 
             {/* Notification Badge */}
-            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, display: { xs: 'none', md: 'block' } }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'text.secondary',
+                fontWeight: 500,
+                display: { xs: 'none', md: 'block' },
+              }}
+            >
               Shift: 08:00 - 16:00
             </Typography>
           </Box>
@@ -220,7 +250,11 @@ export default function Layout() {
           variant="permanent"
           sx={{
             display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, borderRight: '1px solid rgba(255, 255, 255, 0.05)' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: drawerWidth,
+              borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+            },
           }}
           open
         >

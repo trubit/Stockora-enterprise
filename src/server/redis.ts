@@ -17,7 +17,7 @@ export function getRedisClient(): Redis | null {
           if (times > 3) {
             // Stop retrying to prevent endless logs if Redis is missing
             logger.error('Redis connection attempts exceeded limit. Continuing without Redis.');
-            return null; 
+            return null;
           }
           return delay;
         },
@@ -32,7 +32,6 @@ export function getRedisClient(): Redis | null {
         isRedisConnected = false;
         logger.error(`Redis Error: ${error?.message || String(error)}`);
       });
-      
     } catch (err) {
       logger.error(`Could not initialize Redis client: ${err}`);
       redisClient = null;

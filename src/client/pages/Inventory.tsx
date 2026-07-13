@@ -119,21 +119,30 @@ export default function Inventory() {
   // AG Grid Column Definitions
   const columnDefs: ColDef<Product>[] = [
     { field: 'sku', headerName: 'SKU', sortable: true, filter: true, width: 150 },
-    { field: 'name', headerName: 'Product Name', sortable: true, filter: true, flex: 1, minWidth: 200 },
+    {
+      field: 'name',
+      headerName: 'Product Name',
+      sortable: true,
+      filter: true,
+      flex: 1,
+      minWidth: 200,
+    },
     { field: 'category', headerName: 'Category', sortable: true, filter: true, width: 140 },
     {
       field: 'cost',
       headerName: 'Cost Price',
       sortable: true,
       width: 120,
-      valueFormatter: (params: ValueFormatterParams<Product>) => (params.value != null ? `$${Number(params.value).toFixed(2)}` : ''),
+      valueFormatter: (params: ValueFormatterParams<Product>) =>
+        params.value != null ? `$${Number(params.value).toFixed(2)}` : '',
     },
     {
       field: 'price',
       headerName: 'Retail Price',
       sortable: true,
       width: 120,
-      valueFormatter: (params: ValueFormatterParams<Product>) => (params.value != null ? `$${Number(params.value).toFixed(2)}` : ''),
+      valueFormatter: (params: ValueFormatterParams<Product>) =>
+        params.value != null ? `$${Number(params.value).toFixed(2)}` : '',
     },
     {
       field: 'quantity',
@@ -171,10 +180,20 @@ export default function Inventory() {
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button variant="outlined" color="primary" startIcon={<RefreshIcon />} onClick={() => refetch()}>
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<RefreshIcon />}
+            onClick={() => refetch()}
+          >
             Sync
           </Button>
-          <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={() => setOpen(true)}>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={() => setOpen(true)}
+          >
             Add Product
           </Button>
         </Box>
@@ -182,7 +201,15 @@ export default function Inventory() {
 
       {/* Main Table view */}
       <Card className="glass-panel" sx={{ height: 'calc(100vh - 250px)', width: '100%' }}>
-        <Box className="ag-theme-alpine-dark" sx={{ height: '100%', width: '100%', '--ag-background-color': 'transparent', '--ag-header-background-color': '#1f2937' }}>
+        <Box
+          className="ag-theme-alpine-dark"
+          sx={{
+            height: '100%',
+            width: '100%',
+            '--ag-background-color': 'transparent',
+            '--ag-header-background-color': '#1f2937',
+          }}
+        >
           <AgGridReact
             rowData={products}
             columnDefs={columnDefs}
@@ -290,7 +317,12 @@ export default function Inventory() {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="contained" color="primary" disabled={createProductMutation.isPending}>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={createProductMutation.isPending}
+            >
               {createProductMutation.isPending ? 'Saving...' : 'Add Product'}
             </Button>
           </DialogActions>
