@@ -62,15 +62,14 @@ export default function Layout() {
       {/* Brand Header */}
       <Box sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Avatar
+          src="/logo.png"
           sx={{
             bgcolor: 'primary.main',
             width: 38,
             height: 38,
             boxShadow: '0 4px 10px rgba(139, 92, 246, 0.4)',
           }}
-        >
-          S
-        </Avatar>
+        />
         <Box>
           <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '0.05em', lineHeight: 1.2 }}>
             STOCKORA
