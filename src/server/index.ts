@@ -24,6 +24,10 @@ app.use(securityMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve Public Static Assets (Logo, Uploaded avatars, etc.)
+app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
+app.use(express.static(path.join(process.cwd(), 'public')));
+
 // Log HTTP Requests
 app.use((req, _res, next) => {
   logger.http(`${req.method} ${req.url} - IP: ${req.ip}`);
