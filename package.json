@@ -6,7 +6,7 @@
   "scripts": {
     "dev:client": "vite",
     "dev:server": "tsx watch src/server/index.ts",
-    "dev": "concurrently -n \"server,client\" -c \"bgMagenta.bold,bgBlue.bold\" \"npm run dev:server\" \"wait-on http://127.0.0.1:5000/api/health && npm run dev:client\"",
+    "dev": "concurrently -n \"server,client\" -c \"bgMagenta.bold,bgBlue.bold\" \"npm run dev:server\" \"wait-on http://127.0.0.1:5000/api/v1/health && npm run dev:client\"",
     "build:client": "tsc -b tsconfig.app.json && vite build",
     "build:server": "tsc -p tsconfig.server.json",
     "build": "npm run build:client && npm run build:server",
