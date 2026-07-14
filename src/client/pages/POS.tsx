@@ -411,6 +411,7 @@ export default function POS() {
                       <ListItemText
                         primary={item.productName}
                         primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9rem' }}
+                        secondaryTypographyProps={{ component: 'div' }}
                         secondary={
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
                             <Typography variant="caption" color="text.secondary">
