@@ -166,6 +166,15 @@ export default function Inventory() {
       },
     },
     { field: 'barcode', headerName: 'Barcode', sortable: true, filter: true, width: 140 },
+    {
+      field: 'createdAt',
+      headerName: 'Date Added',
+      sortable: true,
+      filter: 'agDateColumnFilter',
+      width: 130,
+      valueFormatter: (params: ValueFormatterParams<Product>) =>
+        params.value ? new Date(params.value).toLocaleDateString() : '',
+    },
   ];
 
   return (
