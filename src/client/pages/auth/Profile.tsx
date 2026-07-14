@@ -4,6 +4,32 @@ import { useForm } from 'react-hook-form';
 import { useAuthStore } from '../../store/auth.ts';
 import { apiClient } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
+import { motion } from 'framer-motion';
+
+const textFieldStyle = {
+  '& .MuiOutlinedInput-root': {
+    bgcolor: 'rgba(17, 24, 39, 0.4)',
+    backdropFilter: 'blur(8px)',
+    borderRadius: 2.5,
+    transition: 'all 0.3s ease',
+    '& fieldset': {
+      borderColor: 'rgba(255, 255, 255, 0.08)',
+    },
+    '&:hover fieldset': {
+      borderColor: 'rgba(139, 92, 246, 0.3)',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: 'primary.main',
+      boxShadow: '0 0 14px rgba(139, 92, 246, 0.25)',
+    },
+  },
+  '& .MuiInputLabel-root': {
+    color: 'text.secondary',
+    '&.Mui-focused': {
+      color: 'primary.light',
+    },
+  },
+};
 
 export default function Profile() {
   const { user, updateUser } = useAuthStore();
@@ -60,82 +86,177 @@ export default function Profile() {
   };
 
   return (
-    <Box sx={{ p: 4 }}>
-      <Typography variant="h4" sx={{ fontWeight: 800, mb: 4 }}>
-        User Profile Settings
-      </Typography>
+    <Box sx={{ p: { xs: 2, md: 4 } }}>
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          User Profile Settings
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 4, fontWeight: 500 }}>
+          Manage your personal workspace preferences, local timezone configurations, and profile pictures.
+        </Typography>
 
-      <Grid container spacing={4}>
-        <Grid item xs={12} md={4}>
-          <Card sx={{ border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-            <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, py: 4 }}>
-              <Avatar src={avatar || undefined} sx={{ width: 120, height: 120 }} />
-              <Button variant="outlined" component="label" sx={{ textTransform: 'none' }}>
-                Upload New Image
-                <input type="file" hidden accept="image/*" onChange={handleAvatarChange} />
-              </Button>
-              <Box sx={{ textAlign: 'center' }}>
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  {user?.username || 'Cashier User'}
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  {user?.roleName || 'Cashier'}
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={8}>
-          <Card sx={{ border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-            <CardContent sx={{ p: 4 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
-                Preferences
-              </Typography>
-              <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                 <TextField
-                  select
-                  label="Preferred Language"
-                  fullWidth
-                  value={preferredLanguage || 'en'}
-                  {...register('preferredLanguage')}
-                  onChange={(e) => setValue('preferredLanguage', e.target.value as 'en' | 'es' | 'fr')}
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={4}>
+            <Card 
+              className="glass-panel" 
+              sx={{ 
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%)',
+                boxShadow: '0 8px 32px rgba(139, 92, 246, 0.08)',
+                borderRadius: 3,
+                position: 'relative',
+                overflow: 'hidden',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '3px',
+                  background: 'linear-gradient(90deg, #8b5cf6, #3b82f6)',
+                }
+              }}
+            >
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, py: 5 }}>
+                <Avatar 
+                  src={avatar || undefined} 
+                  sx={{ 
+                    width: 130, 
+                    height: 130, 
+                    boxShadow: '0 4px 20px rgba(139, 92, 246, 0.25)',
+                    border: '2px solid rgba(139, 92, 246, 0.3)'
+                  }} 
+                />
+                <Button 
+                  variant="outlined" 
+                  component="label" 
+                  sx={{ 
+                    textTransform: 'none', 
+                    borderRadius: 2, 
+                    fontWeight: 600,
+                    borderColor: 'rgba(139, 92, 246, 0.4)',
+                    color: 'primary.light',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      bgcolor: 'rgba(139, 92, 246, 0.08)'
+                    }
+                  }}
                 >
-                  <MenuItem value="en">English</MenuItem>
-                  <MenuItem value="es">Español</MenuItem>
-                  <MenuItem value="fr">Français</MenuItem>
-                </TextField>
-                <TextField
-                  select
-                  label="Time Zone"
-                  fullWidth
-                  value={timeZone || 'UTC'}
-                  {...register('timeZone')}
-                  onChange={(e) => setValue('timeZone', e.target.value as 'UTC' | 'EST' | 'WAT')}
-                >
-                  <MenuItem value="UTC">UTC (Coordinated Universal Time)</MenuItem>
-                  <MenuItem value="EST">EST (Eastern Standard Time)</MenuItem>
-                  <MenuItem value="WAT">WAT (West Africa Time)</MenuItem>
-                </TextField>
-                <TextField
-                  select
-                  label="Interface Theme"
-                  fullWidth
-                  value={themePreference || 'dark'}
-                  {...register('themePreference')}
-                  onChange={(e) => setValue('themePreference', e.target.value as 'light' | 'dark')}
-                >
-                  <MenuItem value="light">Light Mode</MenuItem>
-                  <MenuItem value="dark">Dark Mode</MenuItem>
-                </TextField>
-                <Button variant="contained" type="submit" sx={{ alignSelf: 'flex-start', px: 4, py: 1.2, fontWeight: 700 }}>
-                  Save Preferences
+                  Upload New Image
+                  <input type="file" hidden accept="image/*" onChange={handleAvatarChange} />
                 </Button>
-              </form>
-            </CardContent>
-          </Card>
+                <Box sx={{ textAlign: 'center', mt: 1 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                    {user?.username || 'Guest User'}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, letterSpacing: '0.05em', mt: 0.5 }}>
+                    {user?.roleName || 'Employee'}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={8}>
+            <Card 
+              className="glass-panel" 
+              sx={{ 
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%)',
+                boxShadow: '0 8px 32px rgba(139, 92, 246, 0.08)',
+                borderRadius: 3,
+                position: 'relative',
+                overflow: 'hidden',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '3px',
+                  background: 'linear-gradient(90deg, #8b5cf6, #3b82f6)',
+                }
+              }}
+            >
+              <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+                <Typography variant="h6" sx={{ fontWeight: 800, mb: 3.5 }}>
+                  Preferences Configurations
+                </Typography>
+                <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                  <TextField
+                    select
+                    label="Preferred Language"
+                    fullWidth
+                    value={preferredLanguage || 'en'}
+                    {...register('preferredLanguage')}
+                    onChange={(e) => setValue('preferredLanguage', e.target.value as 'en' | 'es' | 'fr')}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  >
+                    <MenuItem value="en">English</MenuItem>
+                    <MenuItem value="es">Español</MenuItem>
+                    <MenuItem value="fr">Français</MenuItem>
+                  </TextField>
+                  <TextField
+                    select
+                    label="Time Zone"
+                    fullWidth
+                    value={timeZone || 'UTC'}
+                    {...register('timeZone')}
+                    onChange={(e) => setValue('timeZone', e.target.value as 'UTC' | 'EST' | 'WAT')}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  >
+                    <MenuItem value="UTC">UTC (Coordinated Universal Time)</MenuItem>
+                    <MenuItem value="EST">EST (Eastern Standard Time)</MenuItem>
+                    <MenuItem value="WAT">WAT (West Africa Time)</MenuItem>
+                  </TextField>
+                  <TextField
+                    select
+                    label="Interface Theme"
+                    fullWidth
+                    value={themePreference || 'dark'}
+                    {...register('themePreference')}
+                    onChange={(e) => setValue('themePreference', e.target.value as 'light' | 'dark')}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  >
+                    <MenuItem value="light">Light Mode</MenuItem>
+                    <MenuItem value="dark">Dark Mode</MenuItem>
+                  </TextField>
+                  <Button 
+                    variant="contained" 
+                    type="submit" 
+                    sx={{ 
+                      alignSelf: 'flex-start', 
+                      px: 5, 
+                      py: 1.4, 
+                      fontWeight: 700,
+                      borderRadius: 2.5,
+                      textTransform: 'none',
+                      fontSize: '0.95rem',
+                      background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                      boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
+                        boxShadow: '0 6px 20px rgba(139, 92, 246, 0.45)',
+                        transform: 'translateY(-1px)',
+                      }
+                    }}
+                  >
+                    Save Preferences
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
-      </Grid>
+      </motion.div>
     </Box>
   );
 }

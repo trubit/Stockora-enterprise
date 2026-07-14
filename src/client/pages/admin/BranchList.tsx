@@ -6,6 +6,32 @@ import { useForm } from 'react-hook-form';
 import { apiClient } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 import type { Branch } from '../../../shared/types.js';
+import { motion } from 'framer-motion';
+
+const textFieldStyle = {
+  '& .MuiOutlinedInput-root': {
+    bgcolor: 'rgba(17, 24, 39, 0.4)',
+    backdropFilter: 'blur(8px)',
+    borderRadius: 2,
+    transition: 'all 0.3s ease',
+    '& fieldset': {
+      borderColor: 'rgba(255, 255, 255, 0.08)',
+    },
+    '&:hover fieldset': {
+      borderColor: 'rgba(139, 92, 246, 0.3)',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: 'primary.main',
+      boxShadow: '0 0 14px rgba(139, 92, 246, 0.25)',
+    },
+  },
+  '& .MuiInputLabel-root': {
+    color: 'text.secondary',
+    '&.Mui-focused': {
+      color: 'primary.light',
+    },
+  },
+};
 
 export default function BranchList() {
   const [open, setOpen] = useState(false);
@@ -28,7 +54,7 @@ export default function BranchList() {
       return await apiClient.post('/org/branches', { companyId: '507f1f77bcf86cd799439011', ...newBranch });
     },
     onSuccess: () => {
-      toast.success('Branch added successfully!');
+      toast.success('Branch registered successfully!');
       setOpen(false);
       reset();
       refetch();
@@ -41,56 +67,190 @@ export default function BranchList() {
   };
 
   return (
-    <Box sx={{ p: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 800 }}>
-          Branches Manager
+    <Box sx={{ p: { xs: 2, md: 4 } }}>
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Typography variant="h4" sx={{ fontWeight: 800, background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            Branches Manager
+          </Typography>
+          <Button 
+            variant="contained" 
+            startIcon={<AddIcon />} 
+            onClick={() => setOpen(true)} 
+            sx={{ 
+              fontWeight: 700,
+              px: 3,
+              py: 1.2,
+              borderRadius: 2.5,
+              textTransform: 'none',
+              fontSize: '0.9rem',
+              background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+              boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
+                boxShadow: '0 6px 20px rgba(139, 92, 246, 0.45)',
+                transform: 'translateY(-1px)',
+              }
+            }}
+          >
+            Add Branch
+          </Button>
+        </Box>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 4, fontWeight: 500 }}>
+          Configure retail branches, operational physical outlets, and warehouse assignments.
         </Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpen(true)} sx={{ fontWeight: 700 }}>
-          Add Branch
-        </Button>
-      </Box>
 
-      <Grid container spacing={3}>
-        {branches.map((b) => (
-          <Grid item xs={12} sm={6} md={4} key={b._id || b.id}>
-            <Card sx={{ border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                    {b.name}
+        <Grid container spacing={3}>
+          {branches.map((b) => (
+            <Grid item xs={12} sm={6} md={4} key={b._id || b.id}>
+              <Card 
+                className="glass-panel"
+                sx={{ 
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
+                  borderRadius: 3,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  overflow: 'hidden',
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '2px',
+                    background: 'linear-gradient(90deg, #8b5cf6, #3b82f6)',
+                    opacity: 0.6,
+                  },
+                  '&:hover': {
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 10px 25px rgba(139, 92, 246, 0.12)',
+                    borderColor: 'rgba(139, 92, 246, 0.25)',
+                    '&::before': {
+                      opacity: 1,
+                    }
+                  }
+                }}
+              >
+                <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, p: 3 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                      {b.name}
+                    </Typography>
+                    <Chip 
+                      label={b.code} 
+                      size="small" 
+                      color="primary"
+                      sx={{ 
+                        fontWeight: 700, 
+                        fontSize: '0.75rem',
+                        boxShadow: '0 2px 8px rgba(139, 92, 246, 0.2)'
+                      }} 
+                    />
+                  </Box>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', minHeight: 40, fontWeight: 500 }}>
+                    {b.address || 'No address registered'}
                   </Typography>
-                  <Chip label={b.code} size="small" color="primary" />
-                </Box>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  {b.address || 'No address registered'}
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                  Phone: {b.phone || 'N/A'}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                    Phone: {b.phone || 'N/A'}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
 
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <DialogTitle sx={{ fontWeight: 700 }}>Register New Branch</DialogTitle>
-          <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-            <TextField label="Branch Name" fullWidth {...register('name', { required: true })} />
-            <TextField label="Branch Code (e.g., HQ-01)" fullWidth {...register('code', { required: true })} />
-            <TextField label="Address" fullWidth {...register('address')} />
-            <TextField label="Phone Number" fullWidth {...register('phone')} />
-          </DialogContent>
-          <DialogActions sx={{ p: 3 }}>
-            <Button onClick={() => setOpen(false)}>Cancel</Button>
-            <Button variant="contained" type="submit" disabled={createMutation.isPending}>
-              Register
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
+        <Dialog 
+          open={open} 
+          onClose={() => setOpen(false)} 
+          maxWidth="xs" 
+          fullWidth
+          PaperProps={{
+            sx: {
+              background: 'linear-gradient(135deg, rgba(23, 27, 44, 0.95) 0%, rgba(11, 13, 26, 0.98) 100%)',
+              backdropFilter: 'blur(16px)',
+              border: '1px solid rgba(139, 92, 246, 0.2)',
+              borderRadius: 4,
+              p: 1
+            }
+          }}
+        >
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <DialogTitle sx={{ fontWeight: 800, fontSize: '1.25rem', background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', pb: 1 }}>
+              Register New Branch
+            </DialogTitle>
+            <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 2 }}>
+              <TextField 
+                label="Branch Name" 
+                fullWidth 
+                {...register('name', { required: true })} 
+                sx={textFieldStyle}
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField 
+                label="Branch Code (e.g., HQ-01)" 
+                fullWidth 
+                {...register('code', { required: true })} 
+                sx={textFieldStyle}
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField 
+                label="Address" 
+                fullWidth 
+                {...register('address')} 
+                sx={textFieldStyle}
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField 
+                label="Phone Number" 
+                fullWidth 
+                {...register('phone')} 
+                sx={textFieldStyle}
+                InputLabelProps={{ shrink: true }}
+              />
+            </DialogContent>
+            <DialogActions sx={{ p: 3, gap: 1.5 }}>
+              <Button 
+                onClick={() => setOpen(false)}
+                sx={{ 
+                  textTransform: 'none', 
+                  fontWeight: 600, 
+                  color: 'text.secondary',
+                  '&:hover': { color: 'text.primary' }
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="contained" 
+                type="submit" 
+                disabled={createMutation.isPending}
+                sx={{
+                  px: 4,
+                  py: 1,
+                  fontWeight: 700,
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.25)',
+                  '&:hover': {
+                    background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
+                    boxShadow: '0 6px 16px rgba(139, 92, 246, 0.4)'
+                  }
+                }}
+              >
+                {createMutation.isPending ? 'Registering...' : 'Register'}
+              </Button>
+            </DialogActions>
+          </form>
+        </Dialog>
+      </motion.div>
     </Box>
   );
 }
