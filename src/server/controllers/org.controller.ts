@@ -12,10 +12,7 @@ export class OrgController {
   public static async getCompany(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const company = await Company.findOne();
-      if (!company) {
-        return next(new NotFoundError('Company not found.'));
-      }
-      res.json(company);
+      res.json(company || null);
     } catch (err: unknown) {
       next(err);
     }

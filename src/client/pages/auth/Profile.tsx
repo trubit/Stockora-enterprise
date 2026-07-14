@@ -15,13 +15,17 @@ export default function Profile() {
     }
   }, [user]);
 
-  const { register, handleSubmit } = useForm({
+  const { register, handleSubmit, watch, setValue } = useForm({
     values: {
       preferredLanguage: user?.preferredLanguage || 'en',
       timeZone: user?.timeZone || 'UTC',
       themePreference: user?.themePreference || 'dark',
     },
   });
+
+  const preferredLanguage = watch('preferredLanguage');
+  const timeZone = watch('timeZone');
+  const themePreference = watch('themePreference');
 
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   const onSubmit = async (data: any) => {
@@ -89,17 +93,38 @@ export default function Profile() {
                 Preferences
               </Typography>
               <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <TextField select label="Preferred Language" fullWidth {...register('preferredLanguage')}>
+                 <TextField
+                  select
+                  label="Preferred Language"
+                  fullWidth
+                  value={preferredLanguage || 'en'}
+                  {...register('preferredLanguage')}
+                  onChange={(e) => setValue('preferredLanguage', e.target.value as 'en' | 'es' | 'fr')}
+                >
                   <MenuItem value="en">English</MenuItem>
                   <MenuItem value="es">Español</MenuItem>
                   <MenuItem value="fr">Français</MenuItem>
                 </TextField>
-                <TextField select label="Time Zone" fullWidth {...register('timeZone')}>
+                <TextField
+                  select
+                  label="Time Zone"
+                  fullWidth
+                  value={timeZone || 'UTC'}
+                  {...register('timeZone')}
+                  onChange={(e) => setValue('timeZone', e.target.value as 'UTC' | 'EST' | 'WAT')}
+                >
                   <MenuItem value="UTC">UTC (Coordinated Universal Time)</MenuItem>
                   <MenuItem value="EST">EST (Eastern Standard Time)</MenuItem>
                   <MenuItem value="WAT">WAT (West Africa Time)</MenuItem>
                 </TextField>
-                <TextField select label="Interface Theme" fullWidth {...register('themePreference')}>
+                <TextField
+                  select
+                  label="Interface Theme"
+                  fullWidth
+                  value={themePreference || 'dark'}
+                  {...register('themePreference')}
+                  onChange={(e) => setValue('themePreference', e.target.value as 'light' | 'dark')}
+                >
                   <MenuItem value="light">Light Mode</MenuItem>
                   <MenuItem value="dark">Dark Mode</MenuItem>
                 </TextField>
