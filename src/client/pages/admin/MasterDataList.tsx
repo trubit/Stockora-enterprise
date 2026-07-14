@@ -81,7 +81,7 @@ export default function MasterDataList() {
           </TableHead>
           <TableBody>
             {list.map((item) => (
-              <TableRow key={item.id}>
+              <TableRow key={item._id || item.id}>
                 <TableCell>{item.name}</TableCell>
                 <TableCell>
                   <Chip label={item.code} size="small" variant="outlined" />

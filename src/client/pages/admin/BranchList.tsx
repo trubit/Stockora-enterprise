@@ -53,7 +53,7 @@ export default function BranchList() {
 
       <Grid container spacing={3}>
         {branches.map((b) => (
-          <Grid item xs={12} sm={6} md={4} key={b.id}>
+          <Grid item xs={12} sm={6} md={4} key={b._id || b.id}>
             <Card sx={{ border: '1px solid rgba(255, 255, 255, 0.05)' }}>
               <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

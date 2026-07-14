@@ -2,6 +2,7 @@ export type UserRole = 'ADMIN' | 'MANAGER' | 'CASHIER' | 'WAREHOUSE';
 
 export interface User {
   id: string;
+  _id?: string;
   name: string;
   username?: string;
   email: string;
@@ -19,6 +20,7 @@ export interface User {
 
 export interface Branch {
   id: string;
+  _id?: string;
   name: string;
   code: string;
   address: string;
@@ -30,6 +32,7 @@ export interface Branch {
 
 export interface Product {
   id: string;
+  _id?: string;
   sku: string;
   name: string;
   description?: string;
@@ -61,6 +64,7 @@ export interface TransactionItem {
 
 export interface Transaction {
   id: string;
+  _id?: string;
   transactionNumber: string;
   type: TransactionType;
   status: TransactionStatus;
@@ -89,6 +93,7 @@ export interface TransferItem {
 
 export interface StockTransfer {
   id: string;
+  _id?: string;
   transferNumber: string;
   sourceBranchId: string;
   sourceBranchName: string;
@@ -104,6 +109,7 @@ export interface StockTransfer {
 
 export interface Role {
   id: string;
+  _id?: string;
   name: string;
   description?: string;
   permissions: string[];
@@ -114,6 +120,7 @@ export interface Role {
 
 export interface Company {
   id: string;
+  _id?: string;
   name: string;
   logoUrl?: string;
   taxId?: string;
@@ -127,6 +134,7 @@ export interface Company {
 
 export interface Warehouse {
   id: string;
+  _id?: string;
   branchId: string;
   name: string;
   code: string;
@@ -139,6 +147,7 @@ export interface Warehouse {
 
 export interface Department {
   id: string;
+  _id?: string;
   companyId: string;
   name: string;
   managerId?: string;
@@ -148,6 +157,7 @@ export interface Department {
 
 export interface Employee {
   id: string;
+  _id?: string;
   userId: string;
   employeeId: string;
   departmentId?: string;
@@ -162,6 +172,7 @@ export interface Employee {
 
 export interface MasterData {
   id: string;
+  _id?: string;
   type: string;
   name: string;
   code: string;
