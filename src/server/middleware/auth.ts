@@ -26,7 +26,7 @@ export function authMiddleware(req: AuthenticatedRequest, _res: Response, next: 
     };
     req.user = decoded;
     next();
-  } catch (err: unknown) {
+  } catch {
     throw new AuthenticationError('Session expired or invalid.');
   }
 }
