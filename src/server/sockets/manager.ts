@@ -1,11 +1,15 @@
 import type { Server as HttpServer } from 'http';
 import { Server as SocketServer, Socket } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { redis } from '../database/redis.js';
 import { logger } from '../logger.js';
 import { config } from '../../config/environment.js';
 
 export class SocketManager {
   private static instance: SocketManager | null = null;
   private io: SocketServer | null = null;
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  private subClient: any = null;
 
   private constructor() {}
 
@@ -26,6 +30,15 @@ export class SocketManager {
         credentials: true,
       },
     });
+
+    try {
+      const pubClient = redis;
+      this.subClient = redis.duplicate();
+      this.io.adapter(createAdapter(pubClient, this.subClient));
+      logger.info('Socket.IO Redis Pub/Sub adapter registered.');
+    } catch (err) {
+      logger.error('Failed to configure Socket.IO Redis adapter:', err);
+    }
 
     this.setupListeners();
     logger.info('Socket.IO server initialized successfully.');
@@ -54,6 +67,15 @@ export class SocketManager {
   }
 
   public async shutdown(): Promise<void> {
+    if (this.subClient) {
+      try {
+        await this.subClient.quit();
+        logger.info('Socket.IO subscriber Redis client closed.');
+      } catch (err) {
+        logger.error('Error closing Socket.IO subscriber Redis:', err);
+      }
+    }
+
     if (!this.io) return;
     await new Promise<void>((resolve) => {
       this.io!.close(() => {

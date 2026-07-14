@@ -24,8 +24,9 @@ export class DBConnectionManager {
       mongoose.set('strictQuery', true);
 
       const options = {
-        maxPoolSize: 10,
-        serverSelectionTimeoutMS: 5000,
+        maxPoolSize: 200,
+        minPoolSize: 20,
+        serverSelectionTimeoutMS: 10000,
         socketTimeoutMS: 45000,
       };
 

@@ -1,6 +1,9 @@
 import express from 'express';
 import { createServer } from 'http';
 import path from 'path';
+import cluster from 'cluster';
+import os from 'os';
+import compression from 'compression';
 import { config } from '../config/environment.js';
 import { logger } from './logger.js';
 import { securityMiddleware } from './middleware/security.js';
@@ -9,7 +12,7 @@ import { SocketManager } from './sockets/manager.js';
 import { QueueManager } from './queue/bullmq.js';
 import { apiRouter } from './routes/api.js';
 import { notFoundHandler, errorHandler } from './errors/handlers.js';
-import { seedRolesIfEmpty } from './database/seeder.js';
+import { seedRolesIfEmpty, seedProductsIfEmpty } from './database/seeder.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -21,6 +24,9 @@ socketManager.initialize(httpServer);
 // Apply Security Middlewares
 app.use(securityMiddleware);
 
+// Gzip Compression
+app.use(compression());
+
 // Body Parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -31,7 +37,7 @@ app.use(express.static(path.join(process.cwd(), 'public')));
 
 // Log HTTP Requests
 app.use((req, _res, next) => {
-  logger.http(`${req.method} ${req.url} - IP: ${req.ip}`);
+  logger.http(`${req.method} ${req.url} - IP: ${req.ip} (PID: ${process.pid})`);
   next();
 });
 
@@ -72,11 +78,11 @@ const dbManager = DBConnectionManager.getInstance();
 
 // Graceful Shutdown Handler
 async function gracefulShutdown(signal: string) {
-  logger.warn(`Shutdown signal received [${signal}]. Terminating processes...`);
+  logger.warn(`Shutdown signal received [${signal}] on worker [${process.pid}]. Terminating processes...`);
 
   await new Promise<void>((resolve) => {
     httpServer.close(() => {
-      logger.info('HTTP Server closed.');
+      logger.info(`HTTP Server closed on worker [${process.pid}].`);
       resolve();
     });
   });
@@ -85,7 +91,14 @@ async function gracefulShutdown(signal: string) {
   await socketManager.shutdown();
   await dbManager.disconnect();
 
-  logger.warn('Stockora Server stopped. Exiting.');
+  try {
+    const { redisManager } = await import('./database/redis.js');
+    await redisManager.disconnect();
+  } catch (err) {
+    logger.error('Error disconnecting Redis client during shutdown:', err);
+  }
+
+  logger.warn(`Stockora Worker [${process.pid}] stopped. Exiting.`);
   process.exit(0);
 }
 
@@ -96,12 +109,33 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 async function startServer() {
   await dbManager.connect();
   await seedRolesIfEmpty();
+  await seedProductsIfEmpty();
 
   httpServer.listen(config.port, () => {
     logger.info(
-      `Stockora Server running in [${config.env}] mode on http://localhost:${config.port}`
+      `Stockora Worker (PID: ${process.pid}) running in [${config.env}] mode on http://localhost:${config.port}`
     );
   });
 }
 
-startServer();
+// Spawns CPU-based process clusters in production mode for unlimited horizontal scaling
+if (config.isProduction) {
+  if (cluster.isPrimary) {
+    const numCPUs = os.cpus().length;
+    logger.info(`Stockora Primary Process running (PID: ${process.pid}). Forking ${numCPUs} cluster workers...`);
+
+    for (let i = 0; i < numCPUs; i++) {
+      cluster.fork();
+    }
+
+    cluster.on('exit', (worker, code, signal) => {
+      logger.warn(`Worker process ${worker.process.pid} exited (code: ${code}, signal: ${signal}). Reviving worker...`);
+      cluster.fork();
+    });
+  } else {
+    startServer();
+  }
+} else {
+  // Single thread run for developer debugging ease in development environments
+  startServer();
+}
