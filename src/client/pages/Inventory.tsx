@@ -220,6 +220,7 @@ export default function Inventory() {
           }}
         >
           <AgGridReact
+            theme="legacy"
             rowData={products}
             columnDefs={columnDefs}
             pagination={true}
