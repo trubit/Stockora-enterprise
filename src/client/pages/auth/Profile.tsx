@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, Typography, Button, TextField, MenuItem, Avatar, Grid, Card, CardContent } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import { useAuthStore } from '../../store/auth.ts';
@@ -9,8 +9,14 @@ export default function Profile() {
   const { user, updateUser } = useAuthStore();
   const [avatar, setAvatar] = useState<string | null>(user?.avatarUrl || null);
 
+  useEffect(() => {
+    if (user?.avatarUrl) {
+      setAvatar(user.avatarUrl);
+    }
+  }, [user]);
+
   const { register, handleSubmit } = useForm({
-    defaultValues: {
+    values: {
       preferredLanguage: user?.preferredLanguage || 'en',
       timeZone: user?.timeZone || 'UTC',
       themePreference: user?.themePreference || 'dark',

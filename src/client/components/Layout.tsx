@@ -29,6 +29,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import BusinessIcon from '@mui/icons-material/Business';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useAuthStore } from '../store/auth.ts';
+import { apiClient } from '../api/client.ts';
 
 const drawerWidth = 240;
 
@@ -37,7 +38,22 @@ export default function Layout() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, clearSession } = useAuthStore();
+  const { user, accessToken, setUser, clearSession } = useAuthStore();
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (accessToken && !user) {
+        try {
+          const { data } = await apiClient.get('/users/profile');
+          setUser(data);
+        } catch {
+          clearSession();
+          navigate('/login');
+        }
+      }
+    };
+    fetchUserProfile();
+  }, [accessToken, user, setUser, clearSession, navigate]);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
