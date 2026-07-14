@@ -46,6 +46,10 @@ export class AuthController {
           email: user.email,
           roleName: user.roleName,
           isActive: user.isActive,
+          themePreference: user.themePreference,
+          preferredLanguage: user.preferredLanguage,
+          timeZone: user.timeZone,
+          avatarUrl: user.avatarUrl,
         },
       });
     } catch (err: unknown) {
@@ -71,6 +75,10 @@ export class AuthController {
           email: user.email,
           roleName: user.roleName,
           isActive: user.isActive,
+          themePreference: user.themePreference,
+          preferredLanguage: user.preferredLanguage,
+          timeZone: user.timeZone,
+          avatarUrl: user.avatarUrl,
         },
       });
     } catch (err: unknown) {
