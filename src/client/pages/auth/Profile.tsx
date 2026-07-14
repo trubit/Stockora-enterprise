@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import { Box, Typography, Button, TextField, MenuItem, Avatar, Grid, Card, CardContent } from '@mui/material';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { useAuthStore } from '../../store/auth.ts';
 import { apiClient } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
@@ -33,15 +33,9 @@ const textFieldStyle = {
 
 export default function Profile() {
   const { user, updateUser } = useAuthStore();
-  const [avatar, setAvatar] = useState<string | null>(user?.avatarUrl || null);
+  const avatar = user?.avatarUrl || null;
 
-  useEffect(() => {
-    if (user?.avatarUrl) {
-      setAvatar(user.avatarUrl);
-    }
-  }, [user]);
-
-  const { register, handleSubmit, watch, setValue } = useForm({
+  const { register, handleSubmit, control, setValue } = useForm({
     values: {
       preferredLanguage: user?.preferredLanguage || 'en',
       timeZone: user?.timeZone || 'UTC',
@@ -49,9 +43,9 @@ export default function Profile() {
     },
   });
 
-  const preferredLanguage = watch('preferredLanguage');
-  const timeZone = watch('timeZone');
-  const themePreference = watch('themePreference');
+  const preferredLanguage = useWatch({ control, name: 'preferredLanguage' });
+  const timeZone = useWatch({ control, name: 'timeZone' });
+  const themePreference = useWatch({ control, name: 'themePreference' });
 
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   const onSubmit = async (data: any) => {
@@ -77,7 +71,6 @@ export default function Profile() {
           'Content-Type': 'multipart/form-data',
         },
       });
-      setAvatar(res.data.avatarUrl);
       updateUser({ avatarUrl: res.data.avatarUrl });
       toast.success('Avatar updated successfully!');
     } catch {

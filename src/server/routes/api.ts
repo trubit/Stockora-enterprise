@@ -13,7 +13,7 @@ const io = SocketManager.getInstance();
 export const apiRouter = Router();
 
 apiRouter.get('/health', async (_req, res) => {
-  let redisConnected = false;
+  let redisConnected: boolean;
   try {
     const ping = await redis.ping();
     redisConnected = ping === 'PONG';

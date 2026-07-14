@@ -1,5 +1,5 @@
 import { Box, Card, CardContent, Typography, TextField, Button, Link, MenuItem } from '@mui/material';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
@@ -48,7 +48,7 @@ export default function SignUp() {
   const navigate = useNavigate();
   const setSession = useAuthStore((s) => s.setSession);
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<SignUpInputs>({
+  const { register, handleSubmit, control, setValue, formState: { errors } } = useForm<SignUpInputs>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
       username: '',
@@ -58,7 +58,7 @@ export default function SignUp() {
     }
   });
 
-  const roleName = watch('roleName');
+  const roleName = useWatch({ control, name: 'roleName' });
 
   const mutation = useMutation({
     mutationFn: async (credentials: SignUpInputs) => {
