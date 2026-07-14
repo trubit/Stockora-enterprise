@@ -25,6 +25,10 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import OnlineIcon from '@mui/icons-material/SignalCellularAlt';
 import SettingsIcon from '@mui/icons-material/Settings';
 import BranchIcon from '@mui/icons-material/Storefront';
+import LogoutIcon from '@mui/icons-material/Logout';
+import BusinessIcon from '@mui/icons-material/Business';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import { useAuthStore } from '../store/auth.ts';
 
 const drawerWidth = 240;
 
@@ -33,6 +37,7 @@ export default function Layout() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, clearSession } = useAuthStore();
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -55,6 +60,14 @@ export default function Layout() {
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'POS Terminal', icon: <PosIcon />, path: '/pos' },
     { text: 'Inventory Catalog', icon: <InventoryIcon />, path: '/inventory' },
+    { text: 'My Profile', icon: <AccountCircleIcon />, path: '/profile' },
+  ];
+
+  const isAdmin = user?.roleName === 'Company Owner' || user?.roleName === 'Super Administrator';
+  const adminItems = [
+    { text: 'Company Settings', icon: <BusinessIcon />, path: '/company' },
+    { text: 'Branches List', icon: <BranchIcon />, path: '/branches' },
+    { text: 'Master Data', icon: <SettingsIcon />, path: '/master-data' },
   ];
 
   const drawerContent = (
@@ -87,58 +100,140 @@ export default function Layout() {
       <Divider />
 
       {/* Navigation List */}
-      <List sx={{ px: 1.5, py: 2, flexGrow: 1 }}>
-        {menuItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
-              <ListItemButton
-                onClick={() => {
-                  navigate(item.path);
-                  setMobileOpen(false);
-                }}
-                sx={{
-                  borderRadius: 2,
-                  bgcolor: isActive ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
-                  color: isActive ? 'primary.light' : 'text.secondary',
-                  border: isActive ? '1px solid rgba(139, 92, 246, 0.25)' : '1px solid transparent',
-                  '&:hover': {
-                    bgcolor: isActive ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255, 255, 255, 0.02)',
-                    color: 'text.primary',
-                  },
-                }}
-              >
-                <ListItemIcon
-                  sx={{ color: isActive ? 'primary.light' : 'text.secondary', minWidth: 40 }}
-                >
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.text}
-                  primaryTypographyProps={{
-                    fontSize: '0.925rem',
-                    fontWeight: isActive ? 600 : 500,
+      <Box sx={{ flexGrow: 1, overflowY: 'auto', px: 1.5, py: 2 }}>
+        <List disablePadding>
+          {menuItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
+                <ListItemButton
+                  onClick={() => {
+                    navigate(item.path);
+                    setMobileOpen(false);
                   }}
-                />
-              </ListItemButton>
-            </ListItem>
-          );
-        })}
-      </List>
+                  sx={{
+                    borderRadius: 2,
+                    bgcolor: isActive ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
+                    color: isActive ? 'primary.light' : 'text.secondary',
+                    border: isActive ? '1px solid rgba(139, 92, 246, 0.25)' : '1px solid transparent',
+                    '&:hover': {
+                      bgcolor: isActive ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255, 255, 255, 0.02)',
+                      color: 'text.primary',
+                    },
+                  }}
+                >
+                  <ListItemIcon
+                    sx={{ color: isActive ? 'primary.light' : 'text.secondary', minWidth: 40 }}
+                  >
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.text}
+                    primaryTypographyProps={{
+                      fontSize: '0.925rem',
+                      fontWeight: isActive ? 600 : 500,
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
+
+          {isAdmin && (
+            <>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="caption" sx={{ px: 2, color: 'text.secondary', fontWeight: 700, letterSpacing: '0.05em', display: 'block', mb: 1 }}>
+                ADMINISTRATION
+              </Typography>
+              {adminItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
+                    <ListItemButton
+                      onClick={() => {
+                        navigate(item.path);
+                        setMobileOpen(false);
+                      }}
+                      sx={{
+                        borderRadius: 2,
+                        bgcolor: isActive ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
+                        color: isActive ? 'primary.light' : 'text.secondary',
+                        border: isActive ? '1px solid rgba(139, 92, 246, 0.25)' : '1px solid transparent',
+                        '&:hover': {
+                          bgcolor: isActive ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255, 255, 255, 0.02)',
+                          color: 'text.primary',
+                        },
+                      }}
+                    >
+                      <ListItemIcon
+                        sx={{ color: isActive ? 'primary.light' : 'text.secondary', minWidth: 40 }}
+                      >
+                        {item.icon}
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={item.text}
+                        primaryTypographyProps={{
+                          fontSize: '0.925rem',
+                          fontWeight: isActive ? 600 : 500,
+                        }}
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                );
+              })}
+            </>
+          )}
+
+          <Divider sx={{ my: 2 }} />
+          <ListItem disablePadding sx={{ mb: 1 }}>
+            <ListItemButton
+              onClick={() => {
+                clearSession();
+                navigate('/login');
+              }}
+              sx={{
+                borderRadius: 2,
+                color: 'error.main',
+                '&:hover': {
+                  bgcolor: 'rgba(239, 68, 68, 0.08)',
+                  color: 'error.light',
+                },
+              }}
+            >
+              <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}>
+                <LogoutIcon />
+              </ListItemIcon>
+              <ListItemText
+                primary="Sign Out"
+                primaryTypographyProps={{
+                  fontSize: '0.925rem',
+                  fontWeight: 500,
+                }}
+              />
+            </ListItemButton>
+          </ListItem>
+        </List>
+      </Box>
 
       <Divider />
       {/* Footer Profile */}
       <Box sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Avatar src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" />
-        <Box sx={{ overflow: 'hidden' }}>
+        <Avatar
+          src={user?.avatarUrl || undefined}
+          sx={{ cursor: 'pointer', bgcolor: 'secondary.main', color: 'secondary.contrastText' }}
+          onClick={() => navigate('/profile')}
+        >
+          {user?.username?.charAt(0).toUpperCase() || 'U'}
+        </Avatar>
+        <Box sx={{ overflow: 'hidden', cursor: 'pointer', flexGrow: 1 }} onClick={() => navigate('/profile')}>
           <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
-            Jane Doe
+            {user?.username || 'Guest User'}
           </Typography>
           <Typography variant="caption" color="text.secondary" noWrap display="block">
-            Store Manager
+            {user?.roleName || 'Employee'}
           </Typography>
         </Box>
-        <IconButton size="small" sx={{ ml: 'auto', color: 'text.secondary' }}>
+        <IconButton size="small" sx={{ color: 'text.secondary' }} onClick={() => navigate('/profile')}>
           <SettingsIcon fontSize="small" />
         </IconButton>
       </Box>
