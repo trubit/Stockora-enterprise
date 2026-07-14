@@ -3,9 +3,9 @@
 This document details all configuration parameters expected by the environment loader (`src/config/environment.ts`).
 
 ## 1. Core Server Parameters
-- **PORT**: Port number for the Express server (defaults to `5000` locally).
+- **PORT**: Port number for the Express server (defaults to `8080` locally).
 - **NODE_ENV**: Current build phase environment (`development`, `production`, `test`).
-- **CORS_ORIGIN**: Allowed origin URL for browser client connections (defaults to `http://localhost:5173`).
+- **CORS_ORIGIN**: Allowed origin URL for browser client connections (defaults to `http://localhost:3000`).
 
 ## 2. Infrastructure Bindings
 - **MONGODB_URI**: Connection string for MongoDB (e.g. `mongodb://127.0.0.1:27017/stockora`).

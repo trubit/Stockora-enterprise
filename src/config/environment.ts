@@ -5,13 +5,13 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const envSchema = z.object({
-  PORT: z.coerce.number().default(5000),
+  PORT: z.coerce.number().default(8080),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   MONGODB_URI: z.string({ required_error: 'MONGODB_URI is required' }),
   REDIS_URL: z.string({ required_error: 'REDIS_URL is required' }),
   JWT_SECRET: z.string({ required_error: 'JWT_SECRET is required' }),
   JWT_REFRESH_SECRET: z.string({ required_error: 'JWT_REFRESH_SECRET is required' }),
-  CORS_ORIGIN: z.string().default('http://localhost:5173'),
+  CORS_ORIGIN: z.string().default('http://localhost:3000'),
   UPLOAD_MAX_SIZE: z.coerce.number().default(5242880),
 });
 
