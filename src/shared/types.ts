@@ -30,22 +30,57 @@ export interface Branch {
   updatedAt: string;
 }
 
+export interface ProductVariant {
+  sku: string;
+  name: string;
+  price?: number;
+  quantity: number;
+  attributes: { key: string; value: string }[];
+}
+
 export interface Product {
-  id: string;
+  id?: string;
   _id?: string;
   sku: string;
   name: string;
   description?: string;
   category: string;
+  subcategory?: string;
+  brand?: string;
+  uom?: string;
+  isActive: boolean;
+  status: 'ACTIVE' | 'INACTIVE' | 'DRAFT' | 'OUT_OF_STOCK';
+  costPrice: number;
+  sellingPrice: number;
   price: number;
   cost: number;
   quantity: number;
   lowStockAlert: number;
+  reservedQuantity?: number;
+  damagedQuantity?: number;
+  returnedQuantity?: number;
   barcode?: string;
   qrCode?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  wholesalePrice?: number;
+  retailPrice?: number;
+  promotionalPrice?: number;
+  isTaxInclusive?: boolean;
+  currency?: string;
+  variants?: ProductVariant[];
+  attributes?: { key: string; value: string }[];
+  width?: number;
+  height?: number;
+  depth?: number;
+  weight?: number;
+  imageUrl?: string;
+  gallery?: string[];
+  tags?: string[];
+  notes?: string;
+  expirationDate?: string;
+  batchNumbers?: string[];
+  serialNumbers?: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type TransactionType = 'SALE' | 'RETURN' | 'TRANSFER';
@@ -186,5 +221,43 @@ export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
   user: User;
+}
+
+export interface Supplier {
+  id?: string;
+  _id?: string;
+  name: string;
+  code: string;
+  contactPerson: string;
+  email: string;
+  phone: string;
+  address: string;
+  paymentTerms: string;
+  creditLimit: number;
+  taxId?: string;
+  rating?: number;
+  documents?: string[];
+  isActive: boolean;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Customer {
+  id?: string;
+  _id?: string;
+  name: string;
+  code: string;
+  email: string;
+  phone?: string;
+  group: string;
+  creditLimit: number;
+  loyaltyPoints: number;
+  billingAddress?: string;
+  shippingAddress?: string;
+  isActive: boolean;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 

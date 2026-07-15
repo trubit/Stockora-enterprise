@@ -55,6 +55,10 @@ export const SYSTEM_PERMISSIONS = {
   PRODUCTS_WRITE: 'products:write',
   TRANSACTIONS_READ: 'transactions:read',
   TRANSACTIONS_WRITE: 'transactions:write',
+  SUPPLIERS_READ: 'suppliers:read',
+  SUPPLIERS_WRITE: 'suppliers:write',
+  CUSTOMERS_READ: 'customers:read',
+  CUSTOMERS_WRITE: 'customers:write',
   AUDIT_READ: 'audit:read',
 } as const;
 

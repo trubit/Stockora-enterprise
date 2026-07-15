@@ -16,13 +16,22 @@ import {
   Grid,
   Chip,
   Card,
+  Tab,
+  Tabs,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { AgGridReact } from 'ag-grid-react';
 import type { ColDef, ValueFormatterParams, ICellRendererParams } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-alpine.css'; // Classic theme
+import 'ag-grid-community/styles/ag-theme-alpine.css';
 import { toast } from 'react-hot-toast';
 import { socket } from '../socket.ts';
 import type { Product } from '../../shared/types.js';
@@ -49,10 +58,27 @@ const fetchProducts = async (): Promise<Product[]> => {
 export default function Inventory() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
 
   const { data: products = [], refetch } = useQuery({
     queryKey: ['products'],
     queryFn: fetchProducts,
+  });
+
+  const { data: valuation = { weightedAverage: 0, fifo: 0, lifo: 0, totalItemsCount: 0 }, refetch: refetchValuation } = useQuery({
+    queryKey: ['valuation'],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/inventory/valuation');
+      return data;
+    },
+  });
+
+  const { data: movements = [], refetch: refetchMovements } = useQuery({
+    queryKey: ['movements'],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/inventory/movements');
+      return data;
+    },
   });
 
   // Real-time synchronization directly to cache
@@ -60,8 +86,10 @@ export default function Inventory() {
     socket.on('product:stock-updated', (data: { productId: string; quantity: number }) => {
       queryClient.setQueryData<Product[]>(['products'], (old) => {
         if (!old) return old;
-        return old.map((p) => (p.id === data.productId ? { ...p, quantity: data.quantity } : p));
+        return old.map((p) => (p.id === data.productId || p._id === data.productId ? { ...p, quantity: data.quantity } : p));
       });
+      refetchValuation();
+      refetchMovements();
     });
 
     socket.on('product:created', (newProduct: Product) => {
@@ -69,13 +97,15 @@ export default function Inventory() {
         if (!old) return [newProduct];
         return [...old, newProduct];
       });
+      refetchValuation();
+      refetchMovements();
     });
 
     return () => {
       socket.off('product:stock-updated');
       socket.off('product:created');
     };
-  }, [queryClient]);
+  }, [queryClient, refetchValuation, refetchMovements]);
 
   const createProductMutation = useMutation({
     mutationFn: async (newProduct: ProductFormInputs) => {
@@ -87,9 +117,12 @@ export default function Inventory() {
       setOpen(false);
       reset();
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      refetchValuation();
+      refetchMovements();
     },
-    onError: (err: Error) => {
-      toast.error(`Failed to add product: ${err.message || 'Error occurred'}`);
+    onError: (err: unknown) => {
+      const apiErr = err as Error;
+      toast.error(`Failed to add product: ${apiErr.message || 'Error occurred'}`);
     },
   });
 
@@ -114,6 +147,13 @@ export default function Inventory() {
 
   const onSubmit = (data: ProductFormInputs) => {
     createProductMutation.mutate(data);
+  };
+
+  const handleSyncAll = () => {
+    refetch();
+    refetchValuation();
+    refetchMovements();
+    toast.success('Synced valuation & stock counts.');
   };
 
   // AG Grid Column Definitions
@@ -193,7 +233,7 @@ export default function Inventory() {
             variant="outlined"
             color="primary"
             startIcon={<RefreshIcon />}
-            onClick={() => refetch()}
+            onClick={handleSyncAll}
           >
             Sync
           </Button>
@@ -208,29 +248,139 @@ export default function Inventory() {
         </Box>
       </Box>
 
-      {/* Main Table view */}
-      <Card className="glass-panel" sx={{ height: 'calc(100vh - 250px)', width: '100%' }}>
-        <Box
-          className="ag-theme-alpine-dark"
+      {/* Real-Time Valuation Metrics Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card className="glass-panel" sx={{ p: 2.5, background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(30, 41, 59, 0.4) 100%)', border: '1px solid rgba(139, 92, 246, 0.15)' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: '0.05em' }}>WEIGHTED AVG ASSETS</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 800, mt: 1, color: 'primary.light' }}>${Number(valuation.weightedAverage || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Typography>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card className="glass-panel" sx={{ p: 2.5, background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(30, 41, 59, 0.4) 100%)', border: '1px solid rgba(16, 185, 129, 0.15)' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: '0.05em' }}>FIFO ASSET VALUE</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 800, mt: 1, color: 'success.light' }}>${Number(valuation.fifo || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Typography>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card className="glass-panel" sx={{ p: 2.5, background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(30, 41, 59, 0.4) 100%)', border: '1px solid rgba(239, 68, 68, 0.15)' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: '0.05em' }}>LIFO ASSET VALUE</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 800, mt: 1, color: 'error.light' }}>${Number(valuation.lifo || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Typography>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card className="glass-panel" sx={{ p: 2.5, background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(30, 41, 59, 0.4) 100%)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: '0.05em' }}>TOTAL ACTIVE STOCK</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 800, mt: 1 }}>{Number(valuation.totalItemsCount || 0).toLocaleString()} units</Typography>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Tabs value={activeTab} onChange={(_e, v) => setActiveTab(v)} sx={{ mb: 3, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <Tab label="Stock Catalog Table" sx={{ textTransform: 'none', fontWeight: 700 }} />
+        <Tab label="Stock Movements Ledger" sx={{ textTransform: 'none', fontWeight: 700 }} />
+      </Tabs>
+
+      {activeTab === 0 && (
+        <Card className="glass-panel" sx={{ height: 'calc(100vh - 360px)', width: '100%' }}>
+          <Box
+            className="ag-theme-alpine-dark"
+            sx={{
+              height: '100%',
+              width: '100%',
+              '--ag-background-color': 'transparent',
+              '--ag-header-background-color': '#1f2937',
+            }}
+          >
+            <AgGridReact
+              theme="legacy"
+              rowData={products}
+              columnDefs={columnDefs}
+              pagination={true}
+              paginationPageSize={15}
+              paginationPageSizeSelector={[10, 15, 25, 50]}
+              loadingCellRenderer={undefined}
+              domLayout="normal"
+            />
+          </Box>
+        </Card>
+      )}
+
+      {activeTab === 1 && (
+        <TableContainer
+          component={Paper}
+          className="glass-panel"
           sx={{
-            height: '100%',
-            width: '100%',
-            '--ag-background-color': 'transparent',
-            '--ag-header-background-color': '#1f2937',
+            border: '1px solid rgba(255, 255, 255, 0.05)',
+            background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+            borderRadius: 3,
+            maxHeight: 'calc(100vh - 360px)',
           }}
         >
-          <AgGridReact
-            theme="legacy"
-            rowData={products}
-            columnDefs={columnDefs}
-            pagination={true}
-            paginationPageSize={15}
-            paginationPageSizeSelector={[10, 15, 25, 50]}
-            loadingCellRenderer={undefined}
-            domLayout="normal"
-          />
-        </Box>
-      </Card>
+          <Table stickyHeader>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 800, bgcolor: '#111827', color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Product</TableCell>
+                <TableCell sx={{ fontWeight: 800, bgcolor: '#111827', color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>SKU</TableCell>
+                <TableCell sx={{ fontWeight: 800, bgcolor: '#111827', color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Type</TableCell>
+                <TableCell sx={{ fontWeight: 800, bgcolor: '#111827', color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Qty Changed</TableCell>
+                <TableCell sx={{ fontWeight: 800, bgcolor: '#111827', color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Unit Cost</TableCell>
+                <TableCell sx={{ fontWeight: 800, bgcolor: '#111827', color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Audit Notes</TableCell>
+                <TableCell sx={{ fontWeight: 800, bgcolor: '#111827', color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Operator</TableCell>
+                <TableCell sx={{ fontWeight: 800, bgcolor: '#111827', color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Timestamp</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {movements.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} align="center" sx={{ py: 6, color: 'text.secondary', border: 'none' }}>
+                    No stock movements recorded.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                movements.map((mov: {
+                  _id: string;
+                  productId?: { name: string; sku: string };
+                  type: string;
+                  quantity: number;
+                  costPrice: number;
+                  notes?: string;
+                  userId?: { username: string };
+                  createdAt: string;
+                }) => (
+                  <TableRow key={mov._id} sx={{ '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.01)' } }}>
+                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', py: 1.5, fontWeight: 700 }}>
+                      {mov.productId?.name || 'Deleted Product'}
+                    </TableCell>
+                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                      <Chip label={mov.productId?.sku || 'N/A'} size="small" variant="outlined" sx={{ fontWeight: 700, color: 'primary.light' }} />
+                    </TableCell>
+                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                      <Chip label={mov.type} size="small" color={mov.type === 'SALE' ? 'primary' : mov.type === 'ADJUSTMENT' ? 'warning' : 'success'} sx={{ fontWeight: 700 }} />
+                    </TableCell>
+                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontWeight: 800, color: mov.quantity < 0 ? 'error.light' : 'success.light' }}>
+                      {mov.quantity > 0 ? `+${mov.quantity}` : mov.quantity}
+                    </TableCell>
+                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontWeight: 600 }}>
+                      ${Number(mov.costPrice || 0).toFixed(2)}
+                    </TableCell>
+                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', color: 'text.secondary' }}>
+                      {mov.notes || '-'}
+                    </TableCell>
+                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                      {mov.userId?.username || 'System'}
+                    </TableCell>
+                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                      {new Date(mov.createdAt).toLocaleString()}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       {/* Add Product Modal Form */}
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>

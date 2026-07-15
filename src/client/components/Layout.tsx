@@ -28,6 +28,16 @@ import BranchIcon from '@mui/icons-material/Storefront';
 import LogoutIcon from '@mui/icons-material/Logout';
 import BusinessIcon from '@mui/icons-material/Business';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import PeopleIcon from '@mui/icons-material/People';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import CategoryIcon from '@mui/icons-material/Category';
+import AdjustIcon from '@mui/icons-material/Adjust';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import ReceiptIcon from '@mui/icons-material/Receipt';
+import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
+import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
+import PaymentsIcon from '@mui/icons-material/Payments';
 import { useAuthStore } from '../store/auth.ts';
 import { apiClient } from '../api/client.ts';
 
@@ -75,7 +85,15 @@ export default function Layout() {
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'POS Terminal', icon: <PosIcon />, path: '/pos' },
+    { text: 'Products Catalog', icon: <CategoryIcon />, path: '/products' },
     { text: 'Inventory Catalog', icon: <InventoryIcon />, path: '/inventory' },
+    { text: 'Stock Adjustments', icon: <AdjustIcon />, path: '/adjustments' },
+    { text: 'Warehouse Transfers', icon: <SwapHorizIcon />, path: '/transfers' },
+    { text: 'Purchase Orders', icon: <ShoppingCartIcon />, path: '/purchase-orders' },
+    { text: 'Receiving AP', icon: <ReceiptIcon />, path: '/receiving' },
+    { text: 'Sales Orders', icon: <PointOfSaleIcon />, path: '/sales' },
+    { text: 'Sales Returns', icon: <AssignmentReturnIcon />, path: '/returns' },
+    { text: 'Financial Reports', icon: <PaymentsIcon />, path: '/finance' },
     { text: 'My Profile', icon: <AccountCircleIcon />, path: '/profile' },
   ];
 
@@ -84,6 +102,8 @@ export default function Layout() {
     { text: 'Company Settings', icon: <BusinessIcon />, path: '/company' },
     { text: 'Branches List', icon: <BranchIcon />, path: '/branches' },
     { text: 'Master Data', icon: <SettingsIcon />, path: '/master-data' },
+    { text: 'Suppliers Directory', icon: <LocalShippingIcon />, path: '/suppliers' },
+    { text: 'Customers Directory', icon: <PeopleIcon />, path: '/customers' },
   ];
 
   const drawerContent = (

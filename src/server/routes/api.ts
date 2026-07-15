@@ -4,6 +4,19 @@ import { SocketManager } from '../sockets/manager.js';
 import { authRouter } from './auth.routes.js';
 import { userRouter } from './user.routes.js';
 import { orgRouter } from './org.routes.js';
+import { productRouter } from './product.routes.js';
+import { supplierRouter } from './supplier.routes.js';
+import { customerRouter } from './customer.routes.js';
+import { uploadRouter } from './upload.routes.js';
+import { inventoryRouter } from './inventory.routes.js';
+import { transferRouter } from './transfer.routes.js';
+import { requisitionRouter } from './requisition.routes.js';
+import { purchaseOrderRouter } from './purchaseOrder.routes.js';
+import { invoiceRouter } from './invoice.routes.js';
+import { quoteRouter } from './quote.routes.js';
+import { salesOrderRouter } from './salesOrder.routes.js';
+import { salesReturnRouter } from './salesReturn.routes.js';
+import { financeRouter } from './finance.routes.js';
 import { Product } from '../models/Product.js';
 import { Transaction } from '../models/Transaction.js';
 import { redis } from '../database/redis.js';
@@ -30,51 +43,7 @@ apiRouter.get('/health', async (_req, res) => {
   });
 });
 
-apiRouter.get('/products', async (_req, res, next) => {
-  try {
-    const cached = await redis.get('products:all');
-    if (cached) {
-      res.json(JSON.parse(cached));
-      return;
-    }
 
-    const products = await Product.find({ isActive: true }).lean();
-    await redis.setex('products:all', 300, JSON.stringify(products));
-    res.json(products);
-  } catch (err) {
-    next(err);
-  }
-});
-
-apiRouter.post('/products', async (req, res, next) => {
-  const { name, SKU, price, cost, quantity, category, lowStockAlert, barcode } = req.body;
-
-  if (!name || price === undefined || quantity === undefined) {
-    res.status(400).json({ error: 'Missing required parameters: name, price, quantity' });
-    return;
-  }
-
-  try {
-    const newProduct = await Product.create({
-      sku: SKU || `SKU-${Date.now()}`,
-      name,
-      category: category || 'General',
-      price: Number(price),
-      cost: Number(cost || 0),
-      quantity: Number(quantity),
-      lowStockAlert: Number(lowStockAlert || 5),
-      barcode,
-      isActive: true,
-    });
-
-    await redis.del('products:all');
-    io.emitGlobal('product:created', newProduct);
-
-    res.status(201).json(newProduct);
-  } catch (err) {
-    next(err);
-  }
-});
 
 apiRouter.get('/transactions', async (_req, res, next) => {
   try {
@@ -153,3 +122,16 @@ apiRouter.post('/transactions', async (req, res, next) => {
 apiRouter.use('/auth', authRouter);
 apiRouter.use('/users', userRouter);
 apiRouter.use('/org', orgRouter);
+apiRouter.use('/products', productRouter);
+apiRouter.use('/suppliers', supplierRouter);
+apiRouter.use('/customers', customerRouter);
+apiRouter.use('/upload', uploadRouter);
+apiRouter.use('/inventory', inventoryRouter);
+apiRouter.use('/transfers', transferRouter);
+apiRouter.use('/requisitions', requisitionRouter);
+apiRouter.use('/purchase-orders', purchaseOrderRouter);
+apiRouter.use('/invoices', invoiceRouter);
+apiRouter.use('/quotes', quoteRouter);
+apiRouter.use('/sales-orders', salesOrderRouter);
+apiRouter.use('/sales-returns', salesReturnRouter);
+apiRouter.use('/finance', financeRouter);

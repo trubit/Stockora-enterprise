@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import type { ChangeEvent, FormEvent, SyntheticEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../api/client.ts';
@@ -27,10 +27,36 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import ScanIcon from '@mui/icons-material/QrCodeScanner';
 import CheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
-import { toast } from 'react-hot-toast';
 import type { Product, TransactionItem, Transaction } from '../../shared/types.js';
+import { useAuthStore } from '../store/auth.ts';
+import { toast } from 'react-hot-toast';
 
 type CartItem = TransactionItem;
+
+interface OfflineTransactionPayload {
+  items: CartItem[];
+  paymentMethod: 'CASH' | 'CARD' | 'MOBILE' | 'SPLIT';
+  discount: number;
+  tax: number;
+  subtotal: number;
+  total: number;
+  cashierName: string;
+  branchName: string;
+  offlineId?: string;
+}
+
+function getOfflineQueue(): OfflineTransactionPayload[] {
+  try {
+    const stored = localStorage.getItem('offline_transactions');
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function generateOfflineId(): string {
+  return `off-${Date.now()}-${Math.random()}`;
+}
 
 const fetchProducts = async (): Promise<Product[]> => {
   const { data } = await apiClient.get<Product[]>('/products');
@@ -49,9 +75,52 @@ export default function POS() {
   const [barcodeInput, setBarcodeInput] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [discount, setDiscount] = useState<number>(0);
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'MOBILE'>('CASH');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'MOBILE' | 'SPLIT'>('CASH');
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [offlineCount, setOfflineCount] = useState(() => getOfflineQueue().length);
+  const { user } = useAuthStore();
 
   const barcodeInputRef = useRef<HTMLInputElement>(null);
+
+  const syncOfflineTransactions = useCallback(async () => {
+    const queue = getOfflineQueue();
+    if (queue.length === 0) return;
+    toast.loading(`Syncing ${queue.length} offline transactions...`, { id: 'offline-sync' });
+    let successCount = 0;
+    for (const tx of queue) {
+      try {
+        await apiClient.post('/transactions', tx);
+        successCount++;
+      } catch (err) {
+        console.error('Failed to sync offline transaction', err);
+      }
+    }
+    toast.dismiss('offline-sync');
+    if (successCount > 0) {
+      toast.success(`Synced ${successCount} offline transactions successfully!`);
+      localStorage.removeItem('offline_transactions');
+      setOfflineCount(0);
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    }
+  }, [queryClient]);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      syncOfflineTransactions();
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [syncOfflineTransactions]);
 
   // Mutation to handle transaction checkout
   const checkoutMutation = useMutation({
@@ -93,26 +162,26 @@ export default function POS() {
     }
 
     setCart((prevCart) => {
-      const existing = prevCart.find((item) => item.productId === product.id);
+      const existing = prevCart.find((item) => item.productId === (product.id || product._id));
       if (existing) {
-        if (existing.quantity >= product.quantity) {
+        if (existing.quantity >= (product.quantity || 0)) {
           toast.error(`Cannot add more. Only ${product.quantity} units available.`);
           return prevCart;
         }
         return prevCart.map((item) =>
-          item.productId === product.id
+          item.productId === (product.id || product._id)
             ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.price }
             : item
         );
       }
       const newItem: CartItem = {
-        productId: product.id,
+        productId: product.id || product._id || '',
         productName: product.name,
         sku: product.sku,
         quantity: 1,
-        price: product.price,
+        price: product.price || 0,
         discount: 0,
-        total: product.price,
+        total: product.price || 0,
       };
       return [...prevCart, newItem];
     });
@@ -177,20 +246,46 @@ export default function POS() {
       return;
     }
 
-    checkoutMutation.mutate({
+    const payload = {
       items: cart,
       paymentMethod,
       discount,
       tax,
       subtotal,
       total,
-      cashierName: 'Jane Doe',
+      cashierName: user?.username || 'Jane Doe',
       branchName: 'Main HQ',
-    });
+    };
+
+    if (!navigator.onLine) {
+      const queue = getOfflineQueue();
+      queue.push({
+        ...payload,
+        offlineId: generateOfflineId(),
+      });
+      localStorage.setItem('offline_transactions', JSON.stringify(queue));
+      setOfflineCount(queue.length);
+      setCart([]);
+      setDiscount(0);
+      toast.success('Offline checkout stored successfully! Will sync when online.');
+      return;
+    }
+
+    checkoutMutation.mutate(payload);
   };
 
   return (
     <Box sx={{ flexGrow: 1 }}>
+      {!isOnline && (
+        <Box sx={{ bgcolor: 'warning.dark', color: 'warning.contrastText', p: 1.5, mb: 3, borderRadius: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+            ⚠️ Device is currently Offline. Checkout operations will be queued locally.
+          </Typography>
+          {offlineCount > 0 && (
+            <Chip label={`${offlineCount} transactions pending sync`} color="secondary" size="small" sx={{ fontWeight: 700 }} />
+          )}
+        </Box>
+      )}
       <Grid container spacing={3}>
         {/* Product Catalog Pane */}
         <Grid item xs={12} lg={8}>
@@ -472,13 +567,14 @@ export default function POS() {
                     size="small"
                     value={paymentMethod}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                      setPaymentMethod(e.target.value as 'CASH' | 'CARD' | 'MOBILE')
+                      setPaymentMethod(e.target.value as 'CASH' | 'CARD' | 'MOBILE' | 'SPLIT')
                     }
                     fullWidth
                   >
                     <MenuItem value="CASH">Cash</MenuItem>
                     <MenuItem value="CARD">Credit/Debit Card</MenuItem>
-                    <MenuItem value="MOBILE">Mobile Wallet</MenuItem>
+                    <MenuItem value="MOBILE">Mobile Money</MenuItem>
+                    <MenuItem value="SPLIT">Split Payment</MenuItem>
                   </TextField>
                 </Grid>
               </Grid>

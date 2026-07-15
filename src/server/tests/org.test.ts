@@ -7,7 +7,7 @@ import { MasterData } from '../models/MasterData.js';
 
 describe('Organization & Tenancy Records', () => {
   beforeAll(async () => {
-    await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test');
+    await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_org');
     await Company.deleteMany({});
     await Branch.deleteMany({});
     await Warehouse.deleteMany({});
