@@ -126,10 +126,46 @@ export const theme = createTheme({
     MuiInputLabel: {
       styleOverrides: {
         root: {
+          pointerEvents: 'none',
           '&.MuiInputLabel-shrink': {
             backgroundColor: '#151824',
             padding: '0 6px',
             borderRadius: '4px',
+            pointerEvents: 'none',
+          },
+        },
+      },
+    },
+    MuiInputBase: {
+      styleOverrides: {
+        root: {
+          color: '#f3f4f6',
+        },
+        input: {
+          color: '#f3f4f6',
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          color: '#f3f4f6',
+          '& .MuiOutlinedInput-input': {
+            color: '#f3f4f6',
+          },
+        },
+      },
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          color: '#f3f4f6',
+          '&:hover': {
+            backgroundColor: 'rgba(139, 92, 246, 0.08)',
+          },
+          '&.Mui-selected': {
+            backgroundColor: 'rgba(139, 92, 246, 0.16)',
+            color: '#ffffff',
           },
         },
       },
