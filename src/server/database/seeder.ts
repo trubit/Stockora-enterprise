@@ -4,9 +4,6 @@ import { logger } from '../logger.js';
 
 export async function seedRolesIfEmpty(): Promise<void> {
   try {
-    const count = await Role.countDocuments();
-    if (count > 0) return;
-
     const rolesToCreate = [
       {
         name: SYSTEM_ROLES.SUPER_ADMIN,
@@ -30,6 +27,8 @@ export async function seedRolesIfEmpty(): Promise<void> {
           SYSTEM_PERMISSIONS.TRANSACTIONS_WRITE,
           SYSTEM_PERMISSIONS.WAREHOUSES_READ,
           SYSTEM_PERMISSIONS.USERS_READ,
+          SYSTEM_PERMISSIONS.CUSTOMERS_READ,
+          SYSTEM_PERMISSIONS.CUSTOMERS_WRITE,
         ],
         isSystem: true,
       },
@@ -49,6 +48,8 @@ export async function seedRolesIfEmpty(): Promise<void> {
         permissions: [
           SYSTEM_PERMISSIONS.PRODUCTS_READ,
           SYSTEM_PERMISSIONS.TRANSACTIONS_WRITE,
+          SYSTEM_PERMISSIONS.CUSTOMERS_READ,
+          SYSTEM_PERMISSIONS.CUSTOMERS_WRITE,
         ],
         isSystem: true,
       },
@@ -64,13 +65,21 @@ export async function seedRolesIfEmpty(): Promise<void> {
           SYSTEM_PERMISSIONS.PRODUCTS_READ,
           SYSTEM_PERMISSIONS.TRANSACTIONS_READ,
           SYSTEM_PERMISSIONS.AUDIT_READ,
+          SYSTEM_PERMISSIONS.CUSTOMERS_READ,
+          SYSTEM_PERMISSIONS.SUPPLIERS_READ,
         ],
         isSystem: true,
       },
     ];
 
-    await Role.insertMany(rolesToCreate);
-    logger.info(`[Database Seeding] Successfully seeded ${rolesToCreate.length} default workspace system roles.`);
+    for (const r of rolesToCreate) {
+      await Role.findOneAndUpdate(
+        { name: r.name },
+        { $set: { permissions: r.permissions, description: r.description, isSystem: r.isSystem } },
+        { upsert: true, new: true }
+      );
+    }
+    logger.info(`[Database Seeding] Successfully seeded and synced ${rolesToCreate.length} default workspace system roles.`);
   } catch (err: unknown) {
     logger.error('Failed to seed system roles:', err);
   }
