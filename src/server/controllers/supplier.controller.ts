@@ -74,7 +74,14 @@ export class SupplierController {
 
       const oldValues = supplier.toObject();
 
-      const { code, ...updatableData } = req.body;
+      const { code } = req.body;
+      const updatableData = { ...req.body };
+      delete updatableData.code;
+      delete updatableData._id;
+      delete updatableData.id;
+      delete updatableData.createdAt;
+      delete updatableData.updatedAt;
+      delete updatableData.__v;
 
       if (code && code.toUpperCase() !== supplier.code) {
         const existing = await Supplier.findOne({ code: code.toUpperCase() });

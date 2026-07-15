@@ -77,7 +77,15 @@ export class CustomerController {
 
       const oldValues = customer.toObject();
 
-      const { code, email, ...updatableData } = req.body;
+      const { code, email } = req.body;
+      const updatableData = { ...req.body };
+      delete updatableData.code;
+      delete updatableData.email;
+      delete updatableData._id;
+      delete updatableData.id;
+      delete updatableData.createdAt;
+      delete updatableData.updatedAt;
+      delete updatableData.__v;
 
       if (code && code.toUpperCase() !== customer.code) {
         const existingCode = await Customer.findOne({ code: code.toUpperCase() });

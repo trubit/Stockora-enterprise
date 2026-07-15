@@ -98,7 +98,18 @@ export class ProductController {
 
       const oldValues = product.toObject();
 
-      const { sku, costPrice, sellingPrice, cost, price, ...updatableData } = req.body;
+      const { sku, costPrice, sellingPrice, cost, price } = req.body;
+      const updatableData = { ...req.body };
+      delete updatableData.sku;
+      delete updatableData.costPrice;
+      delete updatableData.sellingPrice;
+      delete updatableData.cost;
+      delete updatableData.price;
+      delete updatableData._id;
+      delete updatableData.id;
+      delete updatableData.createdAt;
+      delete updatableData.updatedAt;
+      delete updatableData.__v;
       
       if (sku && sku !== product.sku) {
         const existingSku = await Product.findOne({ sku });

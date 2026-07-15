@@ -123,6 +123,17 @@ export const theme = createTheme({
         },
       },
     },
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
+          '&.MuiInputLabel-shrink': {
+            backgroundColor: '#151824',
+            padding: '0 6px',
+            borderRadius: '4px',
+          },
+        },
+      },
+    },
     MuiTextField: {
       styleOverrides: {
         root: {

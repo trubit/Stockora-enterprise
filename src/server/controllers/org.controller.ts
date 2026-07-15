@@ -54,7 +54,13 @@ export class OrgController {
       }
 
       const prevObj = company.toObject();
-      Object.assign(company, req.body);
+      const updatableData = { ...req.body };
+      delete updatableData._id;
+      delete updatableData.id;
+      delete updatableData.createdAt;
+      delete updatableData.updatedAt;
+      delete updatableData.__v;
+      Object.assign(company, updatableData);
       await company.save();
 
       await AuditLog.create({
