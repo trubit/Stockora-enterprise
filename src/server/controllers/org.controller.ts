@@ -95,7 +95,12 @@ export class OrgController {
     }
 
     try {
-      const branch = await Branch.create({ companyId, name, code, address, phone });
+      const existingBranch = await Branch.findOne({ code: code.toUpperCase() });
+      if (existingBranch) {
+        return next(new ValidationError(`Branch code [${code.toUpperCase()}] already exists.`));
+      }
+
+      const branch = await Branch.create({ companyId, name, code: code.toUpperCase(), address, phone });
       
       await AuditLog.create({
         userId: req.user?.id,
@@ -128,7 +133,12 @@ export class OrgController {
     }
 
     try {
-      const warehouse = await Warehouse.create({ branchId, name, code, zones, capacity });
+      const existingWarehouse = await Warehouse.findOne({ code: code.toUpperCase() });
+      if (existingWarehouse) {
+        return next(new ValidationError(`Warehouse code [${code.toUpperCase()}] already exists.`));
+      }
+
+      const warehouse = await Warehouse.create({ branchId, name, code: code.toUpperCase(), zones, capacity });
 
       await AuditLog.create({
         userId: req.user?.id,

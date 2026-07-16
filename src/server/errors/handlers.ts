@@ -33,6 +33,17 @@ export function errorHandler(err: any, req: Request, res: Response, _next: NextF
     error = new AppError(`Invalid database identifier: ${err.value}`, 400, 'VALIDATION_ERROR');
   }
 
+  // Transform MongoDB E11000 duplicate key error
+  if (err.code === 11000) {
+    const field = Object.keys(err.keyPattern || {})[0] || 'field';
+    const value = err.keyValue ? err.keyValue[field] : 'value';
+    error = new AppError(
+      `Unique constraint violated: ${field} [${value}] already exists.`,
+      400,
+      'VALIDATION_ERROR'
+    );
+  }
+
   const status = error.statusCode || 500;
   const code = error.code || 'INTERNAL_ERROR';
 

@@ -151,6 +151,7 @@ export const theme = createTheme({
             borderRadius: '4px !important',
             pointerEvents: 'none !important',
           },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       },
     },
@@ -176,6 +177,7 @@ export const theme = createTheme({
           '& .MuiOutlinedInput-input': {
             color: '#f3f4f6',
           },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       },
     },
