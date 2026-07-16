@@ -1,5 +1,6 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../store/auth.ts';
 
 export const apiClient = axios.create({
   baseURL: '/api/v1',
@@ -31,7 +32,8 @@ apiClient.interceptors.response.use(
     const errMessage = error.response?.data?.error?.message || error.message || 'Request failed';
 
     if (status === 401) {
-      localStorage.removeItem('stockora_token');
+      useAuthStore.getState().clearSession();
+      window.location.href = '/login';
       toast.error('Session expired. Please log in again.');
     } else if (status === 403) {
       toast.error('Access denied. You do not have permissions for this path.');

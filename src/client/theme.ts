@@ -124,6 +124,9 @@ export const theme = createTheme({
       },
     },
     MuiDialog: {
+      defaultProps: {
+        disableRestoreFocus: true,
+      },
       styleOverrides: {
         paper: {
           background: 'linear-gradient(135deg, #111524 0%, #0c0e17 100%) !important',
