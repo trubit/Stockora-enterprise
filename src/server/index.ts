@@ -12,7 +12,7 @@ import { SocketManager } from './sockets/manager.js';
 import { QueueManager } from './queue/bullmq.js';
 import { apiRouter } from './routes/api.js';
 import { notFoundHandler, errorHandler } from './errors/handlers.js';
-import { seedRolesIfEmpty, seedProductsIfEmpty } from './database/seeder.js';
+import { seedRolesIfEmpty, seedProductsIfEmpty, seedDefaultsIfEmpty } from './database/seeder.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -110,6 +110,7 @@ async function startServer() {
   await dbManager.connect();
   await seedRolesIfEmpty();
   await seedProductsIfEmpty();
+  await seedDefaultsIfEmpty();
 
   httpServer.listen(config.port, () => {
     logger.info(

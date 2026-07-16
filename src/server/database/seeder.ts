@@ -148,3 +148,103 @@ export async function seedProductsIfEmpty(): Promise<void> {
     logger.error('Failed to seed default products:', err);
   }
 }
+
+export async function seedDefaultsIfEmpty(): Promise<void> {
+  try {
+    const { Company } = await import('../models/Company.js');
+    const { Branch } = await import('../models/Branch.js');
+    const { Warehouse } = await import('../models/Warehouse.js');
+    const { Supplier } = await import('../models/Supplier.js');
+    const { Customer } = await import('../models/Customer.js');
+
+    // 1. Seed Company
+    let company = await Company.findOne();
+    if (!company) {
+      company = await Company.create({
+        name: 'Stockora Enterprise Inc.',
+        taxId: 'TX-998877',
+        address: '100 Innovation Way, Toronto, ON',
+        phone: '416-555-0199',
+        currency: 'USD',
+        timeZone: 'EST',
+      });
+      logger.info('[Database Seeding] Seeded default company.');
+    }
+
+    // 2. Seed Branch
+    let branch = await Branch.findOne();
+    if (!branch) {
+      branch = await Branch.create({
+        companyId: company._id,
+        name: 'Toronto Headquarters',
+        code: 'BR-HQ-01',
+        address: '100 Innovation Way, Toronto, ON',
+        phone: '416-555-0199',
+        isActive: true,
+      });
+      logger.info('[Database Seeding] Seeded default headquarters branch.');
+    }
+
+    // 3. Seed Warehouses
+    const warehouseCount = await Warehouse.countDocuments();
+    if (warehouseCount === 0) {
+      await Warehouse.create([
+        {
+          branchId: branch._id,
+          name: 'Main Distribution Center',
+          code: 'WH-CDC-01',
+          zones: ['A', 'B', 'C'],
+          capacity: 10000,
+          isActive: true,
+        },
+        {
+          branchId: branch._id,
+          name: 'Retail Storage Annex',
+          code: 'WH-ANNEX-02',
+          zones: ['Zone X', 'Zone Y'],
+          capacity: 2500,
+          isActive: true,
+        },
+      ]);
+      logger.info('[Database Seeding] Seeded default warehouses.');
+    }
+
+    // 4. Seed Supplier
+    const supplierCount = await Supplier.countDocuments();
+    if (supplierCount === 0) {
+      await Supplier.create({
+        name: 'Apex Global Logistics',
+        code: 'SUP-APEX',
+        contactPerson: 'John Doe',
+        email: 'sales@apexlogistics.com',
+        phone: '555-0144',
+        address: '456 Industrial Pkwy, Chicago, IL',
+        paymentTerms: 'NET 30',
+        creditLimit: 50000,
+        rating: 5,
+        isActive: true,
+      });
+      logger.info('[Database Seeding] Seeded default supplier.');
+    }
+
+    // 5. Seed Customer
+    const customerCount = await Customer.countDocuments();
+    if (customerCount === 0) {
+      await Customer.create({
+        name: 'Acme Corporate Buyers',
+        code: 'CUST-ACME',
+        email: 'purchasing@acme.com',
+        phone: '555-0155',
+        group: 'VIP',
+        creditLimit: 25000,
+        loyaltyPoints: 120,
+        billingAddress: '789 Corporate Way, New York, NY',
+        shippingAddress: '789 Corporate Way, New York, NY',
+        isActive: true,
+      });
+      logger.info('[Database Seeding] Seeded default customer.');
+    }
+  } catch (err: unknown) {
+    logger.error('Failed to seed default database properties:', err);
+  }
+}

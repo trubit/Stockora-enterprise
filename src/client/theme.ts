@@ -144,14 +144,14 @@ export const theme = createTheme({
     MuiInputLabel: {
       styleOverrides: {
         root: {
-          pointerEvents: 'none',
+          pointerEvents: 'none !important',
           '&.MuiInputLabel-shrink': {
-            backgroundColor: '#151824',
-            padding: '0 6px',
-            borderRadius: '4px',
-            pointerEvents: 'none',
+            backgroundColor: '#121420 !important',
+            padding: '0 8px !important',
+            borderRadius: '4px !important',
+            pointerEvents: 'none !important',
           },
-        },
+        } as any,
       },
     },
     MuiInputBase: {
@@ -165,6 +165,9 @@ export const theme = createTheme({
       },
     },
     MuiOutlinedInput: {
+      defaultProps: {
+        notched: true,
+      },
       styleOverrides: {
         root: {
           color: '#f3f4f6',
@@ -173,7 +176,7 @@ export const theme = createTheme({
           '& .MuiOutlinedInput-input': {
             color: '#f3f4f6',
           },
-        },
+        } as any,
       },
     },
     MuiMenuItem: {
