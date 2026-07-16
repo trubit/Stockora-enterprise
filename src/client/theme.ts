@@ -123,6 +123,17 @@ export const theme = createTheme({
         },
       },
     },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          background: 'linear-gradient(135deg, #111524 0%, #0c0e17 100%) !important',
+          border: '1px solid rgba(139, 92, 246, 0.25) !important',
+          borderRadius: '16px !important',
+          boxShadow: '0 12px 40px rgba(139, 92, 246, 0.2) !important',
+          padding: '8px !important',
+        },
+      },
+    },
     MuiSelect: {
       defaultProps: {
         MenuProps: {
@@ -145,6 +156,10 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           pointerEvents: 'none !important',
+          color: '#9ca3af !important',
+          '&.Mui-focused': {
+            color: '#a78bfa !important',
+          },
           '&.MuiInputLabel-shrink': {
             backgroundColor: '#121420 !important',
             padding: '0 8px !important',
@@ -172,8 +187,22 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           color: '#f3f4f6',
-          backdropFilter: 'none !important',
-          transition: 'none !important',
+          backgroundColor: 'rgba(17, 24, 39, 0.35) !important',
+          borderRadius: '10px !important',
+          '& fieldset': {
+            borderColor: 'rgba(255, 255, 255, 0.08) !important',
+            transition: 'border-color 0.2s ease !important',
+          },
+          '&:hover fieldset': {
+            borderColor: 'rgba(139, 92, 246, 0.3) !important',
+          },
+          '&.Mui-focused fieldset': {
+            borderColor: '#8b5cf6 !important',
+            borderWidth: '1px !important',
+          },
+          '&.Mui-focused': {
+            boxShadow: '0 0 16px rgba(139, 92, 246, 0.2) !important',
+          },
           '& .MuiOutlinedInput-input': {
             color: '#f3f4f6',
           },
@@ -206,10 +235,17 @@ export const theme = createTheme({
     },
     MuiTableCell: {
       styleOverrides: {
+        root: {
+          borderBottom: '1px solid rgba(255, 255, 255, 0.04) !important',
+        },
         head: {
-          fontWeight: 600,
-          backgroundColor: '#1f2937',
-          color: '#f3f4f6',
+          fontWeight: 700,
+          backgroundColor: 'rgba(17, 24, 39, 0.6) !important',
+          color: '#a78bfa !important',
+          borderBottom: '1px solid rgba(139, 92, 246, 0.15) !important',
+          textTransform: 'uppercase',
+          fontSize: '0.75rem',
+          letterSpacing: '0.05em',
         },
       },
     },
