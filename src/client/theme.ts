@@ -126,7 +126,10 @@ export const theme = createTheme({
     MuiSelect: {
       defaultProps: {
         MenuProps: {
-          disablePortal: true,
+          disablePortal: false,
+          sx: {
+            zIndex: '2000 !important',
+          },
           PaperProps: {
             sx: {
               background: 'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%) !important',
