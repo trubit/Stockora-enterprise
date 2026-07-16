@@ -134,6 +134,35 @@ export const theme = createTheme({
         },
       },
     },
+    MuiDialogTitle: {
+      styleOverrides: {
+        root: {
+          paddingBottom: '8px !important',
+          fontSize: '1.3rem',
+          fontWeight: 800,
+          background: 'linear-gradient(90deg, #a78bfa 0%, #3b82f6 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          letterSpacing: '0.02em',
+        },
+      },
+    },
+    MuiDialogContent: {
+      styleOverrides: {
+        root: {
+          paddingTop: '24px !important',
+          paddingBottom: '16px !important',
+        },
+      },
+    },
+    MuiDialogActions: {
+      styleOverrides: {
+        root: {
+          padding: '16px 24px !important',
+          borderTop: '1px solid rgba(255, 255, 255, 0.05) !important',
+        },
+      },
+    },
     MuiSelect: {
       defaultProps: {
         MenuProps: {
