@@ -16,30 +16,7 @@ const schema = z.object({
 
 type ResetInputs = z.infer<typeof schema>;
 
-const textFieldStyle = {
-  '& .MuiOutlinedInput-root': {
-    bgcolor: 'rgba(17, 24, 39, 0.4)',
-    backdropFilter: 'blur(8px)',
-    borderRadius: 2.5,
-    transition: 'all 0.3s ease',
-    '& fieldset': {
-      borderColor: 'rgba(255, 255, 255, 0.08)',
-    },
-    '&:hover fieldset': {
-      borderColor: 'rgba(139, 92, 246, 0.3)',
-    },
-    '&.Mui-focused fieldset': {
-      borderColor: 'primary.main',
-      boxShadow: '0 0 14px rgba(139, 92, 246, 0.25)',
-    },
-  },
-  '& .MuiInputLabel-root': {
-    color: 'text.secondary',
-    '&.Mui-focused': {
-      color: 'primary.light',
-    },
-  },
-};
+const textFieldStyle = {};
 
 export default function ResetPassword() {
   const navigate = useNavigate();
