@@ -123,6 +123,21 @@ export const theme = createTheme({
         },
       },
     },
+    MuiSelect: {
+      defaultProps: {
+        MenuProps: {
+          disablePortal: true,
+          PaperProps: {
+            sx: {
+              background: 'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%) !important',
+              backdropFilter: 'blur(20px) !important',
+              border: '1px solid rgba(139, 92, 246, 0.2) !important',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5) !important',
+            },
+          },
+        },
+      },
+    },
     MuiInputLabel: {
       styleOverrides: {
         root: {
