@@ -60,6 +60,23 @@ export const SYSTEM_PERMISSIONS = {
   CUSTOMERS_READ: 'customers:read',
   CUSTOMERS_WRITE: 'customers:write',
   AUDIT_READ: 'audit:read',
+  // Phase 11-16 permissions
+  PROMOTIONS_READ: 'promotions:read',
+  PROMOTIONS_WRITE: 'promotions:write',
+  GIFTCARDS_READ: 'giftcards:read',
+  GIFTCARDS_WRITE: 'giftcards:write',
+  SECURITY_READ: 'security:read',
+  SECURITY_WRITE: 'security:write',
+  AUTOMATION_READ: 'automation:read',
+  AUTOMATION_WRITE: 'automation:write',
+  NOTIFICATIONS_READ: 'notifications:read',
+  NOTIFICATIONS_WRITE: 'notifications:write',
+  RETURNS_READ: 'returns:read',
+  RETURNS_WRITE: 'returns:write',
+  WARRANTIES_READ: 'warranties:read',
+  WARRANTIES_WRITE: 'warranties:write',
+  FINANCE_READ: 'finance:read',
+  FINANCE_WRITE: 'finance:write',
 } as const;
 
 export type SystemPermission = (typeof SYSTEM_PERMISSIONS)[keyof typeof SYSTEM_PERMISSIONS];
