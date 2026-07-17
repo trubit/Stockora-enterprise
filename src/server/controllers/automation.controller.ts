@@ -2,6 +2,7 @@ import type { Response, NextFunction } from 'express';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { QueueManager } from '../queue/bullmq.js';
 import { ValidationError, NotFoundError } from '../errors/AppError.js';
+import type { TaskType } from '../queue/jobs.worker.js';
 
 const VALID_TASKS = [
   'CHECK_LOW_STOCK',
@@ -36,7 +37,7 @@ export class AutomationController {
       if (!queue) {
         // Redis < 5: BullMQ unavailable — run task directly
         const { directDispatch } = await import('../queue/jobs.worker.js');
-        await directDispatch(task as any);
+        await directDispatch(task as TaskType);
         res.status(201).json({
           success: true,
           message: `Task [${task}] executed directly (Redis Streams not supported on local Redis).`,
