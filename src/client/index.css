@@ -1,57 +1,65 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 :root {
-  font-family:
-    'Outfit',
-    'Inter',
-    system-ui,
-    -apple-system,
-    sans-serif;
+  font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #0b0f19;
+  color: #f3f4f6;
+  background-color: #07090e;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Global theme variables */
+  --bg-primary: #07090e;
+  --bg-secondary: #0f131f;
+  --border-glow: rgba(139, 92, 246, 0.15);
+  --border-glow-hover: rgba(139, 92, 246, 0.35);
+  --glass-bg: rgba(15, 21, 36, 0.7);
+  --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background-color: #0b0f19;
+  background-color: var(--bg-primary);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.03) 0px, transparent 50%);
   overflow-x: hidden;
+  color: #f3f4f6;
 }
 
-/* Custom Scrollbars */
+/* Custom Premium Scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0b0f19;
+  background: var(--bg-primary);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1f2937;
-  border-radius: 4px;
+  background: #1e293b;
+  border-radius: 99px;
+  border: 1px solid transparent;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #374151;
+  background: #334155;
 }
 
-/* Micro-animations */
+/* Premium Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -59,27 +67,76 @@ body {
   }
 }
 
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(139, 92, 246, 0.25);
+  }
+}
+
+@keyframes slideRight {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .animate-fade-in {
-  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-right {
+  animation: slideRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Glassmorphism Panel styles */
 .glass-panel {
-  background: rgba(17, 24, 39, 0.7) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glow) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4) !important;
+  transition: var(--transition-smooth) !important;
 }
 
-/* Custom UI Utility classes */
+.glass-panel:hover {
+  border-color: var(--border-glow-hover) !important;
+  box-shadow: 0 12px 40px 0 rgba(139, 92, 246, 0.12) !important;
+}
+
+/* Gradient text utilities */
 .gradient-text {
-  background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 50%, #6366f1 100%);
+  background: linear-gradient(135deg, #c084fc 0%, #8b5cf6 50%, #4f46e5 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .emerald-gradient-text {
-  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  background: linear-gradient(135deg, #34d399 0%, #059669 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+.sky-gradient-text {
+  background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Layout elements */
+.premium-sidebar-item {
+  border-radius: 8px !important;
+  margin: 4px 8px !important;
+  transition: var(--transition-smooth) !important;
+}
+
+.premium-sidebar-item.active {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.18) 0%, rgba(139, 92, 246, 0.05) 100%) !important;
+  border-left: 3px solid #8b5cf6 !important;
 }

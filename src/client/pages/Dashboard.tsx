@@ -126,66 +126,76 @@ export default function Dashboard() {
 
   const metrics = [
     {
-      title: 'Total Revenue',
+      title: 'TOTAL REVENUE',
       value: `$${totalRevenue.toFixed(2)}`,
-      icon: <RevenueIcon sx={{ fontSize: 32, color: 'secondary.main' }} />,
-      desc: 'Live revenue summary',
+      icon: <RevenueIcon sx={{ fontSize: 26, color: '#34d399' }} />,
+      desc: 'Live checkout analytics',
+      gradientClass: 'emerald-gradient-text',
     },
     {
-      title: 'Sales Count',
+      title: 'SALES COUNT',
       value: transactions.length,
-      icon: <TxIcon sx={{ fontSize: 32, color: 'primary.light' }} />,
-      desc: 'Successful cashouts',
+      icon: <TxIcon sx={{ fontSize: 26, color: '#a78bfa' }} />,
+      desc: 'Completed purchases',
+      gradientClass: 'gradient-text',
     },
     {
-      title: 'Inventory Value',
+      title: 'INVENTORY VALUE',
       value: `$${totalValue.toFixed(2)}`,
-      icon: <StockIcon sx={{ fontSize: 32, color: 'info.main' }} />,
-      desc: `Cost base: $${totalCost.toFixed(2)}`,
+      icon: <StockIcon sx={{ fontSize: 26, color: '#38bdf8' }} />,
+      desc: `Cost Base: $${totalCost.toFixed(2)}`,
+      gradientClass: 'sky-gradient-text',
     },
     {
-      title: 'Low Stock Alerts',
+      title: 'LOW STOCK WARNINGS',
       value: lowStockItems.length,
-      icon: <WarningIcon sx={{ fontSize: 32, color: 'error.main' }} />,
-      desc: 'Require immediate replenishment',
+      icon: <WarningIcon sx={{ fontSize: 26, color: '#ef4444' }} />,
+      desc: 'Requires restock',
+      gradientClass: '',
     },
   ];
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 800 }}>
-          Business Dashboard
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Real-time metrics, store analytics, and inventory health tracking.
-        </Typography>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '-0.02em', mb: 0.5 }}>
+            Enterprise Dashboard
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Operational metrics, warehouse tracking, and live synchronization statistics.
+          </Typography>
+        </Box>
       </Box>
 
       {/* Metrics Cards Grid */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {metrics.map((m) => (
           <Grid item xs={12} sm={6} md={3} key={m.title}>
-            <Card className="glass-panel">
+            <Card className="glass-panel" sx={{ borderRadius: '16px' }}>
               <CardContent
-                sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: '24px !important' }}
               >
                 <Box>
                   <Typography
-                    variant="body2"
+                    variant="caption"
                     color="text.secondary"
-                    sx={{ fontWeight: 600, mb: 0.5 }}
+                    sx={{ fontWeight: 800, letterSpacing: '0.08em', display: 'block', mb: 1 }}
                   >
                     {m.title}
                   </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 750, mb: 0.5 }}>
+                  <Typography
+                    variant="h4"
+                    className={m.gradientClass}
+                    sx={{ fontWeight: 800, mb: 0.5, letterSpacing: '-0.02em', color: m.gradientClass ? undefined : m.title.includes('WARNINGS') && Number(m.value) > 0 ? '#ef4444' : '#f3f4f6' }}
+                  >
                     {m.value}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 550 }}>
                     {m.desc}
                   </Typography>
                 </Box>
-                <Box sx={{ p: 1.5, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.02)' }}>
+                <Box sx={{ p: 1.5, borderRadius: '12px', bgcolor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
                   {m.icon}
                 </Box>
               </CardContent>
@@ -197,34 +207,36 @@ export default function Dashboard() {
       {/* Charts Grid */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={8}>
-          <Card className="glass-panel" sx={{ p: 2.5 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
+          <Card className="glass-panel" sx={{ p: 3, borderRadius: '16px' }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, letterSpacing: '-0.01em' }}>
               Sales Activity Trend
             </Typography>
-            <Box sx={{ width: '100%', height: 300 }}>
+            <Box sx={{ width: '100%', height: 320 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.4} />
+                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.35} />
                       <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="name" stroke="#9ca3af" fontSize={11} />
-                  <YAxis stroke="#9ca3af" fontSize={11} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                  <XAxis dataKey="name" stroke="#6b7280" fontSize={11} tickLine={false} />
+                  <YAxis stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#111827',
-                      borderColor: 'rgba(255,255,255,0.1)',
+                      backgroundColor: '#0f131f',
+                      borderColor: 'rgba(139, 92, 246, 0.2)',
+                      borderRadius: '8px',
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                     }}
-                    labelStyle={{ color: '#fff' }}
+                    labelStyle={{ color: '#a78bfa', fontWeight: 700 }}
                   />
                   <Area
                     type="monotone"
                     dataKey="Sales"
                     stroke="#8b5cf6"
-                    strokeWidth={2}
+                    strokeWidth={2.5}
                     fillOpacity={1}
                     fill="url(#colorSales)"
                   />
@@ -235,23 +247,25 @@ export default function Dashboard() {
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Card className="glass-panel" sx={{ p: 2.5 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
+          <Card className="glass-panel" sx={{ p: 3, borderRadius: '16px' }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, letterSpacing: '-0.01em' }}>
               Inventory by Category
             </Typography>
-            <Box sx={{ width: '100%', height: 300 }}>
+            <Box sx={{ width: '100%', height: 320 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={barChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="name" stroke="#9ca3af" fontSize={11} />
-                  <YAxis stroke="#9ca3af" fontSize={11} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                  <XAxis dataKey="name" stroke="#6b7280" fontSize={11} tickLine={false} />
+                  <YAxis stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#111827',
-                      borderColor: 'rgba(255,255,255,0.1)',
+                      backgroundColor: '#0f131f',
+                      borderColor: 'rgba(16, 185, 129, 0.2)',
+                      borderRadius: '8px',
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                     }}
                   />
-                  <Bar dataKey="Stock" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Stock" fill="#10b981" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </Box>
@@ -262,30 +276,31 @@ export default function Dashboard() {
       {/* Feed section */}
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <Card className="glass-panel" sx={{ p: 2.5 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+          <Card className="glass-panel" sx={{ p: 3, borderRadius: '16px' }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, letterSpacing: '-0.01em', color: '#ef4444' }}>
               Critical Stock Replenishment Warnings
             </Typography>
             {lowStockItems.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                No items are currently below stock warnings limits. Excellent!
+              <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
+                ✓ No items are currently below stock warnings limits.
               </Typography>
             ) : (
-              <List>
+              <List disablePadding>
                 {lowStockItems.map((p, idx) => (
                   <Fragment key={p.id}>
-                    {idx > 0 && <Divider sx={{ opacity: 0.5 }} />}
+                    {idx > 0 && <Divider sx={{ borderColor: 'rgba(255,255,255,0.03)' }} />}
                     <ListItem sx={{ px: 0, py: 1.5 }}>
                       <ListItemText
                         primary={p.name}
-                        primaryTypographyProps={{ fontWeight: 600, color: 'error.light' }}
+                        primaryTypographyProps={{ fontWeight: 700, color: '#f87171', fontSize: '0.875rem' }}
                         secondary={`SKU: ${p.sku} | Category: ${p.category}`}
+                        secondaryTypographyProps={{ fontSize: '0.75rem', color: 'text.secondary' }}
                       />
                       <Box sx={{ textAlign: 'right' }}>
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                          {p.quantity} left
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: '#ef4444' }}>
+                          {p.quantity} units
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                           Alert Level: {p.lowStockAlert}
                         </Typography>
                       </Box>
@@ -298,33 +313,34 @@ export default function Dashboard() {
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Card className="glass-panel" sx={{ p: 2.5 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+          <Card className="glass-panel" sx={{ p: 3, borderRadius: '16px' }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, letterSpacing: '-0.01em' }}>
               Recent POS Transactions
             </Typography>
             {transactions.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
                 No checkout transactions recorded during this shift yet.
               </Typography>
             ) : (
-              <List>
+              <List disablePadding>
                 {transactions.slice(0, 5).map((t, idx) => (
                   <Fragment key={t.id}>
-                    {idx > 0 && <Divider sx={{ opacity: 0.5 }} />}
+                    {idx > 0 && <Divider sx={{ borderColor: 'rgba(255,255,255,0.03)' }} />}
                     <ListItem sx={{ px: 0, py: 1.5 }}>
                       <ListItemText
                         primary={`Order #${t.transactionNumber}`}
-                        primaryTypographyProps={{ fontWeight: 600 }}
+                        primaryTypographyProps={{ fontWeight: 700, fontSize: '0.875rem' }}
                         secondary={`${t.items.length} items • ${t.paymentMethod} • Cashier: ${t.cashierName}`}
+                        secondaryTypographyProps={{ fontSize: '0.75rem', color: 'text.secondary' }}
                       />
                       <Box sx={{ textAlign: 'right' }}>
                         <Typography
                           variant="body2"
-                          sx={{ fontWeight: 700, color: 'secondary.light' }}
+                          sx={{ fontWeight: 800, color: '#34d399' }}
                         >
                           +${t.total.toFixed(2)}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                           {new Date(t.createdAt).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit',

@@ -276,7 +276,7 @@ export default function POS() {
         setOfflineCount(count);
         setCart([]);
         setDiscount(0);
-        toast.success('Offline checkout stored in IndexedDB successfully! Will sync when online.');
+        toast.success('Offline checkout stored locally. Will sync automatically.');
       });
       return;
     }
@@ -287,21 +287,22 @@ export default function POS() {
   return (
     <Box sx={{ flexGrow: 1 }}>
       {!isOnline && (
-        <Box sx={{ bgcolor: 'warning.dark', color: 'warning.contrastText', p: 1.5, mb: 3, borderRadius: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="body2" sx={{ fontWeight: 700 }}>
-            ⚠️ Device is currently Offline. Checkout operations will be queued locally.
+        <Box sx={{ bgcolor: 'rgba(245, 158, 11, 0.1)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.2)', p: 2, mb: 3, borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="body2" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+            ⚠️ Operational status: Local Database Mode active. Local sales will sync when connection restores.
           </Typography>
           {offlineCount > 0 && (
-            <Chip label={`${offlineCount} transactions pending sync`} color="secondary" size="small" sx={{ fontWeight: 700 }} />
+            <Chip label={`${offlineCount} transactions queued`} color="warning" size="small" sx={{ fontWeight: 800, fontSize: '0.725rem' }} />
           )}
         </Box>
       )}
+
       <Grid container spacing={3}>
         {/* Product Catalog Pane */}
         <Grid item xs={12} lg={8}>
           <Box
             sx={{
-              mb: 3,
+              mb: 3.5,
               display: 'flex',
               flexWrap: 'wrap',
               gap: 2,
@@ -310,11 +311,11 @@ export default function POS() {
             }}
           >
             <Box>
-              <Typography variant="h4" sx={{ fontWeight: 800 }}>
-                POS Checkout
+              <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '-0.02em', mb: 0.5 }}>
+                POS Terminal
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Search products, scan barcodes, and cash out customer carts.
+                Search products, filter by category or scan barcodes to build customers shopping lists.
               </Typography>
             </Box>
 
@@ -327,30 +328,30 @@ export default function POS() {
                 size="small"
                 value={barcodeInput}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setBarcodeInput(e.target.value)}
-                placeholder="Type '40012011'..."
+                placeholder="Barcode e.g. 40012011..."
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <ScanIcon fontSize="small" color="action" />
+                      <ScanIcon fontSize="small" color="primary" />
                     </InputAdornment>
                   ),
                 }}
                 sx={{ width: 220 }}
               />
-              <Button type="submit" variant="contained" color="secondary" size="small">
+              <Button type="submit" variant="contained" color="primary" size="small" sx={{ px: 2.5 }}>
                 Scan
               </Button>
             </Box>
           </Box>
 
           {/* Search and Category Tabs */}
-          <Card className="glass-panel" sx={{ mb: 3 }}>
+          <Card className="glass-panel" sx={{ mb: 3.5 }}>
             <CardContent sx={{ p: '16px !important' }}>
               <Grid container spacing={2} alignItems="center">
                 <Grid item xs={12} md={5}>
                   <TextField
                     fullWidth
-                    placeholder="Search by name, SKU or barcode..."
+                    placeholder="Search catalog by name, SKU or barcode..."
                     size="small"
                     value={searchTerm}
                     onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
@@ -369,15 +370,16 @@ export default function POS() {
                     onChange={(_: SyntheticEvent, val: string) => setSelectedCategory(val)}
                     variant="scrollable"
                     scrollButtons="auto"
-                    textColor="secondary"
-                    indicatorColor="secondary"
+                    textColor="primary"
+                    indicatorColor="primary"
+                    sx={{ minHeight: 40 }}
                   >
                     {categories.map((cat) => (
                       <Tab
                         key={cat}
                         label={cat}
                         value={cat}
-                        sx={{ fontWeight: 600, fontSize: '0.85rem' }}
+                        sx={{ fontWeight: 700, fontSize: '0.8rem', minHeight: 40 }}
                       />
                     ))}
                   </Tabs>
@@ -390,69 +392,74 @@ export default function POS() {
           <Grid container spacing={2}>
             {filteredProducts.length === 0 ? (
               <Grid item xs={12}>
-                <Box sx={{ py: 8, textAlign: 'center' }}>
-                  <Typography variant="body1" color="text.secondary">
+                <Box sx={{ py: 10, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.01)', border: '1px dashed rgba(255,255,255,0.05)', borderRadius: '12px' }}>
+                  <Typography variant="body2" color="text.secondary">
                     No products found matching filters.
                   </Typography>
                 </Box>
               </Grid>
             ) : (
-              filteredProducts.map((p: Product) => (
-                <Grid item xs={12} sm={6} md={4} key={p.id || p._id}>
-                  <Card
-                    onClick={() => addToCart(p)}
-                    sx={{
-                      cursor: 'pointer',
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      '&:active': { transform: 'scale(0.98)' },
-                    }}
-                  >
-                    <CardContent sx={{ flexGrow: 1, p: 2 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                        <Chip
-                          label={p.category}
-                          size="small"
-                          sx={{
-                            fontSize: '0.7rem',
-                            fontWeight: 600,
-                            bgcolor: 'rgba(255,255,255,0.03)',
-                          }}
-                        />
+              filteredProducts.map((p: Product) => {
+                const qtyLow = p.quantity <= p.lowStockAlert;
+                return (
+                  <Grid item xs={12} sm={6} md={4} key={p.id || p._id}>
+                    <Card
+                      onClick={() => addToCart(p)}
+                      sx={{
+                        cursor: 'pointer',
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        '&:active': { transform: 'scale(0.97)' },
+                      }}
+                    >
+                      <CardContent sx={{ flexGrow: 1, p: 2.5, display: 'flex', flexDirection: 'column' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, alignItems: 'center' }}>
+                          <Chip
+                            label={p.category}
+                            size="small"
+                            sx={{
+                              fontSize: '0.65rem',
+                              fontWeight: 700,
+                              bgcolor: 'rgba(139, 92, 246, 0.08)',
+                              color: 'primary.light',
+                              border: '1px solid rgba(139, 92, 246, 0.15)',
+                            }}
+                          />
+                          <Typography
+                            variant="caption"
+                            color={qtyLow ? '#ef4444' : 'success.light'}
+                            sx={{ fontWeight: 800, fontSize: '0.725rem' }}
+                          >
+                            {p.quantity} left
+                          </Typography>
+                        </Box>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ fontWeight: 700, mb: 0.5, lineHeight: 1.2, color: '#f3f4f6' }}
+                        >
+                          {p.name}
+                        </Typography>
                         <Typography
                           variant="caption"
-                          color={p.quantity <= p.lowStockAlert ? 'error.main' : 'text.secondary'}
-                          sx={{ fontWeight: 700 }}
+                          color="text.secondary"
+                          display="block"
+                          sx={{ mb: 2, fontSize: '0.7rem' }}
                         >
-                          {p.quantity} in stock
+                          SKU: {p.sku}
                         </Typography>
-                      </Box>
-                      <Typography
-                        variant="subtitle1"
-                        sx={{ fontWeight: 700, mb: 0.5, lineHeight: 1.2 }}
-                      >
-                        {p.name}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        display="block"
-                        sx={{ mb: 1.5 }}
-                      >
-                        SKU: {p.sku}
-                      </Typography>
-                      <Typography
-                        variant="h6"
-                        color="primary.light"
-                        sx={{ fontWeight: 800, mt: 'auto' }}
-                      >
-                        ${p.price.toFixed(2)}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))
+                        <Typography
+                          variant="h6"
+                          color="#34d399"
+                          sx={{ fontWeight: 800, mt: 'auto', fontSize: '1.1rem' }}
+                        >
+                          ${p.price.toFixed(2)}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              })
             )}
           </Grid>
         </Grid>
@@ -467,6 +474,7 @@ export default function POS() {
               display: 'flex',
               flexDirection: 'column',
               maxHeight: 'calc(100vh - 120px)',
+              borderRadius: '16px',
             }}
           >
             <Box
@@ -477,22 +485,23 @@ export default function POS() {
                 alignItems: 'center',
               }}
             >
-              <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.01em' }}>
                 Shopping Cart
               </Typography>
               <Chip
                 label={`${cart.reduce((sum, i) => sum + i.quantity, 0)} Items`}
                 size="small"
                 color="primary"
+                sx={{ fontWeight: 700, fontSize: '0.725rem' }}
               />
             </Box>
-            <Divider />
+            <Divider sx={{ borderColor: 'rgba(255,255,255,0.04)' }} />
 
             {/* Cart List */}
-            <Box sx={{ flexGrow: 1, overflowY: 'auto', px: 1, py: 1, minHeight: 200 }}>
+            <Box sx={{ flexGrow: 1, overflowY: 'auto', px: 2, py: 1, minHeight: 220 }}>
               {cart.length === 0 ? (
-                <Box sx={{ py: 8, textCol: 'center', textAlign: 'center' }}>
-                  <Typography variant="body2" color="text.secondary">
+                <Box sx={{ py: 10, textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                     Cart is empty. Click catalog items or scan a barcode to add.
                   </Typography>
                 </Box>
@@ -507,44 +516,45 @@ export default function POS() {
                           color="error"
                           size="small"
                           onClick={() => removeItem(item.productId)}
+                          sx={{ '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.08)' } }}
                         >
                           <DeleteIcon fontSize="small" />
                         </IconButton>
                       }
-                      sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.03)', py: 1.5 }}
+                      sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.03)', py: 1.5, px: 1 }}
                     >
                       <ListItemText
                         primary={item.productName}
-                        primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9rem' }}
+                        primaryTypographyProps={{ fontWeight: 700, fontSize: '0.85rem' }}
                         secondaryTypographyProps={{ component: 'div' }}
                         secondary={
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
                             <Typography variant="caption" color="text.secondary">
                               ${item.price.toFixed(2)} ea
                             </Typography>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 1 }}>
                               <IconButton
                                 size="small"
-                                sx={{ p: 0.2 }}
+                                sx={{ p: 0.2, border: '1px solid rgba(255,255,255,0.06)' }}
                                 onClick={() => adjustQuantity(item.productId, -1)}
                               >
-                                <RemoveIcon fontSize="inherit" />
+                                <RemoveIcon fontSize="inherit" sx={{ fontSize: '0.75rem' }} />
                               </IconButton>
-                              <Typography variant="body2" sx={{ fontWeight: 700, px: 0.5 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 800, px: 0.5, fontSize: '0.8rem' }}>
                                 {item.quantity}
                               </Typography>
                               <IconButton
                                 size="small"
-                                sx={{ p: 0.2 }}
+                                sx={{ p: 0.2, border: '1px solid rgba(255,255,255,0.06)' }}
                                 onClick={() => adjustQuantity(item.productId, 1)}
                               >
-                                <AddIcon fontSize="inherit" />
+                                <AddIcon fontSize="inherit" sx={{ fontSize: '0.75rem' }} />
                               </IconButton>
                             </Box>
                           </Box>
                         }
                       />
-                      <Typography variant="subtitle2" sx={{ mr: 2, fontWeight: 700 }}>
+                      <Typography variant="subtitle2" sx={{ mr: 2, fontWeight: 800, color: 'text.primary', fontSize: '0.85rem' }}>
                         ${item.total.toFixed(2)}
                       </Typography>
                     </ListItem>
@@ -553,11 +563,11 @@ export default function POS() {
               )}
             </Box>
 
-            <Divider />
+            <Divider sx={{ borderColor: 'rgba(255,255,255,0.04)' }} />
 
             {/* Calculations & Checkout */}
-            <Box sx={{ p: 2.5, bgcolor: 'rgba(255, 255, 255, 0.01)' }}>
-              <Grid container spacing={2} sx={{ mb: 2 }}>
+            <Box sx={{ p: 2.5, bgcolor: 'rgba(0, 0, 0, 0.1)' }}>
+              <Grid container spacing={2} sx={{ mb: 2.5 }}>
                 <Grid item xs={6}>
                   <TextField
                     label="Discount ($)"
@@ -590,37 +600,37 @@ export default function POS() {
               </Grid>
 
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
                   Subtotal
                 </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.8rem' }}>
                   ${subtotal.toFixed(2)}
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
                   Sales Tax (8%)
                 </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.8rem' }}>
                   ${tax.toFixed(2)}
                 </Typography>
               </Box>
               {discount > 0 && (
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2" color="error">
+                  <Typography variant="body2" color="error" sx={{ fontSize: '0.8rem' }}>
                     Discount
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.light' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.light', fontSize: '0.8rem' }}>
                     -${discount.toFixed(2)}
                   </Typography>
                 </Box>
               )}
-              <Divider sx={{ my: 1.5 }} />
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2.5 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              <Divider sx={{ my: 1.5, borderColor: 'rgba(255,255,255,0.03)' }} />
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2.5, alignItems: 'center' }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
                   Total
                 </Typography>
-                <Typography variant="h5" color="secondary.light" sx={{ fontWeight: 800 }}>
+                <Typography variant="h5" color="#34d399" sx={{ fontWeight: 800, letterSpacing: '-0.01em' }}>
                   ${total.toFixed(2)}
                 </Typography>
               </Box>
@@ -635,9 +645,10 @@ export default function POS() {
                 disabled={cart.length === 0 || checkoutMutation.isPending}
                 sx={{
                   py: 1.5,
-                  fontSize: '1rem',
+                  fontSize: '0.925rem',
                   fontWeight: 700,
-                  boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
+                  boxShadow: '0 4px 18px rgba(16, 185, 129, 0.25)',
+                  background: 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
                 }}
               >
                 {checkoutMutation.isPending ? 'Processing...' : 'Complete Checkout'}

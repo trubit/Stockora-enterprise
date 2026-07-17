@@ -45,7 +45,7 @@ import LoyaltyIcon from '@mui/icons-material/Loyalty';
 import { useAuthStore } from '../store/auth.ts';
 import { apiClient } from '../api/client.ts';
 
-const drawerWidth = 240;
+const drawerWidth = 260;
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -116,32 +116,40 @@ export default function Layout() {
 
   const drawerContent = (
     <Box
-      sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: 'background.paper' }}
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: '#0a0d16',
+        backgroundImage: 'radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.04) 0px, transparent 50%)',
+      }}
     >
       {/* Brand Header */}
-      <Box sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+      <Box sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
         <Avatar
           src="/logo.png"
           sx={{
             bgcolor: 'primary.main',
-            width: 38,
-            height: 38,
-            boxShadow: '0 4px 10px rgba(139, 92, 246, 0.4)',
+            width: 40,
+            height: 40,
+            boxShadow: '0 4px 14px rgba(139, 92, 246, 0.4)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
           }}
         />
         <Box>
           <Typography
             variant="h6"
-            sx={{ fontWeight: 800, letterSpacing: '0.05em', lineHeight: 1.2 }}
+            className="gradient-text"
+            sx={{ fontWeight: 800, letterSpacing: '0.04em', lineHeight: 1.1 }}
           >
             STOCKORA
           </Typography>
-          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-            Enterprise v1.0
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.68rem', letterSpacing: '0.02em' }}>
+            ENTERPRISE PLATFORM
           </Typography>
         </Box>
       </Box>
-      <Divider />
+      <Divider sx={{ borderColor: 'rgba(255,255,255,0.04)' }} />
 
       {/* Navigation List */}
       <Box sx={{ flexGrow: 1, overflowY: 'auto', px: 1.5, py: 2 }}>
@@ -149,33 +157,35 @@ export default function Layout() {
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
-              <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
+              <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
+                  className={isActive ? 'premium-sidebar-item active' : 'premium-sidebar-item'}
                   onClick={() => {
                     navigate(item.path);
                     setMobileOpen(false);
                   }}
                   sx={{
-                    borderRadius: 2,
-                    bgcolor: isActive ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
-                    color: isActive ? 'primary.light' : 'text.secondary',
-                    border: isActive ? '1px solid rgba(139, 92, 246, 0.25)' : '1px solid transparent',
+                    borderRadius: '8px',
+                    color: isActive ? '#ffffff' : 'text.secondary',
+                    bgcolor: isActive ? 'rgba(139, 92, 246, 0.08) !important' : 'transparent',
+                    borderLeft: isActive ? '3px solid #8b5cf6' : '3px solid transparent',
                     '&:hover': {
-                      bgcolor: isActive ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255, 255, 255, 0.02)',
-                      color: 'text.primary',
+                      bgcolor: isActive ? 'rgba(139, 92, 246, 0.12)' : 'rgba(255, 255, 255, 0.02)',
+                      color: '#ffffff',
                     },
                   }}
                 >
                   <ListItemIcon
-                    sx={{ color: isActive ? 'primary.light' : 'text.secondary', minWidth: 40 }}
+                    sx={{ color: isActive ? 'primary.light' : 'text.secondary', minWidth: 38 }}
                   >
                     {item.icon}
                   </ListItemIcon>
                   <ListItemText
                     primary={item.text}
                     primaryTypographyProps={{
-                      fontSize: '0.925rem',
-                      fontWeight: isActive ? 600 : 500,
+                      fontSize: '0.85rem',
+                      fontWeight: isActive ? 700 : 500,
+                      letterSpacing: '0.01em',
                     }}
                   />
                 </ListItemButton>
@@ -185,40 +195,42 @@ export default function Layout() {
 
           {isAdmin && (
             <>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="caption" sx={{ px: 2, color: 'text.secondary', fontWeight: 700, letterSpacing: '0.05em', display: 'block', mb: 1 }}>
+              <Divider sx={{ my: 2.5, borderColor: 'rgba(255,255,255,0.03)' }} />
+              <Typography variant="caption" sx={{ px: 2.5, color: '#a78bfa', fontWeight: 800, letterSpacing: '0.08em', display: 'block', mb: 1, fontSize: '0.68rem' }}>
                 ADMINISTRATION
               </Typography>
               {adminItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
-                  <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
+                  <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
                     <ListItemButton
+                      className={isActive ? 'premium-sidebar-item active' : 'premium-sidebar-item'}
                       onClick={() => {
                         navigate(item.path);
                         setMobileOpen(false);
                       }}
                       sx={{
-                        borderRadius: 2,
-                        bgcolor: isActive ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
-                        color: isActive ? 'primary.light' : 'text.secondary',
-                        border: isActive ? '1px solid rgba(139, 92, 246, 0.25)' : '1px solid transparent',
+                        borderRadius: '8px',
+                        color: isActive ? '#ffffff' : 'text.secondary',
+                        bgcolor: isActive ? 'rgba(139, 92, 246, 0.08) !important' : 'transparent',
+                        borderLeft: isActive ? '3px solid #8b5cf6' : '3px solid transparent',
                         '&:hover': {
-                          bgcolor: isActive ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255, 255, 255, 0.02)',
-                          color: 'text.primary',
+                          bgcolor: isActive ? 'rgba(139, 92, 246, 0.12)' : 'rgba(255, 255, 255, 0.02)',
+                          color: '#ffffff',
                         },
                       }}
                     >
                       <ListItemIcon
-                        sx={{ color: isActive ? 'primary.light' : 'text.secondary', minWidth: 40 }}
+                        sx={{ color: isActive ? 'primary.light' : 'text.secondary', minWidth: 38 }}
                       >
                         {item.icon}
                       </ListItemIcon>
                       <ListItemText
                         primary={item.text}
                         primaryTypographyProps={{
-                          fontSize: '0.925rem',
-                          fontWeight: isActive ? 600 : 500,
+                          fontSize: '0.85rem',
+                          fontWeight: isActive ? 700 : 500,
+                          letterSpacing: '0.01em',
                         }}
                       />
                     </ListItemButton>
@@ -228,30 +240,31 @@ export default function Layout() {
             </>
           )}
 
-          <Divider sx={{ my: 2 }} />
-          <ListItem disablePadding sx={{ mb: 1 }}>
+          <Divider sx={{ my: 2.5, borderColor: 'rgba(255,255,255,0.03)' }} />
+          <ListItem disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton
               onClick={() => {
                 clearSession();
                 navigate('/login');
               }}
               sx={{
-                borderRadius: 2,
-                color: 'error.main',
+                borderRadius: '8px',
+                color: 'error.light',
+                mx: '8px',
                 '&:hover': {
-                  bgcolor: 'rgba(239, 68, 68, 0.08)',
-                  color: 'error.light',
+                  bgcolor: 'rgba(239, 68, 68, 0.06)',
+                  color: 'error.main',
                 },
               }}
             >
-              <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}>
+              <ListItemIcon sx={{ color: 'inherit', minWidth: 38 }}>
                 <LogoutIcon />
               </ListItemIcon>
               <ListItemText
                 primary="Sign Out"
                 primaryTypographyProps={{
-                  fontSize: '0.925rem',
-                  fontWeight: 500,
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
                 }}
               />
             </ListItemButton>
@@ -259,21 +272,27 @@ export default function Layout() {
         </List>
       </Box>
 
-      <Divider />
+      <Divider sx={{ borderColor: 'rgba(255,255,255,0.04)' }} />
       {/* Footer Profile */}
-      <Box sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Box sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2, bgcolor: 'rgba(0,0,0,0.1)' }}>
         <Avatar
           src={user?.avatarUrl || undefined}
-          sx={{ cursor: 'pointer', bgcolor: 'secondary.main', color: 'secondary.contrastText' }}
+          sx={{
+            cursor: 'pointer',
+            bgcolor: 'primary.main',
+            color: 'primary.contrastText',
+            boxShadow: '0 0 12px rgba(139, 92, 246, 0.25)',
+            border: '2px solid rgba(139, 92, 246, 0.3)',
+          }}
           onClick={() => navigate('/profile')}
         >
           {user?.username?.charAt(0).toUpperCase() || 'U'}
         </Avatar>
         <Box sx={{ overflow: 'hidden', cursor: 'pointer', flexGrow: 1 }} onClick={() => navigate('/profile')}>
-          <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+          <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700, fontSize: '0.825rem' }}>
             {user?.username || 'Guest User'}
           </Typography>
-          <Typography variant="caption" color="text.secondary" noWrap display="block">
+          <Typography variant="caption" color="text.secondary" noWrap display="block" sx={{ fontSize: '0.7rem' }}>
             {user?.roleName || 'Employee'}
           </Typography>
         </Box>
@@ -285,7 +304,7 @@ export default function Layout() {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#07090e' }}>
       {/* Top Navbar */}
       <AppBar
         position="fixed"
@@ -293,9 +312,11 @@ export default function Layout() {
         sx={{
           zIndex: (theme: Theme) => theme.zIndex.drawer + 1,
           boxShadow: 'none',
+          background: 'rgba(7, 9, 14, 0.75) !important',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.05) !important',
         }}
       >
-        <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, sm: 3 } }}>
+        <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, sm: 3 }, minHeight: 64 }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <IconButton
               color="inherit"
@@ -307,21 +328,21 @@ export default function Layout() {
               <MenuIcon />
             </IconButton>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <BranchIcon sx={{ color: 'primary.light' }} />
+              <BranchIcon sx={{ color: 'primary.light', fontSize: '1.25rem' }} />
               <Typography
                 variant="h6"
                 noWrap
                 component="div"
-                sx={{ fontWeight: 700, fontSize: '1.1rem' }}
+                sx={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '0.01em' }}
               >
-                Main Branch (HQ)
+                HQ Division (Toronto)
               </Typography>
             </Box>
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
             {/* System Status Indicators */}
-            <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 2 }}>
+            <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1.5 }}>
               <Tooltip
                 title={
                   isOnline ? 'System Online (Vite/Server Connection Stable)' : 'Offline Mode Active'
@@ -340,10 +361,10 @@ export default function Layout() {
                     },
                   }}
                 >
-                  <OnlineIcon sx={{ color: isOnline ? 'secondary.main' : 'error.main' }} />
+                  <OnlineIcon sx={{ color: isOnline ? 'secondary.main' : 'error.main', fontSize: '1.15rem' }} />
                 </Badge>
               </Tooltip>
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+              <Typography variant="caption" sx={{ color: isOnline ? 'secondary.light' : 'error.light', fontWeight: 800, letterSpacing: '0.05em', fontSize: '0.7rem' }}>
                 {isOnline ? 'ONLINE' : 'OFFLINE'}
               </Typography>
             </Box>
@@ -351,19 +372,25 @@ export default function Layout() {
             <Divider
               orientation="vertical"
               flexItem
-              sx={{ display: { xs: 'none', sm: 'block' } }}
+              sx={{ display: { xs: 'none', sm: 'block' }, borderColor: 'rgba(255,255,255,0.06)' }}
             />
 
-            {/* Notification Badge */}
+            {/* Shift/Operational Info */}
             <Typography
-              variant="body2"
+              variant="caption"
               sx={{
                 color: 'text.secondary',
-                fontWeight: 500,
+                fontWeight: 700,
+                letterSpacing: '0.04em',
                 display: { xs: 'none', md: 'block' },
+                bgcolor: 'rgba(255,255,255,0.02)',
+                px: 1.5,
+                py: 0.5,
+                borderRadius: '6px',
+                border: '1px solid rgba(255,255,255,0.04)',
               }}
             >
-              Shift: 08:00 - 16:00
+              SHIFT: 08:00 - 16:00
             </Typography>
           </Box>
         </Toolbar>
@@ -392,7 +419,7 @@ export default function Layout() {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: drawerWidth,
-              borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+              borderRight: '1px solid rgba(255, 255, 255, 0.04)',
             },
           }}
           open
@@ -406,7 +433,7 @@ export default function Layout() {
         component="main"
         sx={{
           flexGrow: 1,
-          p: { xs: 2.5, sm: 4 },
+          p: { xs: 3, sm: 4 },
           width: { md: `calc(100% - ${drawerWidth}px)` },
           mt: '64px',
           overflowY: 'auto',

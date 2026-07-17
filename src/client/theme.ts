@@ -16,69 +16,74 @@ export const theme = createTheme({
       contrastText: '#ffffff',
     },
     background: {
-      default: '#0b0f19', // Deep dark slate
-      paper: '#111827', // Slate secondary
+      default: '#07090e', // Deep rich dark primary background
+      paper: '#0f131f', // Rich dark secondary card/paper background
     },
     text: {
       primary: '#f3f4f6',
       secondary: '#9ca3af',
       disabled: '#4b5563',
     },
-    divider: 'rgba(255, 255, 255, 0.08)',
+    divider: 'rgba(255, 255, 255, 0.05)',
     error: {
       main: '#ef4444',
+      light: '#f87171',
     },
     warning: {
       main: '#f59e0b',
+      light: '#fbbf24',
     },
     info: {
       main: '#3b82f6',
+      light: '#60a5fa',
     },
     success: {
       main: '#10b981',
+      light: '#34d399',
     },
   },
   typography: {
     fontFamily: '"Outfit", "Inter", "Helvetica Neue", Arial, sans-serif',
     h1: {
-      fontWeight: 700,
+      fontWeight: 800,
       fontSize: '2.5rem',
       letterSpacing: '-0.02em',
     },
     h2: {
-      fontWeight: 700,
+      fontWeight: 800,
       fontSize: '2rem',
       letterSpacing: '-0.015em',
     },
     h3: {
-      fontWeight: 600,
+      fontWeight: 700,
       fontSize: '1.75rem',
       letterSpacing: '-0.01em',
     },
     h4: {
-      fontWeight: 600,
+      fontWeight: 700,
       fontSize: '1.5rem',
+      letterSpacing: '-0.01em',
     },
     h5: {
-      fontWeight: 500,
+      fontWeight: 600,
       fontSize: '1.25rem',
     },
     h6: {
-      fontWeight: 500,
+      fontWeight: 600,
       fontSize: '1rem',
     },
     subtitle1: {
       fontSize: '1rem',
-      fontWeight: 400,
+      fontWeight: 500,
     },
     body1: {
       fontFamily: '"Inter", sans-serif',
-      fontSize: '0.925rem',
+      fontSize: '0.9rem',
       lineHeight: 1.6,
     },
     body2: {
       fontFamily: '"Inter", sans-serif',
-      fontSize: '0.825rem',
+      fontSize: '0.8rem',
       lineHeight: 1.5,
     },
     button: {
@@ -95,16 +100,20 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 8,
-          padding: '8px 16px',
-          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          padding: '8px 18px',
+          transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
           boxShadow: 'none',
           '&:hover': {
-            boxShadow: '0 4px 12px rgba(139, 92, 246, 0.25)',
+            boxShadow: '0 4px 14px rgba(139, 92, 246, 0.2)',
+            transform: 'translateY(-1px)',
+          },
+          '&:active': {
+            transform: 'translateY(0)',
           },
         },
         containedSecondary: {
           '&:hover': {
-            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)',
+            boxShadow: '0 4px 14px rgba(16, 185, 129, 0.2)',
           },
         },
       },
@@ -113,12 +122,15 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: 'none',
+          backgroundColor: '#0f131f',
           border: '1px solid rgba(255, 255, 255, 0.05)',
-          boxShadow: '0 4px 20px 0 rgba(0, 0, 0, 0.3)',
-          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+          transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+          borderRadius: 16,
           '&:hover': {
+            borderColor: 'rgba(139, 92, 246, 0.25)',
             transform: 'translateY(-2px)',
-            boxShadow: '0 8px 30px 0 rgba(0, 0, 0, 0.4)',
+            boxShadow: '0 12px 40px rgba(0, 0, 0, 0.5)',
           },
         },
       },
@@ -129,11 +141,11 @@ export const theme = createTheme({
       },
       styleOverrides: {
         paper: {
-          background: 'linear-gradient(135deg, #111524 0%, #0c0e17 100%) !important',
-          border: '1px solid rgba(139, 92, 246, 0.25) !important',
+          background: 'linear-gradient(135deg, #0f1322 0%, #07090e 100%) !important',
+          border: '1px solid rgba(139, 92, 246, 0.2) !important',
           borderRadius: '16px !important',
-          boxShadow: '0 12px 40px rgba(139, 92, 246, 0.2) !important',
-          padding: '8px !important',
+          boxShadow: '0 24px 64px rgba(0, 0, 0, 0.7) !important',
+          padding: '12px !important',
         },
       },
     },
@@ -141,19 +153,19 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           paddingBottom: '8px !important',
-          fontSize: '1.3rem',
+          fontSize: '1.35rem',
           fontWeight: 800,
-          background: 'linear-gradient(90deg, #a78bfa 0%, #3b82f6 100%)',
+          background: 'linear-gradient(90deg, #c084fc 0%, #3b82f6 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
-          letterSpacing: '0.02em',
+          letterSpacing: '0.01em',
         },
       },
     },
     MuiDialogContent: {
       styleOverrides: {
         root: {
-          paddingTop: '24px !important',
+          paddingTop: '20px !important',
           paddingBottom: '16px !important',
         },
       },
@@ -175,10 +187,9 @@ export const theme = createTheme({
           },
           PaperProps: {
             sx: {
-              background: 'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%) !important',
-              backdropFilter: 'none !important',
-              border: '1px solid rgba(139, 92, 246, 0.2) !important',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5) !important',
+              background: 'linear-gradient(135deg, #0f1322 0%, #07090e 100%) !important',
+              border: '1px solid rgba(139, 92, 246, 0.15) !important',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6) !important',
             },
           },
         },
@@ -193,7 +204,7 @@ export const theme = createTheme({
             color: '#a78bfa !important',
           },
           '&.MuiInputLabel-shrink': {
-            backgroundColor: '#121420 !important',
+            backgroundColor: '#07090e !important',
             padding: '0 8px !important',
             borderRadius: '4px !important',
             pointerEvents: 'none !important',
@@ -219,24 +230,21 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           color: '#f3f4f6',
-          backgroundColor: 'rgba(17, 24, 39, 0.35) !important',
+          backgroundColor: 'rgba(15, 21, 36, 0.3) !important',
           borderRadius: '10px !important',
           '& fieldset': {
-            borderColor: 'rgba(255, 255, 255, 0.08) !important',
+            borderColor: 'rgba(255, 255, 255, 0.05) !important',
             transition: 'border-color 0.2s ease !important',
           },
           '&:hover fieldset': {
-            borderColor: 'rgba(139, 92, 246, 0.3) !important',
+            borderColor: 'rgba(139, 92, 246, 0.25) !important',
           },
           '&.Mui-focused fieldset': {
             borderColor: '#8b5cf6 !important',
             borderWidth: '1px !important',
           },
           '&.Mui-focused': {
-            boxShadow: '0 0 16px rgba(139, 92, 246, 0.2) !important',
-          },
-          '& .MuiOutlinedInput-input': {
-            color: '#f3f4f6',
+            boxShadow: '0 0 16px rgba(139, 92, 246, 0.15) !important',
           },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
@@ -246,12 +254,18 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           color: '#f3f4f6',
+          borderRadius: '6px',
+          margin: '2px 6px',
+          padding: '8px 12px',
           '&:hover': {
             backgroundColor: 'rgba(139, 92, 246, 0.08)',
           },
           '&.Mui-selected': {
-            backgroundColor: 'rgba(139, 92, 246, 0.16)',
+            backgroundColor: 'rgba(139, 92, 246, 0.15)',
             color: '#ffffff',
+            '&:hover': {
+              backgroundColor: 'rgba(139, 92, 246, 0.2)',
+            },
           },
         },
       },
@@ -268,19 +282,21 @@ export const theme = createTheme({
     MuiTableCell: {
       styleOverrides: {
         root: {
-          borderBottom: '1px solid rgba(255, 255, 255, 0.04) !important',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.03) !important',
+          padding: '16px 20px',
         },
         head: {
           fontWeight: 700,
-          backgroundColor: 'rgba(17, 24, 39, 0.6) !important',
+          backgroundColor: 'rgba(15, 21, 36, 0.8) !important',
           color: '#a78bfa !important',
           borderBottom: '1px solid rgba(139, 92, 246, 0.15) !important',
           textTransform: 'uppercase',
           fontSize: '0.75rem',
-          letterSpacing: '0.05em',
+          letterSpacing: '0.06em',
         },
       },
     },
   },
 });
+
 export default theme;
