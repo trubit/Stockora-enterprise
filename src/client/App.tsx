@@ -25,8 +25,13 @@ import WarehouseTransfers from './pages/admin/WarehouseTransfers.tsx';
 import PurchaseOrders from './pages/admin/PurchaseOrders.tsx';
 import ReceivingLogistics from './pages/admin/ReceivingLogistics.tsx';
 import SalesBackOffice from './pages/admin/SalesBackOffice.tsx';
-import SalesReturns from './pages/admin/SalesReturns.tsx';
+import ReturnsLogistics from './pages/admin/ReturnsLogistics.tsx';
+import MarketingManager from './pages/admin/MarketingManager.tsx';
+import CommunicationCenter from './pages/admin/CommunicationCenter.tsx';
+import SchedulerMonitor from './pages/admin/SchedulerMonitor.tsx';
+import AdminConsole from './pages/admin/AdminConsole.tsx';
 import FinancialReports from './pages/admin/FinancialReports.tsx';
+import OfflineSyncMonitor from './pages/admin/OfflineSyncMonitor.tsx';
 import { ProtectedRoute } from './routes/ProtectedRoute.tsx';
 
 
@@ -106,7 +111,12 @@ function App() {
             <Route path="purchase-orders" element={<PurchaseOrders />} />
             <Route path="receiving" element={<ReceivingLogistics />} />
             <Route path="sales" element={<SalesBackOffice />} />
-            <Route path="returns" element={<SalesReturns />} />
+            <Route path="returns" element={<ReturnsLogistics />} />
+            <Route path="marketing" element={<MarketingManager />} />
+            <Route path="communication" element={<CommunicationCenter />} />
+            <Route path="scheduler" element={<SchedulerMonitor />} />
+            <Route path="offline-sync" element={<OfflineSyncMonitor />} />
+            <Route path="console" element={<AdminConsole />} />
             <Route path="finance" element={<FinancialReports />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

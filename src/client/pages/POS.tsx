@@ -30,33 +30,14 @@ import CheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
 import type { Product, TransactionItem, Transaction } from '../../shared/types.js';
 import { useAuthStore } from '../store/auth.ts';
 import { toast } from 'react-hot-toast';
+import {
+  queueOfflineTransaction,
+  getPendingQueueCount,
+  runSync,
+  on as onSyncEvent,
+} from '../offline/syncEngine.ts';
 
 type CartItem = TransactionItem;
-
-interface OfflineTransactionPayload {
-  items: CartItem[];
-  paymentMethod: 'CASH' | 'CARD' | 'MOBILE' | 'SPLIT';
-  discount: number;
-  tax: number;
-  subtotal: number;
-  total: number;
-  cashierName: string;
-  branchName: string;
-  offlineId?: string;
-}
-
-function getOfflineQueue(): OfflineTransactionPayload[] {
-  try {
-    const stored = localStorage.getItem('offline_transactions');
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-}
-
-function generateOfflineId(): string {
-  return `off-${Date.now()}-${Math.random()}`;
-}
 
 const fetchProducts = async (): Promise<Product[]> => {
   const { data } = await apiClient.get<Product[]>('/products');
@@ -77,34 +58,32 @@ export default function POS() {
   const [discount, setDiscount] = useState<number>(0);
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'MOBILE' | 'SPLIT'>('CASH');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [offlineCount, setOfflineCount] = useState(() => getOfflineQueue().length);
-  const { user } = useAuthStore();
+  const [offlineCount, setOfflineCount] = useState(0);
+  const { user, accessToken } = useAuthStore();
 
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
   const syncOfflineTransactions = useCallback(async () => {
-    const queue = getOfflineQueue();
-    if (queue.length === 0) return;
-    toast.loading(`Syncing ${queue.length} offline transactions...`, { id: 'offline-sync' });
-    let successCount = 0;
-    for (const tx of queue) {
-      try {
-        await apiClient.post('/transactions', tx);
-        successCount++;
-      } catch (err) {
-        console.error('Failed to sync offline transaction', err);
+    if (!accessToken) return;
+    const count = await getPendingQueueCount();
+    if (count === 0) return;
+    toast.loading(`Syncing ${count} offline transactions...`, { id: 'offline-sync' });
+    try {
+      const res = await runSync(accessToken);
+      toast.dismiss('offline-sync');
+      if (res.synced > 0) {
+        toast.success(`Synced ${res.synced} transactions successfully!`);
+        queryClient.invalidateQueries({ queryKey: ['products'] });
       }
+    } catch (err) {
+      toast.dismiss('offline-sync');
+      console.error('Offline sync failed:', err);
     }
-    toast.dismiss('offline-sync');
-    if (successCount > 0) {
-      toast.success(`Synced ${successCount} offline transactions successfully!`);
-      localStorage.removeItem('offline_transactions');
-      setOfflineCount(0);
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-    }
-  }, [queryClient]);
+  }, [accessToken, queryClient]);
 
   useEffect(() => {
+    getPendingQueueCount().then(setOfflineCount);
+
     const handleOnline = () => {
       setIsOnline(true);
       syncOfflineTransactions();
@@ -116,9 +95,16 @@ export default function POS() {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
+    const unsub = onSyncEvent('pending:change', (payload) => {
+      if (payload.pendingCount !== undefined) {
+        setOfflineCount(payload.pendingCount);
+      }
+    });
+
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      unsub();
     };
   }, [syncOfflineTransactions]);
 
@@ -258,16 +244,32 @@ export default function POS() {
     };
 
     if (!navigator.onLine) {
-      const queue = getOfflineQueue();
-      queue.push({
-        ...payload,
-        offlineId: generateOfflineId(),
+      queueOfflineTransaction({
+        id: `off-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        transactionNumber: `TX-OFF-${Date.now().toString().slice(-6)}`,
+        items: cart.map(item => ({
+          productId: item.productId,
+          productName: item.productName,
+          sku: item.sku,
+          quantity: item.quantity,
+          unitPrice: item.price,
+          lineTotal: item.total,
+        })),
+        subtotal,
+        tax,
+        discount,
+        total,
+        paymentMethod,
+        cashierName: user?.username || 'Jane Doe',
+        branchName: 'Main HQ',
+        capturedAt: new Date().toISOString(),
+      }).then(async () => {
+        const count = await getPendingQueueCount();
+        setOfflineCount(count);
+        setCart([]);
+        setDiscount(0);
+        toast.success('Offline checkout stored in IndexedDB successfully! Will sync when online.');
       });
-      localStorage.setItem('offline_transactions', JSON.stringify(queue));
-      setOfflineCount(queue.length);
-      setCart([]);
-      setDiscount(0);
-      toast.success('Offline checkout stored successfully! Will sync when online.');
       return;
     }
 

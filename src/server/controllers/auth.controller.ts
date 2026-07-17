@@ -1,13 +1,15 @@
 import type { Request, Response, NextFunction } from 'express';
-import { AuthService } from '../services/auth.service.js';
+import { AuthService, validatePasswordStrength } from '../services/auth.service.js';
 import { User } from '../models/User.js';
 import { Role } from '../models/Role.js';
+import { SystemConfig } from '../models/SystemConfig.js';
+import { AuditLog } from '../models/AuditLog.js';
 import { ValidationError, ConflictError } from '../errors/AppError.js';
 import { EmailService } from '../services/email.service.js';
 
 export class AuthController {
   public static async register(req: Request, res: Response, next: NextFunction): Promise<void> {
-    const { username, email, password, roleName } = req.body;
+    const { username, email, password, roleName, branchId, allowedBranches } = req.body;
 
     if (!username || !email || !password || !roleName) {
       return next(new ValidationError('Username, email, password, and roleName are required.'));
@@ -24,11 +26,36 @@ export class AuthController {
         return next(new ValidationError(`Specified role [${roleName}] does not exist.`));
       }
 
+      // Password policy validation
+      let sysConfig = await SystemConfig.findOne();
+      if (!sysConfig) {
+        sysConfig = await SystemConfig.create({
+          maintenanceMode: false,
+          featureFlags: new Map([
+            ['loyaltyProgram', true],
+            ['offlinePOS', true],
+            ['returns exchanges', true],
+          ]),
+          allowedIPs: [],
+          deniedIPs: [],
+          maxConcurrentSessions: 3,
+          sessionTimeoutMinutes: 60,
+        });
+      }
+
+      const policy = sysConfig.passwordPolicy;
+      const passError = validatePasswordStrength(password, policy);
+      if (passError) {
+        return next(new ValidationError(passError));
+      }
+
       const user = await User.create({
         username,
         email,
         password,
         roleName,
+        branchId,
+        allowedBranches: allowedBranches || (branchId ? [branchId] : []),
         isActive: true,
       });
 
@@ -50,6 +77,8 @@ export class AuthController {
           preferredLanguage: user.preferredLanguage,
           timeZone: user.timeZone,
           avatarUrl: user.avatarUrl,
+          branchId: user.branchId,
+          allowedBranches: user.allowedBranches,
         },
       });
     } catch (err: unknown) {
@@ -58,17 +87,27 @@ export class AuthController {
   }
 
   public static async login(req: Request, res: Response, next: NextFunction): Promise<void> {
-    const { email, password } = req.body;
+    const { email, password, deviceFingerprint } = req.body;
     if (!email || !password) {
       return next(new ValidationError('Email and password are required.'));
     }
 
+    const ipAddress = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '';
+    const userAgent = req.headers['user-agent'] || '';
+
     try {
-      const { user, accessToken, refreshToken } = await AuthService.authenticate(email, password);
+      const { user, accessToken, refreshToken, sessionId } = await AuthService.authenticate(
+        email,
+        password,
+        ipAddress,
+        userAgent,
+        deviceFingerprint
+      );
       
       res.json({
         accessToken,
         refreshToken,
+        sessionId,
         user: {
           id: user._id,
           username: user.username,
@@ -79,6 +118,8 @@ export class AuthController {
           preferredLanguage: user.preferredLanguage,
           timeZone: user.timeZone,
           avatarUrl: user.avatarUrl,
+          branchId: user.branchId,
+          allowedBranches: user.allowedBranches,
         },
       });
     } catch (err: unknown) {

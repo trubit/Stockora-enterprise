@@ -141,10 +141,12 @@ describe('Sales & POS Cycles Integration', () => {
 
     const salesReturn = await SalesReturn.create({
       returnNumber,
+      transactionNumber: 'TX-TEST-001',
       customerId,
-      items: [{ productId, quantity: 5, price: 12.0, refundAmount: 60.0 }],
+      items: [{ productId, productName: 'Test Product', sku: 'SKU-TEST-001', quantity: 5, price: 12.0, refundAmount: 60.0, reason: 'Wrong size carton', condition: 'SELLABLE', action: 'REFUND' }],
       reason: 'Wrong size carton',
       status: 'COMPLETED',
+      createdBy: userId,
     });
 
     expect(salesReturn.status).toBe('COMPLETED');

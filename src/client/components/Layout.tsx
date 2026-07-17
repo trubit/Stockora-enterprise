@@ -38,6 +38,10 @@ import ReceiptIcon from '@mui/icons-material/Receipt';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
 import PaymentsIcon from '@mui/icons-material/Payments';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import QueryBuilderIcon from '@mui/icons-material/QueryBuilder';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import LoyaltyIcon from '@mui/icons-material/Loyalty';
 import { useAuthStore } from '../store/auth.ts';
 import { apiClient } from '../api/client.ts';
 
@@ -92,7 +96,9 @@ export default function Layout() {
     { text: 'Purchase Orders', icon: <ShoppingCartIcon />, path: '/purchase-orders' },
     { text: 'Receiving AP', icon: <ReceiptIcon />, path: '/receiving' },
     { text: 'Sales Orders', icon: <PointOfSaleIcon />, path: '/sales' },
-    { text: 'Sales Returns', icon: <AssignmentReturnIcon />, path: '/returns' },
+    { text: 'Sales Returns & RMAs', icon: <AssignmentReturnIcon />, path: '/returns' },
+    { text: 'Marketing & Loyalty', icon: <LoyaltyIcon />, path: '/marketing' },
+    { text: 'Communication Center', icon: <NotificationsActiveIcon />, path: '/communication' },
     { text: 'Financial Reports', icon: <PaymentsIcon />, path: '/finance' },
     { text: 'My Profile', icon: <AccountCircleIcon />, path: '/profile' },
   ];
@@ -104,6 +110,8 @@ export default function Layout() {
     { text: 'Master Data', icon: <SettingsIcon />, path: '/master-data' },
     { text: 'Suppliers Directory', icon: <LocalShippingIcon />, path: '/suppliers' },
     { text: 'Customers Directory', icon: <PeopleIcon />, path: '/customers' },
+    { text: 'Scheduler Monitor', icon: <QueryBuilderIcon />, path: '/scheduler' },
+    { text: 'Admin Console', icon: <AdminPanelSettingsIcon />, path: '/console' },
   ];
 
   const drawerContent = (

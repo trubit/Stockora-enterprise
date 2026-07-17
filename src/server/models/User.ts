@@ -15,6 +15,8 @@ export interface IUser extends Document {
   preferredLanguage: string;
   timeZone: string;
   avatarUrl?: string;
+  branchId?: string;
+  allowedBranches?: string[];
   comparePassword: (password: string) => Promise<boolean>;
   createdAt: Date;
   updatedAt: Date;
@@ -35,6 +37,8 @@ const UserSchema = new Schema<IUser>(
     preferredLanguage: { type: String, default: 'en' },
     timeZone: { type: String, default: 'UTC' },
     avatarUrl: { type: String },
+    branchId: { type: String, index: true },
+    allowedBranches: [{ type: String }],
   },
   { timestamps: true }
 );

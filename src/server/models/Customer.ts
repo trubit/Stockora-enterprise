@@ -1,5 +1,12 @@
 import mongoose, { Schema, type Document } from 'mongoose';
 
+export interface ILoyaltyHistoryEntry {
+  date: Date;
+  points: number; // Positive = earned, negative = spent/expired
+  reason: string;
+  referenceId?: string; // Transaction or promo reference
+}
+
 export interface ICustomer extends Document {
   name: string;
   code: string;
@@ -8,6 +15,10 @@ export interface ICustomer extends Document {
   group: string;
   creditLimit: number;
   loyaltyPoints: number;
+  loyaltyTier: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
+  loyaltyHistory: ILoyaltyHistoryEntry[];
+  birthday?: Date;
+  referralCode?: string;
   billingAddress?: string;
   shippingAddress?: string;
   isActive: boolean;
@@ -15,6 +26,13 @@ export interface ICustomer extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
+const LoyaltyHistorySchema = new Schema<ILoyaltyHistoryEntry>({
+  date: { type: Date, required: true, default: Date.now },
+  points: { type: Number, required: true },
+  reason: { type: String, required: true },
+  referenceId: { type: String },
+});
 
 const CustomerSchema = new Schema<ICustomer>(
   {
@@ -25,6 +43,15 @@ const CustomerSchema = new Schema<ICustomer>(
     group: { type: String, required: true, default: 'RETAIL', index: true },
     creditLimit: { type: Number, required: true, default: 0, min: 0 },
     loyaltyPoints: { type: Number, required: true, default: 0, min: 0 },
+    loyaltyTier: {
+      type: String,
+      required: true,
+      enum: ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM'],
+      default: 'BRONZE',
+    },
+    loyaltyHistory: { type: [LoyaltyHistorySchema], default: [] },
+    birthday: { type: Date },
+    referralCode: { type: String, unique: true, sparse: true },
     billingAddress: { type: String, trim: true },
     shippingAddress: { type: String, trim: true },
     isActive: { type: Boolean, default: true, index: true },
@@ -33,4 +60,7 @@ const CustomerSchema = new Schema<ICustomer>(
   { timestamps: true }
 );
 
+CustomerSchema.index({ loyaltyTier: 1 });
+
 export const Customer = mongoose.model<ICustomer>('Customer', CustomerSchema);
+

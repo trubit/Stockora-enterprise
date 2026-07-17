@@ -13,6 +13,7 @@ import { QueueManager } from './queue/bullmq.js';
 import { apiRouter } from './routes/api.js';
 import { notFoundHandler, errorHandler } from './errors/handlers.js';
 import { seedRolesIfEmpty, seedProductsIfEmpty, seedDefaultsIfEmpty } from './database/seeder.js';
+import { initializeBackgroundWorkers } from './queue/jobs.worker.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -111,6 +112,7 @@ async function startServer() {
   await seedRolesIfEmpty();
   await seedProductsIfEmpty();
   await seedDefaultsIfEmpty();
+  initializeBackgroundWorkers();
 
   httpServer.listen(config.port, () => {
     logger.info(
