@@ -16,6 +16,7 @@ import {
   Avatar,
   Badge,
   Tooltip,
+  Chip,
 } from '@mui/material';
 import type { Theme } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -137,13 +138,30 @@ export default function Layout() {
           }}
         />
         <Box>
-          <Typography
-            variant="h6"
-            className="gradient-text"
-            sx={{ fontWeight: 800, letterSpacing: '0.04em', lineHeight: 1.1 }}
-          >
-            STOCKORA
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography
+              variant="h6"
+              className="gradient-text"
+              sx={{ fontWeight: 900, letterSpacing: '0.04em', lineHeight: 1.1 }}
+            >
+              STOCKORA
+            </Typography>
+            <Chip
+              label="PRO MAX"
+              size="small"
+              sx={{
+                height: 16,
+                fontSize: '0.55rem',
+                fontWeight: 900,
+                color: '#fff',
+                background: 'linear-gradient(90deg, #c084fc 0%, #6366f1 100%)',
+                border: 'none',
+                borderRadius: '4px',
+                px: 0.5,
+                '& .MuiChip-label': { px: 0.5 },
+              }}
+            />
+          </Box>
           <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.68rem', letterSpacing: '0.02em' }}>
             ENTERPRISE PLATFORM
           </Typography>
