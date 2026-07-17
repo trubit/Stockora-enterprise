@@ -185,12 +185,46 @@ async function processWarrantyExpiryAlert(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Router
+// Interval-based fallback scheduler (used when Redis < 5 is detected)
 // ---------------------------------------------------------------------------
 
-/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-async function dispatchTask(job: Job<any>): Promise<void> {
-  const task: TaskType = job.data?.task ?? job.name;
+const MS = {
+  MINUTE:  60_000,
+  HOUR:    3_600_000,
+  DAY:    86_400_000,
+};
+
+function scheduleInterval(name: TaskType, intervalMs: number, dispatchFn: (name: TaskType) => Promise<void>): void {
+  const fn = async () => {
+    try {
+      logger.info(`[Scheduler] Running fallback interval job: ${name}`);
+      await dispatchFn(name);
+    } catch (err) {
+      logger.error(`[Scheduler] Fallback job [${name}] failed:`, err);
+    }
+  };
+  setInterval(fn, intervalMs);
+  logger.info(`[Scheduler] Fallback setInterval registered: [${name}] every ${intervalMs / 1000}s`);
+}
+
+function startFallbackScheduler(): void {
+  logger.warn('[Scheduler] BullMQ cron unsupported (Redis < 5). Starting Node.js setInterval fallback for all background jobs.');
+  scheduleInterval('CHECK_LOW_STOCK',        MS.HOUR,              directDispatch);
+  scheduleInterval('DB_CLEANUP',             MS.DAY,               directDispatch);
+  scheduleInterval('EXPIRE_PROMOTIONS',      MS.DAY,               directDispatch);
+  scheduleInterval('EXPIRE_GIFT_CARDS',      MS.DAY,               directDispatch);
+  scheduleInterval('REORDER_SUGGESTIONS',    8 * MS.HOUR,          directDispatch);
+  scheduleInterval('LOYALTY_TIER_RECALC',    7  * MS.DAY,          directDispatch);
+  scheduleInterval('FLUSH_SCHEDULED_NOTIFS', 5  * MS.MINUTE,       directDispatch);
+  scheduleInterval('GENERATE_DAILY_REPORT',  MS.DAY,               directDispatch);
+  scheduleInterval('WARRANTY_EXPIRY_ALERT',  MS.DAY,               directDispatch);
+}
+
+// ---------------------------------------------------------------------------
+// Direct dispatcher (used by fallback, avoids BullMQ Job wrapper dependency)
+// ---------------------------------------------------------------------------
+
+async function directDispatch(task: TaskType): Promise<void> {
   switch (task) {
     case 'CHECK_LOW_STOCK':         return processLowStockCheck();
     case 'DB_CLEANUP':              return processLogRotation();
@@ -203,8 +237,18 @@ async function dispatchTask(job: Job<any>): Promise<void> {
     case 'GENERATE_DAILY_REPORT':   return processGenerateDailyReport();
     case 'WARRANTY_EXPIRY_ALERT':   return processWarrantyExpiryAlert();
     default:
-      logger.warn(`[BullMQ] Unknown task: ${task}`);
+      logger.warn(`[Scheduler] Unknown task: ${task}`);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Router (BullMQ job wrapper → directDispatch)
+// ---------------------------------------------------------------------------
+
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+async function dispatchTask(job: Job<any>): Promise<void> {
+  const task: TaskType = job.data?.task ?? job.name;
+  return directDispatch(task);
 }
 
 // ---------------------------------------------------------------------------
@@ -214,22 +258,33 @@ async function dispatchTask(job: Job<any>): Promise<void> {
 export async function initializeBackgroundWorkers(): Promise<void> {
   const manager = QueueManager.getInstance();
 
-  // Register queue + worker
+  // Register queue + worker — always safe even on Redis 3.x
   manager.registerQueue(QUEUE);
   manager.registerWorker(QUEUE, dispatchTask);
 
-  // Register cron schedules
-  await Promise.all([
-    manager.registerCronJob({ queueName: QUEUE, jobName: 'CHECK_LOW_STOCK',         cron: '0 * * * *'     }),  // hourly
-    manager.registerCronJob({ queueName: QUEUE, jobName: 'DB_CLEANUP',              cron: '0 2 * * *'     }),  // 02:00 daily
-    manager.registerCronJob({ queueName: QUEUE, jobName: 'EXPIRE_PROMOTIONS',       cron: '30 0 * * *'    }),  // 00:30 daily
-    manager.registerCronJob({ queueName: QUEUE, jobName: 'EXPIRE_GIFT_CARDS',       cron: '45 0 * * *'    }),  // 00:45 daily
-    manager.registerCronJob({ queueName: QUEUE, jobName: 'REORDER_SUGGESTIONS',     cron: '0 8 * * 1-5'   }),  // Mon-Fri 08:00
-    manager.registerCronJob({ queueName: QUEUE, jobName: 'LOYALTY_TIER_RECALC',     cron: '0 3 * * 0'     }),  // Sunday 03:00
-    manager.registerCronJob({ queueName: QUEUE, jobName: 'FLUSH_SCHEDULED_NOTIFS',  cron: '*/5 * * * *'   }),  // every 5 min
-    manager.registerCronJob({ queueName: QUEUE, jobName: 'GENERATE_DAILY_REPORT',   cron: '55 23 * * *'   }),  // 23:55 daily
-    manager.registerCronJob({ queueName: QUEUE, jobName: 'WARRANTY_EXPIRY_ALERT',   cron: '0 9 * * *'     }),  // 09:00 daily
-  ]);
-
-  logger.info('[BullMQ] All background workers and cron schedules registered (10 jobs total).');
+  // Attempt BullMQ cron registration; fall back to setInterval if Redis Streams
+  // are unsupported (Redis < 5 returns ERR on XADD inside Lua scripts)
+  try {
+    await Promise.all([
+      manager.registerCronJob({ queueName: QUEUE, jobName: 'CHECK_LOW_STOCK',         cron: '0 * * * *'     }),
+      manager.registerCronJob({ queueName: QUEUE, jobName: 'DB_CLEANUP',              cron: '0 2 * * *'     }),
+      manager.registerCronJob({ queueName: QUEUE, jobName: 'EXPIRE_PROMOTIONS',       cron: '30 0 * * *'    }),
+      manager.registerCronJob({ queueName: QUEUE, jobName: 'EXPIRE_GIFT_CARDS',       cron: '45 0 * * *'    }),
+      manager.registerCronJob({ queueName: QUEUE, jobName: 'REORDER_SUGGESTIONS',     cron: '0 8 * * 1-5'   }),
+      manager.registerCronJob({ queueName: QUEUE, jobName: 'LOYALTY_TIER_RECALC',     cron: '0 3 * * 0'     }),
+      manager.registerCronJob({ queueName: QUEUE, jobName: 'FLUSH_SCHEDULED_NOTIFS',  cron: '*/5 * * * *'   }),
+      manager.registerCronJob({ queueName: QUEUE, jobName: 'GENERATE_DAILY_REPORT',   cron: '55 23 * * *'   }),
+      manager.registerCronJob({ queueName: QUEUE, jobName: 'WARRANTY_EXPIRY_ALERT',   cron: '0 9 * * *'     }),
+    ]);
+    logger.info('[BullMQ] All background workers and cron schedules registered (10 jobs total).');
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('Unknown Redis command') || msg.includes('XADD') || msg.includes('XREAD') || msg.includes('ERR Error running script')) {
+      startFallbackScheduler();
+    } else {
+      // Re-throw unexpected errors
+      throw err;
+    }
+  }
 }
+
