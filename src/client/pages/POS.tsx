@@ -39,6 +39,14 @@ import {
 
 type CartItem = TransactionItem;
 
+function generateOfflineId(): string {
+  return `off-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+}
+
+function generateOfflineTransactionNumber(): string {
+  return `TX-OFF-${Date.now().toString().slice(-6)}`;
+}
+
 const fetchProducts = async (): Promise<Product[]> => {
   const { data } = await apiClient.get<Product[]>('/products');
   return data;
@@ -245,8 +253,8 @@ export default function POS() {
 
     if (!navigator.onLine) {
       queueOfflineTransaction({
-        id: `off-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        transactionNumber: `TX-OFF-${Date.now().toString().slice(-6)}`,
+        id: generateOfflineId(),
+        transactionNumber: generateOfflineTransactionNumber(),
         items: cart.map(item => ({
           productId: item.productId,
           productName: item.productName,

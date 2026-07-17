@@ -81,6 +81,14 @@ interface Warranty {
   claims: WarrantyClaim[];
 }
 
+interface ClientProduct {
+  _id: string;
+  id?: string;
+  name: string;
+  sku: string;
+  price: number;
+}
+
 const textFieldStyle = {};
 
 export default function ReturnsLogistics() {
@@ -105,7 +113,7 @@ export default function ReturnsLogistics() {
   const [retReason, setRetReason] = useState('Size mismatch');
   const [retCondition, setRetCondition] = useState<'SELLABLE' | 'DAMAGED'>('SELLABLE');
   const [retAction, setRetAction] = useState<'REFUND' | 'EXCHANGE'>('REFUND');
-  const [addedItems, setAddedItems] = useState<any[]>([]);
+  const [addedItems, setAddedItems] = useState<ReturnItem[]>([]);
 
   // Form states for warranty
   const [warProductId, setWarProductId] = useState('');
@@ -136,7 +144,7 @@ export default function ReturnsLogistics() {
     },
   });
 
-  const { data: products = [] } = useQuery<any[]>({
+  const { data: products = [] } = useQuery<ClientProduct[]>({
     queryKey: ['products'],
     queryFn: async () => {
       const { data } = await apiClient.get('/products');
@@ -145,7 +153,7 @@ export default function ReturnsLogistics() {
   });
 
   const returnMutation = useMutation({
-    mutationFn: async (payload: any) => {
+    mutationFn: async (payload: Record<string, unknown>) => {
       const { data } = await apiClient.post('/returns', payload);
       return data;
     },
@@ -158,8 +166,9 @@ export default function ReturnsLogistics() {
       setOriginalTx('');
       setRmaNotes('');
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error?.message || 'Failed to submit RMA.');
+    onError: (err: unknown) => {
+      const error = err as { response?: { data?: { error?: { message?: string } } } };
+      toast.error(error.response?.data?.error?.message || 'Failed to submit RMA.');
     },
   });
 
@@ -175,7 +184,7 @@ export default function ReturnsLogistics() {
   });
 
   const warrantyMutation = useMutation({
-    mutationFn: async (payload: any) => {
+    mutationFn: async (payload: Record<string, unknown>) => {
       const { data } = await apiClient.post('/returns/warranties', payload);
       return data;
     },
@@ -190,7 +199,7 @@ export default function ReturnsLogistics() {
   });
 
   const claimMutation = useMutation({
-    mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
+    mutationFn: async ({ id, payload }: { id: string; payload: Record<string, unknown> }) => {
       const { data } = await apiClient.post(`/returns/warranties/${id}/claims`, payload);
       return data;
     },
@@ -557,7 +566,7 @@ export default function ReturnsLogistics() {
                     label="Condition"
                     fullWidth
                     value={retCondition}
-                    onChange={(e) => setRetCondition(e.target.value as any)}
+                    onChange={(e) => setRetCondition(e.target.value as 'SELLABLE' | 'DAMAGED')}
                     sx={textFieldStyle}
                   >
                     <MenuItem value="SELLABLE">Sellable / Returning to Shelves</MenuItem>
@@ -579,7 +588,7 @@ export default function ReturnsLogistics() {
                     label="Resolution Action"
                     fullWidth
                     value={retAction}
-                    onChange={(e) => setRetAction(e.target.value as any)}
+                    onChange={(e) => setRetAction(e.target.value as 'REFUND' | 'EXCHANGE')}
                     sx={textFieldStyle}
                   >
                     <MenuItem value="REFUND">Refund Amount</MenuItem>
@@ -728,7 +737,7 @@ export default function ReturnsLogistics() {
                 label="Resolution Action"
                 fullWidth
                 value={claimAction}
-                onChange={(e) => setClaimAction(e.target.value as any)}
+                onChange={(e) => setClaimAction(e.target.value as 'REPAIR' | 'REPLACEMENT' | 'REFUND' | 'REJECTED')}
                 sx={textFieldStyle}
               >
                 <MenuItem value="REPAIR">Complete Technical Repair</MenuItem>

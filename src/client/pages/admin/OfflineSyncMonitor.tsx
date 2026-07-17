@@ -93,7 +93,7 @@ export default function OfflineSyncMonitor() {
   }, []);
 
   useEffect(() => {
-    refreshLocalState();
+    Promise.resolve().then(() => refreshLocalState());
 
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);

@@ -3,7 +3,6 @@ import { AuthService, validatePasswordStrength } from '../services/auth.service.
 import { User } from '../models/User.js';
 import { Role } from '../models/Role.js';
 import { SystemConfig } from '../models/SystemConfig.js';
-import { AuditLog } from '../models/AuditLog.js';
 import { ValidationError, ConflictError } from '../errors/AppError.js';
 import { EmailService } from '../services/email.service.js';
 

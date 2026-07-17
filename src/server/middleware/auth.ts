@@ -86,7 +86,7 @@ export async function authMiddleware(req: AuthenticatedRequest, _res: Response, 
     }
 
     next();
-  } catch (err) {
+  } catch {
     return next(new AuthenticationError('Session expired or invalid.'));
   }
 }

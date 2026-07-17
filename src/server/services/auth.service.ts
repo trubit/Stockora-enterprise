@@ -5,7 +5,7 @@ import { RefreshToken } from '../models/RefreshToken.js';
 import { Session } from '../models/Session.js';
 import { SystemConfig, type IPasswordPolicy } from '../models/SystemConfig.js';
 import { AuditLog } from '../models/AuditLog.js';
-import { AuthenticationError, ValidationError } from '../errors/AppError.js';
+import { AuthenticationError } from '../errors/AppError.js';
 import { config } from '../../config/environment.js';
 import crypto from 'crypto';
 

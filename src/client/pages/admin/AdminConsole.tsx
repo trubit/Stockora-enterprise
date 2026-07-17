@@ -215,8 +215,9 @@ export default function AdminConsole() {
       toast.success('System security & server settings saved successfully.');
       queryClient.invalidateQueries({ queryKey: ['system-config'] });
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error?.message || 'Failed to update system config.');
+    onError: (err: unknown) => {
+      const error = err as { response?: { data?: { error?: { message?: string } } } };
+      toast.error(error.response?.data?.error?.message || 'Failed to update system config.');
     },
   });
 
@@ -229,8 +230,9 @@ export default function AdminConsole() {
       toast.success('Session has been revoked.');
       refetchSessions();
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error?.message || 'Failed to revoke session.');
+    onError: (err: unknown) => {
+      const error = err as { response?: { data?: { error?: { message?: string } } } };
+      toast.error(error.response?.data?.error?.message || 'Failed to revoke session.');
     },
   });
 
@@ -244,8 +246,9 @@ export default function AdminConsole() {
       setForceLogoutUserIdInput('');
       refetchSessions();
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.error?.message || 'Failed to force logout user.');
+    onError: (err: unknown) => {
+      const error = err as { response?: { data?: { error?: { message?: string } } } };
+      toast.error(error.response?.data?.error?.message || 'Failed to force logout user.');
     },
   });
 
@@ -304,8 +307,9 @@ export default function AdminConsole() {
       link.click();
       link.parentNode?.removeChild(link);
       toast.success('GDPR profile data bundle generated and downloaded successfully.');
-    } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || 'GDPR Export request failed.');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: { message?: string } } } };
+      toast.error(error.response?.data?.error?.message || 'GDPR Export request failed.');
     } finally {
       setIsExportingGdpr(false);
     }
