@@ -5,16 +5,18 @@ import { config } from '../../config/environment.js';
 import { SystemConfig } from '../models/SystemConfig.js';
 import { Session } from '../models/Session.js';
 
+/**
+ * AuthenticatedRequest extends Express Request with our server-side extras.
+ * The `user` property inherits from Express.User (augmented in types/express.d.ts)
+ * which is compatible with @types/passport's Express.User merge — no conflict.
+ */
 export interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    username: string;
-    roleName: string;
-  };
+  user?: Express.User;
   sessionId?: string;
   ipAddress?: string;
   userAgent?: string;
 }
+
 
 export async function authMiddleware(req: AuthenticatedRequest, _res: Response, next: NextFunction): Promise<void> {
   const ipAddress = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '';
