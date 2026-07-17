@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { logger } from '../logger.js';
+import { ResilientExecutor } from '../utils/resiliency/index.js';
 
 export class EmailService {
   private static transporter: nodemailer.Transporter | null = null;
@@ -34,9 +35,26 @@ export class EmailService {
     return this.transporter;
   }
 
-  public static async sendWelcome(email: string, username: string): Promise<void> {
+  private static async send(options: nodemailer.SendMailOptions): Promise<void> {
     const transporter = this.getTransporter();
-    await transporter.sendMail({
+    await ResilientExecutor.execute(
+      {
+        name: 'EmailService',
+        retryCount: 3,
+        timeoutMs: 5000,
+        backoffType: 'EXPONENTIAL',
+        jitterType: 'DECORRELATED',
+        bulkheadMaxConcurrency: 5,
+        isIdempotent: true,
+      },
+      async () => {
+        await transporter.sendMail(options);
+      }
+    );
+  }
+
+  public static async sendWelcome(email: string, username: string): Promise<void> {
+    await this.send({
       from: process.env.EMAIL_FROM || 'noreply@stockora.com',
       to: email,
       subject: 'Welcome to Stockora Enterprise!',
@@ -45,8 +63,7 @@ export class EmailService {
   }
 
   public static async sendVerificationLink(email: string, link: string): Promise<void> {
-    const transporter = this.getTransporter();
-    await transporter.sendMail({
+    await this.send({
       from: process.env.EMAIL_FROM || 'noreply@stockora.com',
       to: email,
       subject: 'Verify your Stockora Account',
@@ -55,8 +72,7 @@ export class EmailService {
   }
 
   public static async sendPasswordReset(email: string, link: string): Promise<void> {
-    const transporter = this.getTransporter();
-    await transporter.sendMail({
+    await this.send({
       from: process.env.EMAIL_FROM || 'noreply@stockora.com',
       to: email,
       subject: 'Reset your Stockora Password',

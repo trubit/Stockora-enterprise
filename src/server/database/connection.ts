@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { logger } from '../logger.js';
 import { config } from '../../config/environment.js';
+import { ResilientExecutor } from '../utils/resiliency/index.js';
 
 export class DBConnectionManager {
   private static instance: DBConnectionManager | null = null;
@@ -30,14 +31,24 @@ export class DBConnectionManager {
         socketTimeoutMS: 45000,
       };
 
-      await mongoose.connect(config.mongodbUri, options);
+      await ResilientExecutor.execute(
+        {
+          name: 'MongoDB',
+          retryCount: 10,
+          baseDelayMs: 500,
+          maxDelayMs: 5000,
+          backoffType: 'EXPONENTIAL',
+          jitterType: 'FULL',
+          isIdempotent: true,
+        },
+        async () => {
+          await mongoose.connect(config.mongodbUri, options);
+        }
+      );
+
       logger.info(`MongoDB Connected successfully: ${mongoose.connection.host}`);
     } catch (err) {
       logger.error('Failed to establish MongoDB database pool:', err);
-      if (!this.isShuttingDown) {
-        logger.info('Retrying connection to database in 5 seconds...');
-        setTimeout(() => this.connect(), 5000);
-      }
     }
   }
 
