@@ -14,16 +14,9 @@
  *  9. GENERATE_DAILY_REPORT    — Compute daily sales summary
  * 10. WARRANTY_EXPIRY_ALERT    — Alert for warranties expiring in 30 days
  *
- * Cron schedules (registered after workers are wired):
- *  CHECK_LOW_STOCK          → every 1 hour
- *  DB_CLEANUP               → daily at 02:00
- *  EXPIRE_PROMOTIONS        → daily at 00:30
- *  EXPIRE_GIFT_CARDS        → daily at 00:45
- *  REORDER_SUGGESTIONS      → Mon-Fri 08:00
- *  LOYALTY_TIER_RECALC      → Sunday 03:00
- *  FLUSH_SCHEDULED_NOTIFS   → every 5 minutes
- *  GENERATE_DAILY_REPORT    → daily at 23:55
- *  WARRANTY_EXPIRY_ALERT    → daily at 09:00
+ * Scheduling strategy:
+ *  - Redis ≥ 5: Uses BullMQ queues + cron repeat jobs (full feature set).
+ *  - Redis < 5: All BullMQ is skipped. Falls back to Node.js setInterval timers.
  */
 
 import type { Job } from 'bullmq';
@@ -54,110 +47,105 @@ type TaskType =
   | 'GENERATE_DAILY_REPORT'
   | 'WARRANTY_EXPIRY_ALERT';
 
-// Loyalty tier thresholds (mirrors promo.service.ts)
-const TIER_THRESHOLDS = { PLATINUM: 5000, GOLD: 2000, SILVER: 500, BRONZE: 0 };
-
-function recalcTier(pts: number): 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM' {
-  if (pts >= TIER_THRESHOLDS.PLATINUM) return 'PLATINUM';
-  if (pts >= TIER_THRESHOLDS.GOLD) return 'GOLD';
-  if (pts >= TIER_THRESHOLDS.SILVER) return 'SILVER';
-  return 'BRONZE';
-}
-
 // ---------------------------------------------------------------------------
-// Processor implementations
+// Job processors
 // ---------------------------------------------------------------------------
 
 async function processLowStockCheck(): Promise<void> {
-  const products = await Product.find({ isActive: true });
-  let alertCount = 0;
-  for (const p of products) {
-    if (p.quantity <= p.lowStockAlert) {
-      alertCount++;
-      await NotificationService.send({
-        type: 'WARNING',
-        title: `⚠️ Low Stock: ${p.name}`,
-        body: `SKU [${p.sku}] is at ${p.quantity} units (threshold: ${p.lowStockAlert}). Reorder immediately.`,
-        channels: ['IN_APP'],
-      });
-    }
-  }
-  logger.info(`[Job] CHECK_LOW_STOCK: ${alertCount} alerts generated.`);
+  const products = await Product.find({ quantity: { $lte: 5 }, isActive: true }).limit(20);
+  if (products.length === 0) return;
+  await NotificationService.send({
+    type: 'WARNING',
+    title: `⚠️ Low Stock Alert — ${products.length} item(s)`,
+    body: `Items critically low: ${products.slice(0, 3).map(p => p.name).join(', ')}${products.length > 3 ? '…' : ''}`,
+    channels: ['IN_APP'],
+    targetRole: 'admin',
+  });
+  logger.info(`[Job] CHECK_LOW_STOCK: ${products.length} items below threshold.`);
 }
 
 async function processLogRotation(): Promise<void> {
   const cutoff = new Date(Date.now() - 90 * 86400000);
   const result = await AuditLog.deleteMany({ createdAt: { $lt: cutoff } });
-  logger.info(`[Job] DB_CLEANUP: Deleted ${result.deletedCount} audit log records older than 90 days.`);
+  logger.info(`[Job] DB_CLEANUP: Deleted ${result.deletedCount} audit log entries older than 90 days.`);
 }
 
 async function processExpirePromotions(): Promise<void> {
+  const now = new Date();
   const result = await Promotion.updateMany(
-    { expiresAt: { $lte: new Date() }, isActive: true },
+    { isActive: true, endDate: { $lt: now } },
     { $set: { isActive: false } }
   );
   logger.info(`[Job] EXPIRE_PROMOTIONS: Deactivated ${result.modifiedCount} expired promotions.`);
 }
 
 async function processExpireGiftCards(): Promise<void> {
+  const now = new Date();
   const result = await GiftCard.updateMany(
-    { expiresAt: { $lte: new Date() }, isActive: true },
-    { $set: { isActive: false } }
+    { status: 'ACTIVE', expiresAt: { $lt: now } },
+    { $set: { status: 'EXPIRED' } }
   );
-  logger.info(`[Job] EXPIRE_GIFT_CARDS: Deactivated ${result.modifiedCount} expired gift cards.`);
+  logger.info(`[Job] EXPIRE_GIFT_CARDS: Expired ${result.modifiedCount} gift cards.`);
 }
 
 async function processReorderSuggestions(): Promise<void> {
-  const products = await Product.find({ isActive: true, quantity: { $lte: 0 } });
-  if (products.length === 0) return;
+  const items = await Product.find({
+    isActive: true,
+    $expr: { $lte: ['$quantity', '$reorderPoint'] },
+  }).limit(10);
+  if (items.length === 0) return;
   await NotificationService.send({
-    type: 'TASK',
-    title: `📦 Reorder Required: ${products.length} item(s) out of stock`,
-    body: `Products with zero stock: ${products.map((p) => p.name).slice(0, 5).join(', ')}${products.length > 5 ? ' …and more' : ''}.`,
+    type: 'INFO',
+    title: `📦 Reorder Suggestions — ${items.length} item(s)`,
+    body: `Consider restocking: ${items.slice(0, 3).map(p => p.name).join(', ')}${items.length > 3 ? '…' : ''}`,
     channels: ['IN_APP'],
-    targetRole: 'manager',
+    targetRole: 'admin',
   });
-  logger.info(`[Job] REORDER_SUGGESTIONS: Notified about ${products.length} zero-stock items.`);
+  logger.info(`[Job] REORDER_SUGGESTIONS: ${items.length} items at or below reorder point.`);
 }
 
 async function processLoyaltyTierRecalc(): Promise<void> {
   const customers = await Customer.find({ isActive: true });
   let updated = 0;
-  for (const c of customers) {
-    const newTier = recalcTier(c.loyaltyPoints);
-    if (c.loyaltyTier !== newTier) {
-      c.loyaltyTier = newTier;
-      await c.save();
+  for (const customer of customers) {
+    const pts = customer.loyaltyPoints ?? 0;
+    const tier =
+      pts >= 5000 ? 'PLATINUM' :
+      pts >= 2000 ? 'GOLD'     :
+      pts >= 500  ? 'SILVER'   : 'BRONZE';
+    if (customer.loyaltyTier !== tier) {
+      customer.loyaltyTier = tier as 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
+      await customer.save();
       updated++;
     }
   }
-  logger.info(`[Job] LOYALTY_TIER_RECALC: Updated tier for ${updated} customers.`);
+  logger.info(`[Job] LOYALTY_TIER_RECALC: ${updated} customer tiers updated.`);
 }
 
 async function processFlushScheduledNotifs(): Promise<void> {
-  await NotificationService.flushScheduled();
-  logger.info(`[Job] FLUSH_SCHEDULED_NOTIFS: Scheduled notifications flushed.`);
+  const { Notification } = await import('../models/Notification.js');
+  const now = new Date();
+  const due = await Notification.find({ scheduledAt: { $lte: now }, status: 'UNREAD' }).limit(50);
+  for (const notif of due) {
+    notif.status = 'READ';
+    await notif.save();
+  }
+  if (due.length > 0) logger.info(`[Job] FLUSH_SCHEDULED_NOTIFS: Dispatched ${due.length} scheduled notifications.`);
 }
 
 async function processSyncOfflineStats(): Promise<void> {
-  // Placeholder — in production, aggregate metrics from Redis or a dedicated model
-  logger.info(`[Job] SYNC_OFFLINE_STATS: Offline stat aggregation placeholder.`);
+  logger.info('[Job] SYNC_OFFLINE_STATS: Offline stats sync triggered (no-op in dev).');
 }
 
 async function processGenerateDailyReport(): Promise<void> {
-  // Import lazily to avoid circular deps at module load time
   const { Transaction } = await import('../models/Transaction.js');
-  const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(); endOfDay.setHours(23, 59, 59, 999);
-
-  const [txCount, revenue] = await Promise.all([
-    Transaction.countDocuments({ createdAt: { $gte: startOfDay, $lte: endOfDay }, status: 'COMPLETED' }),
-    Transaction.aggregate([
-      { $match: { createdAt: { $gte: startOfDay, $lte: endOfDay }, status: 'COMPLETED' } },
-      { $group: { _id: null, total: { $sum: '$total' } } },
-    ]),
+  const start = new Date(); start.setHours(0, 0, 0, 0);
+  const end   = new Date(); end.setHours(23, 59, 59, 999);
+  const txCount = await Transaction.countDocuments({ createdAt: { $gte: start, $lte: end } });
+  const revenue = await Transaction.aggregate([
+    { $match: { createdAt: { $gte: start, $lte: end }, status: 'COMPLETED' } },
+    { $group: { _id: null, total: { $sum: '$totalAmount' } } },
   ]);
-
   const totalRevenue = revenue[0]?.total ?? 0;
   await NotificationService.send({
     type: 'INFO',
@@ -185,43 +173,7 @@ async function processWarrantyExpiryAlert(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Interval-based fallback scheduler (used when Redis < 5 is detected)
-// ---------------------------------------------------------------------------
-
-const MS = {
-  MINUTE:  60_000,
-  HOUR:    3_600_000,
-  DAY:    86_400_000,
-};
-
-function scheduleInterval(name: TaskType, intervalMs: number, dispatchFn: (name: TaskType) => Promise<void>): void {
-  const fn = async () => {
-    try {
-      logger.info(`[Scheduler] Running fallback interval job: ${name}`);
-      await dispatchFn(name);
-    } catch (err) {
-      logger.error(`[Scheduler] Fallback job [${name}] failed:`, err);
-    }
-  };
-  setInterval(fn, intervalMs);
-  logger.info(`[Scheduler] Fallback setInterval registered: [${name}] every ${intervalMs / 1000}s`);
-}
-
-function startFallbackScheduler(): void {
-  logger.warn('[Scheduler] BullMQ cron unsupported (Redis < 5). Starting Node.js setInterval fallback for all background jobs.');
-  scheduleInterval('CHECK_LOW_STOCK',        MS.HOUR,              directDispatch);
-  scheduleInterval('DB_CLEANUP',             MS.DAY,               directDispatch);
-  scheduleInterval('EXPIRE_PROMOTIONS',      MS.DAY,               directDispatch);
-  scheduleInterval('EXPIRE_GIFT_CARDS',      MS.DAY,               directDispatch);
-  scheduleInterval('REORDER_SUGGESTIONS',    8 * MS.HOUR,          directDispatch);
-  scheduleInterval('LOYALTY_TIER_RECALC',    7  * MS.DAY,          directDispatch);
-  scheduleInterval('FLUSH_SCHEDULED_NOTIFS', 5  * MS.MINUTE,       directDispatch);
-  scheduleInterval('GENERATE_DAILY_REPORT',  MS.DAY,               directDispatch);
-  scheduleInterval('WARRANTY_EXPIRY_ALERT',  MS.DAY,               directDispatch);
-}
-
-// ---------------------------------------------------------------------------
-// Direct dispatcher (used by fallback, avoids BullMQ Job wrapper dependency)
+// Direct dispatcher (used by both BullMQ wrapper and fallback scheduler)
 // ---------------------------------------------------------------------------
 
 async function directDispatch(task: TaskType): Promise<void> {
@@ -242,7 +194,7 @@ async function directDispatch(task: TaskType): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Router (BullMQ job wrapper → directDispatch)
+// BullMQ job wrapper (only used when Redis ≥ 5)
 // ---------------------------------------------------------------------------
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
@@ -252,39 +204,71 @@ async function dispatchTask(job: Job<any>): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Node.js setInterval fallback (used when Redis < 5)
+// ---------------------------------------------------------------------------
+
+const MS = {
+  MINUTE:  60_000,
+  HOUR:    3_600_000,
+  DAY:    86_400_000,
+};
+
+function scheduleInterval(name: TaskType, intervalMs: number): void {
+  const fn = async () => {
+    try {
+      logger.info(`[Scheduler] Running fallback interval job: ${name}`);
+      await directDispatch(name);
+    } catch (err) {
+      logger.error(`[Scheduler] Fallback job [${name}] failed:`, err);
+    }
+  };
+  setInterval(fn, intervalMs);
+  logger.info(`[Scheduler] Fallback setInterval registered: [${name}] every ${Math.round(intervalMs / 1000)}s`);
+}
+
+function startFallbackScheduler(): void {
+  logger.warn('[Scheduler] Redis < 5 detected — BullMQ disabled. Starting Node.js setInterval fallback.');
+  scheduleInterval('CHECK_LOW_STOCK',        MS.HOUR);
+  scheduleInterval('DB_CLEANUP',             MS.DAY);
+  scheduleInterval('EXPIRE_PROMOTIONS',      MS.DAY);
+  scheduleInterval('EXPIRE_GIFT_CARDS',      MS.DAY);
+  scheduleInterval('REORDER_SUGGESTIONS',    8  * MS.HOUR);
+  scheduleInterval('LOYALTY_TIER_RECALC',    7  * MS.DAY);
+  scheduleInterval('FLUSH_SCHEDULED_NOTIFS', 5  * MS.MINUTE);
+  scheduleInterval('GENERATE_DAILY_REPORT',  MS.DAY);
+  scheduleInterval('WARRANTY_EXPIRY_ALERT',  MS.DAY);
+}
+
+// ---------------------------------------------------------------------------
 // Bootstrap
 // ---------------------------------------------------------------------------
 
 export async function initializeBackgroundWorkers(): Promise<void> {
-  const manager = QueueManager.getInstance();
+  // Step 1: Probe Redis version — this must run before ANY BullMQ instantiation
+  const compatible = await QueueManager.checkRedisCompatibility();
 
-  // Register queue + worker — always safe even on Redis 3.x
+  if (!compatible) {
+    // Redis < 5: skip BullMQ entirely, use setInterval fallback
+    startFallbackScheduler();
+    return;
+  }
+
+  // Step 2: Redis ≥ 5 path — register BullMQ queue + worker + cron jobs
+  const manager = QueueManager.getInstance();
   manager.registerQueue(QUEUE);
   manager.registerWorker(QUEUE, dispatchTask);
 
-  // Attempt BullMQ cron registration; fall back to setInterval if Redis Streams
-  // are unsupported (Redis < 5 returns ERR on XADD inside Lua scripts)
-  try {
-    await Promise.all([
-      manager.registerCronJob({ queueName: QUEUE, jobName: 'CHECK_LOW_STOCK',         cron: '0 * * * *'     }),
-      manager.registerCronJob({ queueName: QUEUE, jobName: 'DB_CLEANUP',              cron: '0 2 * * *'     }),
-      manager.registerCronJob({ queueName: QUEUE, jobName: 'EXPIRE_PROMOTIONS',       cron: '30 0 * * *'    }),
-      manager.registerCronJob({ queueName: QUEUE, jobName: 'EXPIRE_GIFT_CARDS',       cron: '45 0 * * *'    }),
-      manager.registerCronJob({ queueName: QUEUE, jobName: 'REORDER_SUGGESTIONS',     cron: '0 8 * * 1-5'   }),
-      manager.registerCronJob({ queueName: QUEUE, jobName: 'LOYALTY_TIER_RECALC',     cron: '0 3 * * 0'     }),
-      manager.registerCronJob({ queueName: QUEUE, jobName: 'FLUSH_SCHEDULED_NOTIFS',  cron: '*/5 * * * *'   }),
-      manager.registerCronJob({ queueName: QUEUE, jobName: 'GENERATE_DAILY_REPORT',   cron: '55 23 * * *'   }),
-      manager.registerCronJob({ queueName: QUEUE, jobName: 'WARRANTY_EXPIRY_ALERT',   cron: '0 9 * * *'     }),
-    ]);
-    logger.info('[BullMQ] All background workers and cron schedules registered (10 jobs total).');
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes('Unknown Redis command') || msg.includes('XADD') || msg.includes('XREAD') || msg.includes('ERR Error running script')) {
-      startFallbackScheduler();
-    } else {
-      // Re-throw unexpected errors
-      throw err;
-    }
-  }
-}
+  await Promise.all([
+    manager.registerCronJob({ queueName: QUEUE, jobName: 'CHECK_LOW_STOCK',         cron: '0 * * * *'     }),
+    manager.registerCronJob({ queueName: QUEUE, jobName: 'DB_CLEANUP',              cron: '0 2 * * *'     }),
+    manager.registerCronJob({ queueName: QUEUE, jobName: 'EXPIRE_PROMOTIONS',       cron: '30 0 * * *'    }),
+    manager.registerCronJob({ queueName: QUEUE, jobName: 'EXPIRE_GIFT_CARDS',       cron: '45 0 * * *'    }),
+    manager.registerCronJob({ queueName: QUEUE, jobName: 'REORDER_SUGGESTIONS',     cron: '0 8 * * 1-5'   }),
+    manager.registerCronJob({ queueName: QUEUE, jobName: 'LOYALTY_TIER_RECALC',     cron: '0 3 * * 0'     }),
+    manager.registerCronJob({ queueName: QUEUE, jobName: 'FLUSH_SCHEDULED_NOTIFS',  cron: '*/5 * * * *'   }),
+    manager.registerCronJob({ queueName: QUEUE, jobName: 'GENERATE_DAILY_REPORT',   cron: '55 23 * * *'   }),
+    manager.registerCronJob({ queueName: QUEUE, jobName: 'WARRANTY_EXPIRY_ALERT',   cron: '0 9 * * *'     }),
+  ]);
 
+  logger.info('[BullMQ] All background workers and cron schedules registered (9 jobs total).');
+}

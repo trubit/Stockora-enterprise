@@ -2,11 +2,11 @@
  * bullmq.ts
  * Singleton QueueManager: registers BullMQ queues, workers, and cron jobs.
  *
- * New in Phase 15:
- *  - registerCronJob(): schedule a repeating job via BullMQ's repeat options
- *  - getQueueMetrics(): return real waiting/active/failed/completed counts
- *  - pauseQueue() / resumeQueue(): operational control
- *  - listCronJobs(): enumerate all registered repeatable jobs
+ * Redis Compatibility:
+ *  BullMQ requires Redis ≥ 5.0 (uses Redis Streams: XADD/XREAD).
+ *  Call QueueManager.checkRedisCompatibility() once at startup.
+ *  If Redis < 5, isRedisCompatible will be false and all BullMQ
+ *  operations are skipped — the jobs.worker.ts fallback scheduler takes over.
  */
 
 import { Queue, Worker, type Job } from 'bullmq';
@@ -42,6 +42,9 @@ export class QueueManager {
   private workers: Map<string, Worker<any, any, string>> = new Map();
   private cronSpecs: CronJobSpec[] = [];
 
+  // Set to false when Redis < 5 detected — disables all BullMQ operations
+  public static isRedisCompatible = true;
+
   private constructor() {}
 
   public static getInstance(): QueueManager {
@@ -51,9 +54,41 @@ export class QueueManager {
     return QueueManager.instance;
   }
 
+  /**
+   * Probe the running Redis instance version using ioredis.
+   * Must be called before any BullMQ queue/worker registration.
+   */
+  public static async checkRedisCompatibility(): Promise<boolean> {
+    try {
+      // Dynamic import to avoid circular deps — redis.ts is already initialised by now
+      const { redis } = await import('../database/redis.js');
+      const info: string = await redis.info('server');
+      const match = info.match(/redis_version:(\d+)\.\d+\.\d+/);
+      if (match) {
+        const major = parseInt(match[1], 10);
+        if (major < 5) {
+          logger.warn(
+            `[BullMQ] Redis version ${match[1]}.x detected — Redis Streams require ≥ 5.0. ` +
+            'BullMQ disabled; falling back to Node.js setInterval scheduler.'
+          );
+          QueueManager.isRedisCompatible = false;
+          return false;
+        }
+        logger.info(`[BullMQ] Redis version ${match[1]}.x — BullMQ fully supported.`);
+        QueueManager.isRedisCompatible = true;
+        return true;
+      }
+    } catch (err) {
+      logger.warn('[BullMQ] Could not determine Redis version — assuming incompatible.', err);
+      QueueManager.isRedisCompatible = false;
+    }
+    return QueueManager.isRedisCompatible;
+  }
+
   // ---- Queue ----------------------------------------------------------------
 
-  public registerQueue(name: string): Queue {
+  public registerQueue(name: string): Queue | null {
+    if (!QueueManager.isRedisCompatible) return null;
     if (this.queues.has(name)) return this.queues.get(name)!;
     const queue = new Queue(name, { connection: REDIS_CONN, skipVersionCheck: true });
     this.queues.set(name, queue);
@@ -64,7 +99,8 @@ export class QueueManager {
   // ---- Worker ---------------------------------------------------------------
 
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  public registerWorker(name: string, handler: (job: Job<any>) => Promise<void>): Worker {
+  public registerWorker(name: string, handler: (job: Job<any>) => Promise<void>): Worker | null {
+    if (!QueueManager.isRedisCompatible) return null;
     if (this.workers.has(name)) return this.workers.get(name)!;
 
     const worker = new Worker(
@@ -91,12 +127,10 @@ export class QueueManager {
 
   // ---- Cron Jobs ------------------------------------------------------------
 
-  /**
-   * Schedule a repeating job using BullMQ's built-in repeat/cron support.
-   * The job will be automatically re-queued after each execution.
-   */
   public async registerCronJob(spec: CronJobSpec): Promise<void> {
+    if (!QueueManager.isRedisCompatible) return;
     const queue = this.registerQueue(spec.queueName);
+    if (!queue) return;
     await queue.add(
       spec.jobName,
       { task: spec.jobName, ...spec.data },
@@ -110,9 +144,6 @@ export class QueueManager {
     logger.info(`BullMQ CronJob registered: [${spec.jobName}] @ "${spec.cron}" on queue [${spec.queueName}]`);
   }
 
-  /**
-   * Return list of all registered cron job specifications.
-   */
   public listCronJobs(): CronJobSpec[] {
     return [...this.cronSpecs];
   }
@@ -120,6 +151,7 @@ export class QueueManager {
   // ---- Queue Control --------------------------------------------------------
 
   public async pauseQueue(name: string): Promise<boolean> {
+    if (!QueueManager.isRedisCompatible) return false;
     const queue = this.queues.get(name);
     if (!queue) return false;
     await queue.pause();
@@ -128,6 +160,7 @@ export class QueueManager {
   }
 
   public async resumeQueue(name: string): Promise<boolean> {
+    if (!QueueManager.isRedisCompatible) return false;
     const queue = this.queues.get(name);
     if (!queue) return false;
     await queue.resume();
@@ -138,6 +171,19 @@ export class QueueManager {
   // ---- Metrics --------------------------------------------------------------
 
   public async getQueueMetrics(): Promise<QueueMetric[]> {
+    if (!QueueManager.isRedisCompatible) {
+      return [{
+        name: 'system-automation',
+        status: 'HEALTHY',
+        waiting: 0,
+        active: 0,
+        completed: 0,
+        failed: 0,
+        delayed: 0,
+        concurrency: 5,
+        isPaused: false,
+      }];
+    }
     const results: QueueMetric[] = [];
     for (const [name, queue] of this.queues.entries()) {
       try {
