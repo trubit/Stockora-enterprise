@@ -35,7 +35,7 @@ const QUEUE = 'system-automation';
 // Job type registry
 // ---------------------------------------------------------------------------
 
-type TaskType =
+export type TaskType =
   | 'CHECK_LOW_STOCK'
   | 'DB_CLEANUP'
   | 'EXPIRE_PROMOTIONS'
@@ -176,7 +176,7 @@ async function processWarrantyExpiryAlert(): Promise<void> {
 // Direct dispatcher (used by both BullMQ wrapper and fallback scheduler)
 // ---------------------------------------------------------------------------
 
-async function directDispatch(task: TaskType): Promise<void> {
+export async function directDispatch(task: TaskType): Promise<void> {
   switch (task) {
     case 'CHECK_LOW_STOCK':         return processLowStockCheck();
     case 'DB_CLEANUP':              return processLogRotation();

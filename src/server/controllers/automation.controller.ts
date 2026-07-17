@@ -34,10 +34,12 @@ export class AutomationController {
       const queue = manager.registerQueue('system-automation');
 
       if (!queue) {
-        // Redis < 5: BullMQ unavailable — tasks run via setInterval fallback
-        res.status(503).json({
-          success: false,
-          message: 'Manual task trigger unavailable: Redis Streams not supported on this Redis version. Background jobs run automatically via the fallback scheduler.',
+        // Redis < 5: BullMQ unavailable — run task directly
+        const { directDispatch } = await import('../queue/jobs.worker.js');
+        await directDispatch(task as any);
+        res.status(201).json({
+          success: true,
+          message: `Task [${task}] executed directly (Redis Streams not supported on local Redis).`,
         });
         return;
       }

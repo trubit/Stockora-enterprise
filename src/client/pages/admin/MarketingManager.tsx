@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../api/client.ts';
 import {
@@ -436,13 +436,13 @@ export default function MarketingManager() {
                 </TableRow>
               ) : (
                 giftCards.map((gc) => (
-                  <>
-                    <TableRow key={gc._id}>
+                  <React.Fragment key={gc._id}>
+                    <TableRow>
                       <TableCell sx={{ fontWeight: 700 }}>{gc.code}</TableCell>
                       <TableCell sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>{gc.purchasedByName || '—'}</TableCell>
                       <TableCell>${gc.initialBalance.toFixed(2)}</TableCell>
                       <TableCell sx={{ color: gc.balance === 0 ? 'error.light' : 'success.light', fontWeight: 600 }}>
-                        ${gc.balance.toFixed(2)}
+                         ${gc.balance.toFixed(2)}
                         <LinearProgress
                           variant="determinate"
                           value={gc.initialBalance > 0 ? (gc.balance / gc.initialBalance) * 100 : 0}
@@ -513,7 +513,7 @@ export default function MarketingManager() {
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </React.Fragment>
                 ))
               )}
             </TableBody>
@@ -538,8 +538,8 @@ export default function MarketingManager() {
             </TableHead>
             <TableBody>
               {customers.map((c) => (
-                <>
-                  <TableRow key={c._id}>
+                <React.Fragment key={c._id}>
+                  <TableRow>
                     <TableCell>
                       <Typography fontWeight={700} variant="body2">{c.name}</Typography>
                       <Typography variant="caption" color="text.secondary">{c.email}</Typography>
@@ -615,7 +615,7 @@ export default function MarketingManager() {
                       </TableCell>
                     </TableRow>
                   )}
-                </>
+                </React.Fragment>
               ))}
             </TableBody>
           </Table>

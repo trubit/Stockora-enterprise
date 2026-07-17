@@ -398,7 +398,7 @@ export default function POS() {
               </Grid>
             ) : (
               filteredProducts.map((p: Product) => (
-                <Grid item xs={12} sm={6} md={4} key={p.id}>
+                <Grid item xs={12} sm={6} md={4} key={p.id || p._id}>
                   <Card
                     onClick={() => addToCart(p)}
                     sx={{
