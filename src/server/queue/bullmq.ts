@@ -55,7 +55,7 @@ export class QueueManager {
 
   public registerQueue(name: string): Queue {
     if (this.queues.has(name)) return this.queues.get(name)!;
-    const queue = new Queue(name, { connection: REDIS_CONN });
+    const queue = new Queue(name, { connection: REDIS_CONN, skipVersionCheck: true });
     this.queues.set(name, queue);
     logger.info(`BullMQ Queue registered: [${name}]`);
     return queue;
@@ -73,7 +73,7 @@ export class QueueManager {
         logger.info(`Processing BullMQ job [${job.id}] in queue [${name}]: task=${job.data?.task ?? job.name}`);
         await handler(job);
       },
-      { connection: REDIS_CONN, concurrency: 5 }
+      { connection: REDIS_CONN, concurrency: 5, skipVersionCheck: true }
     );
 
     worker.on('failed', (job, err) => {
