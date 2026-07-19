@@ -6,6 +6,9 @@ export interface IWarehouse extends Document {
   code: string;
   zones: string[];
   capacity?: number;
+  rowsCount?: number;
+  shelvesCount?: number;
+  binsCount?: number;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -18,6 +21,9 @@ const WarehouseSchema = new Schema<IWarehouse>(
     code: { type: String, required: true, unique: true, uppercase: true, trim: true },
     zones: [{ type: String }],
     capacity: { type: Number },
+    rowsCount: { type: Number, default: 5 },
+    shelvesCount: { type: Number, default: 4 },
+    binsCount: { type: Number, default: 6 },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

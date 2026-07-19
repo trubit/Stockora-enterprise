@@ -180,34 +180,45 @@ export default function SignIn() {
               </Button>
             </form>
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', pt: 2.5 }}>
-              <Link 
-                onClick={() => navigate('/forgot-password')} 
-                sx={{ 
-                  cursor: 'pointer', 
-                  fontSize: '0.85rem', 
-                  color: 'text.secondary', 
-                  textDecoration: 'none',
-                  transition: 'color 0.2s',
-                  '&:hover': { color: 'primary.light' } 
-                }}
-              >
-                Forgot Password?
-              </Link>
-              <Link 
-                onClick={() => navigate('/signup')} 
-                sx={{ 
-                  cursor: 'pointer', 
-                  fontSize: '0.85rem', 
-                  color: 'primary.light', 
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                  transition: 'color 0.2s',
-                  '&:hover': { color: 'primary.main' } 
-                }}
-              >
-                Create Account
-              </Link>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, borderTop: '1px solid rgba(255,255,255,0.05)', pt: 2.5 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Link 
+                  onClick={() => navigate('/forgot-password')} 
+                  sx={{ 
+                    cursor: 'pointer', 
+                    fontSize: '0.85rem', 
+                    color: 'text.secondary', 
+                    textDecoration: 'none',
+                    transition: 'color 0.2s',
+                    '&:hover': { color: 'primary.light' } 
+                  }}
+                >
+                  Forgot Password?
+                </Link>
+                <Link 
+                  onClick={() => navigate('/signup')} 
+                  sx={{ 
+                    cursor: 'pointer', 
+                    fontSize: '0.85rem', 
+                    color: 'primary.light', 
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    transition: 'color 0.2s',
+                    '&:hover': { color: 'primary.main' } 
+                  }}
+                >
+                  Create Account
+                </Link>
+              </Box>
+
+              <Typography variant="caption" sx={{ textAlign: 'center', mt: 1 }}>
+                <Link
+                  onClick={() => navigate('/landing')}
+                  sx={{ cursor: 'pointer', color: '#9ca3af', textDecoration: 'none', '&:hover': { color: '#34d399' } }}
+                >
+                  ← Back to Enterprise Landing Page
+                </Link>
+              </Typography>
             </Box>
           </CardContent>
         </Card>

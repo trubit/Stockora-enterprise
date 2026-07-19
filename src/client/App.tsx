@@ -32,6 +32,12 @@ import SchedulerMonitor from './pages/admin/SchedulerMonitor.tsx';
 import AdminConsole from './pages/admin/AdminConsole.tsx';
 import FinancialReports from './pages/admin/FinancialReports.tsx';
 import OfflineSyncMonitor from './pages/admin/OfflineSyncMonitor.tsx';
+import AIAssistant from './pages/admin/AIAssistant.tsx';
+import CurrencySettings from './pages/admin/CurrencySettings.tsx';
+import HardwareControl from './pages/admin/HardwareControl.tsx';
+import IntegrationManager from './pages/admin/IntegrationManager.tsx';
+import WarehouseVisualizer from './pages/admin/WarehouseVisualizer.tsx';
+import LandingPage from './pages/LandingPage.tsx';
 import { ProtectedRoute } from './routes/ProtectedRoute.tsx';
 
 
@@ -86,6 +92,7 @@ function App() {
         }}
       />
       <Routes>
+        <Route path="/landing" element={<LandingPage />} />
         <Route path="/login" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -117,6 +124,11 @@ function App() {
             <Route path="scheduler" element={<SchedulerMonitor />} />
             <Route path="offline-sync" element={<OfflineSyncMonitor />} />
             <Route path="console" element={<AdminConsole />} />
+            <Route path="ai-assistant" element={<AIAssistant />} />
+            <Route path="currency" element={<CurrencySettings />} />
+            <Route path="hardware" element={<HardwareControl />} />
+            <Route path="integrations" element={<IntegrationManager />} />
+            <Route path="warehouse-visualizer" element={<WarehouseVisualizer />} />
             <Route path="finance" element={<FinancialReports />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

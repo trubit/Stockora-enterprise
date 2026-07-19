@@ -4,18 +4,19 @@ import { apiClient } from '../api/client.ts';
 import {
   Grid,
   Card,
-  CardContent,
   Typography,
   Box,
   List,
   ListItem,
   ListItemText,
   Divider,
+  Button,
 } from '@mui/material';
 import RevenueIcon from '@mui/icons-material/TrendingUp';
 import TxIcon from '@mui/icons-material/ShoppingCart';
 import StockIcon from '@mui/icons-material/Inventory2';
 import WarningIcon from '@mui/icons-material/WarningAmber';
+import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import {
   AreaChart,
   Area,
@@ -27,8 +28,12 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 import { socket } from '../socket.ts';
 import type { Product, Transaction } from '../../shared/types.js';
+import PageHeader from '../components/PageHeader.tsx';
+import StatCard from '../components/StatCard.tsx';
+import StatusChip from '../components/StatusChip.tsx';
 
 // Query functions
 const fetchProducts = async (): Promise<Product[]> => {
@@ -43,6 +48,7 @@ const fetchTransactions = async (): Promise<Transaction[]> => {
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
@@ -86,11 +92,11 @@ export default function Dashboard() {
 
   // Compute stats
   const totalRevenue = transactions.reduce((sum, t) => sum + t.total, 0);
-  const totalCost = products.reduce((sum, p) => sum + p.cost * p.quantity, 0);
-  const totalValue = products.reduce((sum, p) => sum + p.price * p.quantity, 0);
+  const totalCost = products.reduce((sum, p) => sum + (p.costPrice ?? p.cost ?? 0) * p.quantity, 0);
+  const totalValue = products.reduce((sum, p) => sum + (p.sellingPrice ?? p.price ?? 0) * p.quantity, 0);
   const lowStockItems = products.filter((p) => p.quantity <= p.lowStockAlert);
 
-  // Group transactions for Recharts (last 7 days or mock sequence)
+  // Group transactions for Recharts
   const chartData =
     transactions.length > 0
       ? transactions
@@ -124,97 +130,90 @@ export default function Dashboard() {
     Stock: categoryStats[cat],
   }));
 
-  const metrics = [
-    {
-      title: 'TOTAL REVENUE',
-      value: `$${totalRevenue.toFixed(2)}`,
-      icon: <RevenueIcon sx={{ fontSize: 26, color: '#34d399' }} />,
-      desc: 'Live checkout analytics',
-      gradientClass: 'emerald-gradient-text',
-      glowClass: 'glow-card glow-card-emerald',
-    },
-    {
-      title: 'SALES COUNT',
-      value: transactions.length,
-      icon: <TxIcon sx={{ fontSize: 26, color: '#a78bfa' }} />,
-      desc: 'Completed purchases',
-      gradientClass: 'gradient-text',
-      glowClass: 'glow-card',
-    },
-    {
-      title: 'INVENTORY VALUE',
-      value: `$${totalValue.toFixed(2)}`,
-      icon: <StockIcon sx={{ fontSize: 26, color: '#38bdf8' }} />,
-      desc: `Cost Base: $${totalCost.toFixed(2)}`,
-      gradientClass: 'sky-gradient-text',
-      glowClass: 'glow-card glow-card-sky',
-    },
-    {
-      title: 'LOW STOCK WARNINGS',
-      value: lowStockItems.length,
-      icon: <WarningIcon sx={{ fontSize: 26, color: '#ef4444' }} />,
-      desc: 'Requires restock',
-      gradientClass: '',
-      glowClass: lowStockItems.length > 0 ? 'glow-card glow-card-error' : 'glow-card',
-    },
-  ];
-
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '-0.02em', mb: 0.5 }}>
-            Enterprise Dashboard
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Operational metrics, warehouse tracking, and live synchronization statistics.
-          </Typography>
-        </Box>
-      </Box>
+      <PageHeader
+        title="Enterprise Dashboard"
+        subtitle="Operational metrics, real-time inventory tracking, and live point-of-sale checkout stream."
+        category="Stockora HQ"
+        badgeText="LIVE STREAM"
+        badgeColor="secondary"
+        action={
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<PointOfSaleIcon />}
+            onClick={() => navigate('/pos')}
+            sx={{
+              fontWeight: 700,
+              borderRadius: '10px',
+              px: 3,
+              py: 1,
+              background: 'linear-gradient(135deg, #8b5cf6 0%, #10b981 100%)',
+              boxShadow: '0 4px 18px rgba(139, 92, 246, 0.4)',
+            }}
+          >
+            Launch POS Checkout
+          </Button>
+        }
+      />
 
       {/* Metrics Cards Grid */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {metrics.map((m) => (
-          <Grid item xs={12} sm={6} md={3} key={m.title}>
-            <Card className={`glass-panel ${m.glowClass}`} sx={{ borderRadius: '16px' }}>
-              <CardContent
-                sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: '24px !important' }}
-              >
-                <Box>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ fontWeight: 800, letterSpacing: '0.08em', display: 'block', mb: 1 }}
-                  >
-                    {m.title}
-                  </Typography>
-                  <Typography
-                    variant="h4"
-                    className={m.gradientClass}
-                    sx={{ fontWeight: 800, mb: 0.5, letterSpacing: '-0.02em', color: m.gradientClass ? undefined : m.title.includes('WARNINGS') && Number(m.value) > 0 ? '#ef4444' : '#f3f4f6' }}
-                  >
-                    {m.value}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 550 }}>
-                    {m.desc}
-                  </Typography>
-                </Box>
-                <Box sx={{ p: 1.5, borderRadius: '12px', bgcolor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
-                  {m.icon}
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="TOTAL SHIFT REVENUE"
+            value={`$${totalRevenue.toFixed(2)}`}
+            subtitle="Live checkout analytics"
+            icon={<RevenueIcon sx={{ fontSize: 22 }} />}
+            trend="+14.2%"
+            trendUp={true}
+            color="emerald"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="SALES COUNT"
+            value={transactions.length}
+            subtitle="Completed purchases"
+            icon={<TxIcon sx={{ fontSize: 22 }} />}
+            trend="+8.5%"
+            trendUp={true}
+            color="violet"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="INVENTORY VALUE"
+            value={`$${totalValue.toFixed(2)}`}
+            subtitle={`Cost Base: $${totalCost.toFixed(2)}`}
+            icon={<StockIcon sx={{ fontSize: 22 }} />}
+            color="sky"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="LOW STOCK ALERTS"
+            value={lowStockItems.length}
+            subtitle="Requires immediate restock"
+            icon={<WarningIcon sx={{ fontSize: 22 }} />}
+            trend={lowStockItems.length > 0 ? 'ATTENTION NEEDED' : 'NORMAL'}
+            trendUp={lowStockItems.length === 0}
+            color={lowStockItems.length > 0 ? 'rose' : 'emerald'}
+          />
+        </Grid>
       </Grid>
 
       {/* Charts Grid */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={8}>
           <Card className="glass-panel" sx={{ p: 3, borderRadius: '16px' }}>
-            <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, letterSpacing: '-0.01em' }}>
-              Sales Activity Trend
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.01em' }}>
+                Sales Activity & Revenue Stream
+              </Typography>
+              <StatusChip status="ACTIVE" label="Live Socket Feed" />
+            </Box>
             <Box sx={{ width: '100%', height: 320 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -253,7 +252,7 @@ export default function Dashboard() {
         <Grid item xs={12} md={4}>
           <Card className="glass-panel" sx={{ p: 3, borderRadius: '16px' }}>
             <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, letterSpacing: '-0.01em' }}>
-              Inventory by Category
+              Stock Volume by Category
             </Typography>
             <Box sx={{ width: '100%', height: 320 }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -281,31 +280,34 @@ export default function Dashboard() {
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <Card className="glass-panel" sx={{ p: 3, borderRadius: '16px' }}>
-            <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, letterSpacing: '-0.01em', color: '#ef4444' }}>
-              Critical Stock Replenishment Warnings
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.01em', color: '#ef4444' }}>
+                Low Stock Warning Queue
+              </Typography>
+              <StatusChip status={lowStockItems.length > 0 ? 'LOW_STOCK' : 'IN_STOCK'} />
+            </Box>
             {lowStockItems.length === 0 ? (
-              <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
-                ✓ No items are currently below stock warnings limits.
+              <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
+                ✓ All items currently satisfy safe stock inventory thresholds.
               </Typography>
             ) : (
               <List disablePadding>
                 {lowStockItems.map((p, idx) => (
-                  <Fragment key={p.id}>
+                  <Fragment key={p._id || p.id || idx}>
                     {idx > 0 && <Divider sx={{ borderColor: 'rgba(255,255,255,0.03)' }} />}
                     <ListItem sx={{ px: 0, py: 1.5 }}>
                       <ListItemText
                         primary={p.name}
                         primaryTypographyProps={{ fontWeight: 700, color: '#f87171', fontSize: '0.875rem' }}
-                        secondary={`SKU: ${p.sku} | Category: ${p.category}`}
+                        secondary={`SKU: ${p.sku} • Category: ${p.category}`}
                         secondaryTypographyProps={{ fontSize: '0.75rem', color: 'text.secondary' }}
                       />
                       <Box sx={{ textAlign: 'right' }}>
                         <Typography variant="body2" sx={{ fontWeight: 800, color: '#ef4444' }}>
-                          {p.quantity} units
+                          {p.quantity} units left
                         </Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                          Alert Level: {p.lowStockAlert}
+                          Threshold: {p.lowStockAlert}
                         </Typography>
                       </Box>
                     </ListItem>
@@ -318,17 +320,20 @@ export default function Dashboard() {
 
         <Grid item xs={12} md={6}>
           <Card className="glass-panel" sx={{ p: 3, borderRadius: '16px' }}>
-            <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, letterSpacing: '-0.01em' }}>
-              Recent POS Transactions
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.01em' }}>
+                Recent POS Transactions
+              </Typography>
+              <StatusChip status="COMPLETED" label="Synced" />
+            </Box>
             {transactions.length === 0 ? (
-              <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
-                No checkout transactions recorded during this shift yet.
+              <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
+                No POS transactions recorded during this shift yet.
               </Typography>
             ) : (
               <List disablePadding>
                 {transactions.slice(0, 5).map((t, idx) => (
-                  <Fragment key={t.id}>
+                  <Fragment key={t._id || t.id || idx}>
                     {idx > 0 && <Divider sx={{ borderColor: 'rgba(255,255,255,0.03)' }} />}
                     <ListItem sx={{ px: 0, py: 1.5 }}>
                       <ListItemText
@@ -338,10 +343,7 @@ export default function Dashboard() {
                         secondaryTypographyProps={{ fontSize: '0.75rem', color: 'text.secondary' }}
                       />
                       <Box sx={{ textAlign: 'right' }}>
-                        <Typography
-                          variant="body2"
-                          sx={{ fontWeight: 800, color: '#34d399' }}
-                        >
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: '#34d399' }}>
                           +${t.total.toFixed(2)}
                         </Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>

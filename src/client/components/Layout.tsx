@@ -43,17 +43,35 @@ import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import QueryBuilderIcon from '@mui/icons-material/QueryBuilder';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import LoyaltyIcon from '@mui/icons-material/Loyalty';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import UsbIcon from '@mui/icons-material/Usb';
+import CloudQueueIcon from '@mui/icons-material/CloudQueue';
+import WarehouseIcon from '@mui/icons-material/Warehouse';
 import { useAuthStore } from '../store/auth.ts';
 import { apiClient } from '../api/client.ts';
+import QuickSearchModal from './QuickSearchModal.tsx';
+import SearchIcon from '@mui/icons-material/Search';
 
 const drawerWidth = 260;
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, accessToken, setUser, clearSession } = useAuthStore();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -101,6 +119,7 @@ export default function Layout() {
     { text: 'Marketing & Loyalty', icon: <LoyaltyIcon />, path: '/marketing' },
     { text: 'Communication Center', icon: <NotificationsActiveIcon />, path: '/communication' },
     { text: 'Financial Reports', icon: <PaymentsIcon />, path: '/finance' },
+    { text: 'AI Assistant & Forecasts', icon: <AutoAwesomeIcon />, path: '/ai-assistant' },
     { text: 'My Profile', icon: <AccountCircleIcon />, path: '/profile' },
   ];
 
@@ -108,6 +127,10 @@ export default function Layout() {
   const adminItems = [
     { text: 'Company Settings', icon: <BusinessIcon />, path: '/company' },
     { text: 'Branches List', icon: <BranchIcon />, path: '/branches' },
+    { text: 'Currency & Tax Settings', icon: <PaymentsIcon />, path: '/currency' },
+    { text: 'Hardware Terminals', icon: <UsbIcon />, path: '/hardware' },
+    { text: 'Integrations & ERP', icon: <CloudQueueIcon />, path: '/integrations' },
+    { text: '3D Warehouse Visualizer', icon: <WarehouseIcon />, path: '/warehouse-visualizer' },
     { text: 'Master Data', icon: <SettingsIcon />, path: '/master-data' },
     { text: 'Suppliers Directory', icon: <LocalShippingIcon />, path: '/suppliers' },
     { text: 'Customers Directory', icon: <PeopleIcon />, path: '/customers' },
@@ -358,6 +381,29 @@ export default function Layout() {
             </Box>
           </Box>
 
+          {/* Quick Search Jump Bar */}
+          <Chip
+            icon={<SearchIcon style={{ color: '#8b5cf6', fontSize: 16 }} />}
+            label="Search modules... (Ctrl+K)"
+            onClick={() => setSearchOpen(true)}
+            sx={{
+              display: { xs: 'none', sm: 'flex' },
+              backgroundColor: 'rgba(255, 255, 255, 0.04)',
+              color: '#9ca3af',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              fontWeight: 600,
+              fontSize: '0.78rem',
+              px: 1,
+              py: 1.8,
+              cursor: 'pointer',
+              '&:hover': {
+                backgroundColor: 'rgba(139, 92, 246, 0.12)',
+                borderColor: 'rgba(139, 92, 246, 0.3)',
+                color: '#ffffff',
+              },
+            }}
+          />
+
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
             {/* System Status Indicators */}
             <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1.5 }}>
@@ -462,6 +508,9 @@ export default function Layout() {
           <Outlet />
         </Box>
       </Box>
+
+      {/* Global Quick Jump Modal */}
+      <QuickSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </Box>
   );
 }

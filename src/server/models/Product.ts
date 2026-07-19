@@ -109,4 +109,14 @@ const ProductSchema = new Schema<IProduct>(
   { timestamps: true }
 );
 
+ProductSchema.pre('validate', function (next) {
+  if (this.costPrice === undefined && this.cost !== undefined) {
+    this.costPrice = this.cost;
+  }
+  if (this.sellingPrice === undefined && this.price !== undefined) {
+    this.sellingPrice = this.price;
+  }
+  next();
+});
+
 export const Product = mongoose.model<IProduct>('Product', ProductSchema);

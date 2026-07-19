@@ -30,6 +30,7 @@ import CheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
 import type { Product, TransactionItem, Transaction } from '../../shared/types.js';
 import { useAuthStore } from '../store/auth.ts';
 import { toast } from 'react-hot-toast';
+import PageHeader from '../components/PageHeader.tsx';
 import {
   queueOfflineTransaction,
   getPendingQueueCount,
@@ -286,6 +287,38 @@ export default function POS() {
 
   return (
     <Box sx={{ flexGrow: 1 }}>
+      <PageHeader
+        title="POS Checkout Terminal"
+        subtitle="Search items, select categories, or scan product barcodes for high-speed counter checkout."
+        category="Operations"
+        badgeText={isOnline ? 'ONLINE SYNC' : 'OFFLINE MODE'}
+        badgeColor={isOnline ? 'secondary' : 'warning'}
+        action={
+          <Box component="form" onSubmit={handleBarcodeSubmit} sx={{ display: 'flex', gap: 1 }}>
+            <TextField
+              inputRef={barcodeInputRef}
+              label="Barcode Scanner"
+              variant="outlined"
+              size="small"
+              value={barcodeInput}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setBarcodeInput(e.target.value)}
+              placeholder="Scan e.g. 40012011..."
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <ScanIcon fontSize="small" color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ width: 220 }}
+            />
+            <Button type="submit" variant="contained" color="primary" size="small" sx={{ px: 2.5, fontWeight: 700, borderRadius: '8px' }}>
+              Scan
+            </Button>
+          </Box>
+        }
+      />
+
       {!isOnline && (
         <Box sx={{ bgcolor: 'rgba(245, 158, 11, 0.1)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.2)', p: 2, mb: 3, borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="body2" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -300,49 +333,6 @@ export default function POS() {
       <Grid container spacing={3}>
         {/* Product Catalog Pane */}
         <Grid item xs={12} lg={8}>
-          <Box
-            sx={{
-              mb: 3.5,
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 2,
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Box>
-              <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '-0.02em', mb: 0.5 }}>
-                POS Terminal
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Search products, filter by category or scan barcodes to build customers shopping lists.
-              </Typography>
-            </Box>
-
-            {/* Simulated Barcode Scanner Bar */}
-            <Box component="form" onSubmit={handleBarcodeSubmit} sx={{ display: 'flex', gap: 1 }}>
-              <TextField
-                inputRef={barcodeInputRef}
-                label="Simulated Barcode Scan"
-                variant="outlined"
-                size="small"
-                value={barcodeInput}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setBarcodeInput(e.target.value)}
-                placeholder="Barcode e.g. 40012011..."
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <ScanIcon fontSize="small" color="primary" />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ width: 220 }}
-              />
-              <Button type="submit" variant="contained" color="primary" size="small" sx={{ px: 2.5 }}>
-                Scan
-              </Button>
-            </Box>
-          </Box>
 
           {/* Search and Category Tabs */}
           <Card className="glass-panel" sx={{ mb: 3.5 }}>

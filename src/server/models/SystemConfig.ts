@@ -16,6 +16,8 @@ export interface ISystemConfig extends Document {
   maxConcurrentSessions: number;
   sessionTimeoutMinutes: number;
   passwordPolicy: IPasswordPolicy;
+  taxRate: number;
+  taxType: 'VAT' | 'GST' | 'SALES_TAX';
   updatedBy?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -47,6 +49,8 @@ const SystemConfigSchema = new Schema<ISystemConfig>(
         requireSpecialChars: true,
       }),
     },
+    taxRate: { type: Number, default: 8.0 },
+    taxType: { type: String, enum: ['VAT', 'GST', 'SALES_TAX'], default: 'GST' },
     updatedBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }

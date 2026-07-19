@@ -6,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
   Box,
-  Typography,
   Button,
   Dialog,
   DialogTitle,
@@ -35,6 +34,8 @@ import 'ag-grid-community/styles/ag-theme-alpine.css';
 import { toast } from 'react-hot-toast';
 import { socket } from '../socket.ts';
 import type { Product } from '../../shared/types.js';
+import PageHeader from '../components/PageHeader.tsx';
+import StatCard from '../components/StatCard.tsx';
 
 // Zod Validation Schema for Product Creation
 const productSchema = z.object({
@@ -219,60 +220,78 @@ export default function Inventory() {
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800 }}>
-            Inventory Catalog
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Manage product listings, SKU barcodes, warehouse locations, and warning levels.
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined"
-            color="primary"
-            startIcon={<RefreshIcon />}
-            onClick={handleSyncAll}
-          >
-            Sync
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-            onClick={() => setOpen(true)}
-          >
-            Add Product
-          </Button>
-        </Box>
-      </Box>
+      <PageHeader
+        title="Inventory Catalog & Stock Ledger"
+        subtitle="Manage product listings, SKU barcodes, warehouse valuation assets, and warning thresholds."
+        category="Catalog"
+        badgeText={`${products.length} PRODUCTS`}
+        badgeColor="primary"
+        action={
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<RefreshIcon />}
+              onClick={handleSyncAll}
+              sx={{ fontWeight: 700, borderRadius: '8px' }}
+            >
+              Sync
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={() => setOpen(true)}
+              sx={{
+                fontWeight: 700,
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+                boxShadow: '0 4px 14px rgba(139, 92, 246, 0.3)',
+              }}
+            >
+              Add Product
+            </Button>
+          </Box>
+        }
+      />
 
       {/* Real-Time Valuation Metrics Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card className="glass-panel" sx={{ p: 2.5, background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(30, 41, 59, 0.4) 100%)', border: '1px solid rgba(139, 92, 246, 0.15)' }}>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: '0.05em' }}>WEIGHTED AVG ASSETS</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 800, mt: 1, color: 'primary.light' }}>${Number(valuation.weightedAverage || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Typography>
-          </Card>
+          <StatCard
+            title="WEIGHTED AVG ASSETS"
+            value={`$${Number(valuation.weightedAverage || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            subtitle="Real-time asset valuation"
+            icon={<RefreshIcon sx={{ fontSize: 22 }} />}
+            color="violet"
+          />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card className="glass-panel" sx={{ p: 2.5, background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(30, 41, 59, 0.4) 100%)', border: '1px solid rgba(16, 185, 129, 0.15)' }}>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: '0.05em' }}>FIFO ASSET VALUE</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 800, mt: 1, color: 'success.light' }}>${Number(valuation.fifo || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Typography>
-          </Card>
+          <StatCard
+            title="FIFO ASSET VALUE"
+            value={`$${Number(valuation.fifo || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            subtitle="First-In First-Out cost base"
+            icon={<RefreshIcon sx={{ fontSize: 22 }} />}
+            color="emerald"
+          />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card className="glass-panel" sx={{ p: 2.5, background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(30, 41, 59, 0.4) 100%)', border: '1px solid rgba(239, 68, 68, 0.15)' }}>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: '0.05em' }}>LIFO ASSET VALUE</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 800, mt: 1, color: 'error.light' }}>${Number(valuation.lifo || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Typography>
-          </Card>
+          <StatCard
+            title="LIFO ASSET VALUE"
+            value={`$${Number(valuation.lifo || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            subtitle="Last-In First-Out cost base"
+            icon={<RefreshIcon sx={{ fontSize: 22 }} />}
+            color="amber"
+          />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card className="glass-panel" sx={{ p: 2.5, background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(30, 41, 59, 0.4) 100%)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: '0.05em' }}>TOTAL ACTIVE STOCK</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 800, mt: 1 }}>{Number(valuation.totalItemsCount || 0).toLocaleString()} units</Typography>
-          </Card>
+          <StatCard
+            title="TOTAL ACTIVE STOCK"
+            value={`${Number(valuation.totalItemsCount || 0).toLocaleString()} units`}
+            subtitle="Total items in stock"
+            icon={<RefreshIcon sx={{ fontSize: 22 }} />}
+            color="sky"
+          />
         </Grid>
       </Grid>
 

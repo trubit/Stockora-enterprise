@@ -218,7 +218,7 @@ export default function SignUp() {
               </Button>
             </form>
 
-            <Box sx={{ display: 'flex', justifyContent: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', pt: 2.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, borderTop: '1px solid rgba(255,255,255,0.05)', pt: 2.5 }}>
               <Link 
                 onClick={() => navigate('/login')} 
                 sx={{ 
@@ -233,6 +233,14 @@ export default function SignUp() {
               >
                 Already have an account? Sign In
               </Link>
+              <Typography variant="caption" sx={{ textAlign: 'center', mt: 0.5 }}>
+                <Link
+                  onClick={() => navigate('/landing')}
+                  sx={{ cursor: 'pointer', color: '#9ca3af', textDecoration: 'none', '&:hover': { color: '#34d399' } }}
+                >
+                  ← Back to Enterprise Landing Page
+                </Link>
+              </Typography>
             </Box>
           </CardContent>
         </Card>

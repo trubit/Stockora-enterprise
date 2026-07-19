@@ -20,6 +20,8 @@ export interface ITransaction extends Document {
   discount: number;
   total: number;
   paymentMethod: 'CASH' | 'CARD' | 'MOBILE' | 'SPLIT';
+  currencyCode: string;
+  exchangeRate: number;
   cashierId: string;
   cashierName: string;
   branchId: string;
@@ -49,6 +51,8 @@ const TransactionSchema = new Schema<ITransaction>(
     discount: { type: Number, required: true, min: 0, default: 0 },
     total: { type: Number, required: true, min: 0 },
     paymentMethod: { type: String, required: true, enum: ['CASH', 'CARD', 'MOBILE', 'SPLIT'], default: 'CASH' },
+    currencyCode: { type: String, default: 'USD', uppercase: true },
+    exchangeRate: { type: Number, default: 1.0 },
     cashierId: { type: String, required: true, index: true },
     cashierName: { type: String, required: true },
     branchId: { type: String, required: true, index: true },
