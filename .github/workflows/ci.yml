@@ -60,6 +60,17 @@ jobs:
   unit-and-integration-test:
     name: Unit & Integration Testing
     runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+      redis:
+        image: redis:7.0
+        ports:
+          - 6379:6379
+
     env:
       PORT: 5000
       NODE_ENV: test
