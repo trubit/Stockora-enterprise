@@ -25,7 +25,11 @@ export default function AccessDenied() {
         <Typography variant="h6" sx={{ color: 'text.secondary' }}>
           You do not have the required permissions to view this system page.
         </Typography>
-        <Button variant="contained" onClick={() => navigate('/')} sx={{ px: 4, py: 1.5, fontWeight: 700 }}>
+        <Button
+          variant="contained"
+          onClick={() => navigate('/')}
+          sx={{ px: 4, py: 1.5, fontWeight: 700 }}
+        >
           Back to Dashboard
         </Button>
       </Box>

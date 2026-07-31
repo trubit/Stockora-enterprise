@@ -10,14 +10,18 @@ export class NotificationController {
   // Notifications for the current user
   // -------------------------------------------------------------------------
 
-  public static async listNotifications(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async listNotifications(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const { unreadOnly } = req.query;
       const filter: Record<string, unknown> = {
         $or: [
           { userId: req.user?.id },
-          { userId: { $exists: false }, targetRole: { $exists: false } },  // Global broadcasts
-          { targetRole: req.user?.roleName },                               // Role-targeted
+          { userId: { $exists: false }, targetRole: { $exists: false } }, // Global broadcasts
+          { targetRole: req.user?.roleName }, // Role-targeted
         ],
       };
       if (unreadOnly === 'true') filter.status = 'UNREAD';
@@ -29,7 +33,11 @@ export class NotificationController {
     }
   }
 
-  public static async markRead(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async markRead(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const notification = await Notification.findById(id);
@@ -42,7 +50,11 @@ export class NotificationController {
     }
   }
 
-  public static async markAllRead(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async markAllRead(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const count = await NotificationService.markAllRead(req.user!.id);
       res.json({ success: true, markedRead: count });
@@ -51,7 +63,11 @@ export class NotificationController {
     }
   }
 
-  public static async deleteNotification(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async deleteNotification(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const notification = await Notification.findByIdAndDelete(id);
@@ -66,7 +82,11 @@ export class NotificationController {
   // Broadcast
   // -------------------------------------------------------------------------
 
-  public static async broadcast(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async broadcast(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { type, title, body, channels, targetRole, scheduledAt, metadata } = req.body;
     if (!type || !title || !body) {
       return next(new ValidationError('Type, title, and body are required.'));
@@ -102,7 +122,11 @@ export class NotificationController {
   // Templates
   // -------------------------------------------------------------------------
 
-  public static async listTemplates(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async listTemplates(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const templates = await NotificationTemplate.find().sort({ createdAt: -1 });
       res.json(templates);
@@ -111,18 +135,29 @@ export class NotificationController {
     }
   }
 
-  public static async createTemplate(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async createTemplate(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { key, name, type, channels, titleTemplate, bodyTemplate } = req.body;
     if (!key || !name || !type || !titleTemplate || !bodyTemplate) {
-      return next(new ValidationError('key, name, type, titleTemplate, and bodyTemplate are required.'));
+      return next(
+        new ValidationError('key, name, type, titleTemplate, and bodyTemplate are required.')
+      );
     }
     try {
       const existing = await NotificationTemplate.findOne({ key: key.toUpperCase() });
-      if (existing) return next(new ValidationError(`Template key [${key.toUpperCase()}] already exists.`));
+      if (existing)
+        return next(new ValidationError(`Template key [${key.toUpperCase()}] already exists.`));
       const template = await NotificationTemplate.create({
-        key: key.toUpperCase(), name, type,
+        key: key.toUpperCase(),
+        name,
+        type,
         channels: channels || ['IN_APP'],
-        titleTemplate, bodyTemplate, isActive: true,
+        titleTemplate,
+        bodyTemplate,
+        isActive: true,
       });
       res.status(201).json(template);
     } catch (err: unknown) {
@@ -130,7 +165,11 @@ export class NotificationController {
     }
   }
 
-  public static async updateTemplate(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async updateTemplate(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const template = await NotificationTemplate.findByIdAndUpdate(id, req.body, { new: true });
@@ -141,7 +180,11 @@ export class NotificationController {
     }
   }
 
-  public static async deleteTemplate(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async deleteTemplate(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const template = await NotificationTemplate.findByIdAndDelete(id);
@@ -152,13 +195,20 @@ export class NotificationController {
     }
   }
 
-  public static async sendFromTemplate(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async sendFromTemplate(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { templateKey, vars, userId, targetRole } = req.body;
     if (!templateKey || !vars) {
       return next(new ValidationError('templateKey and vars are required.'));
     }
     try {
-      await NotificationService.sendFromTemplate(templateKey, vars as Record<string, string>, { userId, targetRole });
+      await NotificationService.sendFromTemplate(templateKey, vars as Record<string, string>, {
+        userId,
+        targetRole,
+      });
       res.status(201).json({ success: true });
     } catch (err: unknown) {
       next(err);

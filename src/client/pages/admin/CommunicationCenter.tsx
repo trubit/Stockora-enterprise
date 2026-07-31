@@ -71,7 +71,10 @@ interface NotificationTemplate {
 
 // ---- Constants --------------------------------------------------------------
 
-const TYPE_COLORS: Record<string, 'default' | 'success' | 'warning' | 'error' | 'info' | 'primary' | 'secondary'> = {
+const TYPE_COLORS: Record<
+  string,
+  'default' | 'success' | 'warning' | 'error' | 'info' | 'primary' | 'secondary'
+> = {
   INFO: 'info',
   WARNING: 'warning',
   SECURITY: 'error',
@@ -114,7 +117,11 @@ export default function CommunicationCenter() {
   const { data: notifications = [] } = useQuery<NotificationItem[]>({
     queryKey: ['notifications', unreadOnly],
     queryFn: async () =>
-      (await apiClient.get('/notifications', { params: { unreadOnly: unreadOnly ? 'true' : 'false' } })).data,
+      (
+        await apiClient.get('/notifications', {
+          params: { unreadOnly: unreadOnly ? 'true' : 'false' },
+        })
+      ).data,
   });
 
   const { data: templates = [] } = useQuery<NotificationTemplate[]>({
@@ -128,7 +135,12 @@ export default function CommunicationCenter() {
   useEffect(() => {
     const handler = (newNotif: NotificationItem) => {
       toast(`🔔 ${newNotif.title}`, {
-        style: { borderRadius: '10px', background: '#111827', color: '#fff', border: '1px solid rgba(139, 92, 246, 0.3)' },
+        style: {
+          borderRadius: '10px',
+          background: '#111827',
+          color: '#fff',
+          border: '1px solid rgba(139, 92, 246, 0.3)',
+        },
         duration: 5000,
       });
       queryClient.setQueryData<NotificationItem[]>(['notifications', false], (old) =>
@@ -139,7 +151,9 @@ export default function CommunicationCenter() {
       );
     };
     socket.on('notification:received', handler);
-    return () => { socket.off('notification:received', handler); };
+    return () => {
+      socket.off('notification:received', handler);
+    };
   }, [queryClient]);
 
   // --- Mutations -------------------------------------------------------------
@@ -166,7 +180,9 @@ export default function CommunicationCenter() {
     mutationFn: async (payload: Record<string, unknown>) =>
       (await apiClient.post('/notifications/broadcast', payload)).data,
     onSuccess: () => {
-      toast.success(bUseSchedule ? 'Notification scheduled.' : 'Broadcast dispatched to all targets.');
+      toast.success(
+        bUseSchedule ? 'Notification scheduled.' : 'Broadcast dispatched to all targets.'
+      );
       setOpenBroadcastDialog(false);
       resetBroadcastForm();
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -178,7 +194,8 @@ export default function CommunicationCenter() {
   const templateMutation = useMutation({
     mutationFn: async (payload: Record<string, unknown>) => {
       if (editingTemplate) {
-        return (await apiClient.put(`/notifications/templates/${editingTemplate._id}`, payload)).data;
+        return (await apiClient.put(`/notifications/templates/${editingTemplate._id}`, payload))
+          .data;
       }
       return (await apiClient.post('/notifications/templates', payload)).data;
     },
@@ -193,7 +210,8 @@ export default function CommunicationCenter() {
   });
 
   const deleteTemplateMutation = useMutation({
-    mutationFn: async (id: string) => (await apiClient.delete(`/notifications/templates/${id}`)).data,
+    mutationFn: async (id: string) =>
+      (await apiClient.delete(`/notifications/templates/${id}`)).data,
     onSuccess: () => {
       toast.success('Template deleted.');
       queryClient.invalidateQueries({ queryKey: ['notification-templates'] });
@@ -203,13 +221,22 @@ export default function CommunicationCenter() {
   // --- Handlers --------------------------------------------------------------
 
   const resetBroadcastForm = () => {
-    setBTitle(''); setBBody(''); setBType('INFO'); setBChannels(['IN_APP']);
-    setBTargetRole(''); setBScheduledAt(''); setBUseSchedule(false);
+    setBTitle('');
+    setBBody('');
+    setBType('INFO');
+    setBChannels(['IN_APP']);
+    setBTargetRole('');
+    setBScheduledAt('');
+    setBUseSchedule(false);
   };
 
   const resetTemplateForm = () => {
-    setEditingTemplate(null); setTKey(''); setTName(''); setTType('INFO');
-    setTTitleTemplate(''); setTBodyTemplate('');
+    setEditingTemplate(null);
+    setTKey('');
+    setTName('');
+    setTType('INFO');
+    setTTitleTemplate('');
+    setTBodyTemplate('');
   };
 
   const handleBroadcast = () => {
@@ -224,13 +251,22 @@ export default function CommunicationCenter() {
   };
 
   const handleSaveTemplate = () => {
-    templateMutation.mutate({ key: tKey, name: tName, type: tType, titleTemplate: tTitleTemplate, bodyTemplate: tBodyTemplate });
+    templateMutation.mutate({
+      key: tKey,
+      name: tName,
+      type: tType,
+      titleTemplate: tTitleTemplate,
+      bodyTemplate: tBodyTemplate,
+    });
   };
 
   const openEditTemplate = (t: NotificationTemplate) => {
     setEditingTemplate(t);
-    setTKey(t.key); setTName(t.name); setTType(t.type);
-    setTTitleTemplate(t.titleTemplate); setTBodyTemplate(t.bodyTemplate);
+    setTKey(t.key);
+    setTName(t.name);
+    setTType(t.type);
+    setTTitleTemplate(t.titleTemplate);
+    setTBodyTemplate(t.bodyTemplate);
     setOpenTemplateDialog(true);
   };
 
@@ -239,18 +275,26 @@ export default function CommunicationCenter() {
   return (
     <Box sx={{ width: '100%' }}>
       {/* Header */}
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <Box
+        sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
+      >
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800 }}>Communication Center</Typography>
+          <Typography variant="h4" sx={{ fontWeight: 800 }}>
+            Communication Center
+          </Typography>
           <Typography variant="body1" color="text.secondary">
-            Real-time alerts, scheduled broadcasts, multi-channel notifications, and message templates.
+            Real-time alerts, scheduled broadcasts, multi-channel notifications, and message
+            templates.
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
             variant="outlined"
             startIcon={<AddIcon />}
-            onClick={() => { resetTemplateForm(); setOpenTemplateDialog(true); }}
+            onClick={() => {
+              resetTemplateForm();
+              setOpenTemplateDialog(true);
+            }}
           >
             New Template
           </Button>
@@ -279,13 +323,24 @@ export default function CommunicationCenter() {
       {/* ---- Tab 0: Notification Feed ---- */}
       {activeTab === 0 && (
         <Paper className="glass-panel" sx={{ p: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+          >
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}
+            >
               <NotificationsActiveIcon color="primary" /> Live System Feed
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
               <FormControlLabel
-                control={<Switch size="small" checked={unreadOnly} onChange={(e) => setUnreadOnly(e.target.checked)} />}
+                control={
+                  <Switch
+                    size="small"
+                    checked={unreadOnly}
+                    onChange={(e) => setUnreadOnly(e.target.checked)}
+                  />
+                }
                 label="Unread only"
               />
               <Tooltip title="Mark all as read">
@@ -314,9 +369,11 @@ export default function CommunicationCenter() {
                   {idx > 0 && <Divider sx={{ opacity: 0.1, my: 0.5 }} />}
                   <ListItem
                     sx={{
-                      px: 1.5, borderRadius: 1,
+                      px: 1.5,
+                      borderRadius: 1,
                       bgcolor: n.status === 'UNREAD' ? 'rgba(139,92,246,0.05)' : 'transparent',
-                      borderLeft: n.status === 'UNREAD' ? '3px solid #8b5cf6' : '3px solid transparent',
+                      borderLeft:
+                        n.status === 'UNREAD' ? '3px solid #8b5cf6' : '3px solid transparent',
                     }}
                     secondaryAction={
                       <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -328,7 +385,11 @@ export default function CommunicationCenter() {
                           </Tooltip>
                         )}
                         <Tooltip title="Delete">
-                          <IconButton size="small" color="error" onClick={() => deleteMutation.mutate(n._id)}>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => deleteMutation.mutate(n._id)}
+                          >
                             <DeleteOutlineIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
@@ -337,22 +398,40 @@ export default function CommunicationCenter() {
                   >
                     <ListItemText
                       primary={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{n.title}</Typography>
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}
+                        >
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                            {n.title}
+                          </Typography>
                           <Chip label={n.type} color={TYPE_COLORS[n.type]} size="small" />
-                          {n.targetRole && <Chip label={`→ ${n.targetRole}`} size="small" variant="outlined" />}
+                          {n.targetRole && (
+                            <Chip label={`→ ${n.targetRole}`} size="small" variant="outlined" />
+                          )}
                           {n.channels.map((c) => (
                             <Chip key={c} label={c} size="small" sx={{ fontSize: '0.65rem' }} />
                           ))}
                           {n.scheduledAt && (
-                            <Chip label={`Scheduled: ${new Date(n.scheduledAt).toLocaleString()}`} size="small" color="info" icon={<ScheduleSendIcon />} />
+                            <Chip
+                              label={`Scheduled: ${new Date(n.scheduledAt).toLocaleString()}`}
+                              size="small"
+                              color="info"
+                              icon={<ScheduleSendIcon />}
+                            />
                           )}
                         </Box>
                       }
                       secondary={
                         <Box sx={{ mt: 0.5 }}>
-                          <Typography variant="body2" color="text.secondary">{n.body}</Typography>
-                          <Typography variant="caption" color="text.disabled" display="block" sx={{ mt: 0.5 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            {n.body}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="text.disabled"
+                            display="block"
+                            sx={{ mt: 0.5 }}
+                          >
                             {new Date(n.createdAt).toLocaleString()}
                           </Typography>
                         </Box>
@@ -385,38 +464,64 @@ export default function CommunicationCenter() {
             <TableBody>
               {templates.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center">No templates yet. Click "New Template" to create one.</TableCell>
+                  <TableCell colSpan={8} align="center">
+                    No templates yet. Click "New Template" to create one.
+                  </TableCell>
                 </TableRow>
               ) : (
                 templates.map((t) => (
                   <TableRow key={t._id}>
-                    <TableCell sx={{ fontWeight: 700, fontFamily: 'monospace', color: 'secondary.light' }}>{t.key}</TableCell>
+                    <TableCell
+                      sx={{ fontWeight: 700, fontFamily: 'monospace', color: 'secondary.light' }}
+                    >
+                      {t.key}
+                    </TableCell>
                     <TableCell>{t.name}</TableCell>
-                    <TableCell><Chip label={t.type} color={TYPE_COLORS[t.type]} size="small" /></TableCell>
+                    <TableCell>
+                      <Chip label={t.type} color={TYPE_COLORS[t.type]} size="small" />
+                    </TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                        {t.channels.map((c) => <Chip key={c} label={c} size="small" sx={{ fontSize: '0.65rem' }} />)}
+                        {t.channels.map((c) => (
+                          <Chip key={c} label={c} size="small" sx={{ fontSize: '0.65rem' }} />
+                        ))}
                       </Box>
                     </TableCell>
-                    <TableCell sx={{ fontSize: '0.78rem', color: 'text.secondary', maxWidth: 200 }}>{t.titleTemplate}</TableCell>
+                    <TableCell sx={{ fontSize: '0.78rem', color: 'text.secondary', maxWidth: 200 }}>
+                      {t.titleTemplate}
+                    </TableCell>
                     <TableCell sx={{ fontSize: '0.78rem', color: 'text.secondary', maxWidth: 240 }}>
                       <Tooltip title={t.bodyTemplate} placement="top">
                         <Typography variant="caption" sx={{ cursor: 'help' }}>
-                          {t.bodyTemplate.length > 60 ? t.bodyTemplate.slice(0, 60) + '…' : t.bodyTemplate}
+                          {t.bodyTemplate.length > 60
+                            ? t.bodyTemplate.slice(0, 60) + '…'
+                            : t.bodyTemplate}
                         </Typography>
                       </Tooltip>
                     </TableCell>
                     <TableCell>
-                      <Chip label={t.isActive ? 'Active' : 'Inactive'} color={t.isActive ? 'success' : 'default'} size="small" />
+                      <Chip
+                        label={t.isActive ? 'Active' : 'Inactive'}
+                        color={t.isActive ? 'success' : 'default'}
+                        size="small"
+                      />
                     </TableCell>
                     <TableCell sx={{ display: 'flex', gap: 0.5 }}>
                       <Tooltip title="Edit">
-                        <IconButton size="small" color="primary" onClick={() => openEditTemplate(t)}>
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => openEditTemplate(t)}
+                        >
                           <EditIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Delete">
-                        <IconButton size="small" color="error" onClick={() => deleteTemplateMutation.mutate(t._id)}>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => deleteTemplateMutation.mutate(t._id)}
+                        >
                           <DeleteOutlineIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
@@ -432,14 +537,23 @@ export default function CommunicationCenter() {
       {/* ===== DIALOGS ===== */}
 
       {/* Broadcast Dialog */}
-      <Dialog open={openBroadcastDialog} onClose={() => setOpenBroadcastDialog(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={openBroadcastDialog}
+        onClose={() => setOpenBroadcastDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>Broadcast System Notification</DialogTitle>
         <DialogContent>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <TextField
-                select label="Alert Type" fullWidth value={bType}
-                onChange={(e) => setBType(e.target.value as NotificationItem['type'])} sx={textFieldStyle}
+                select
+                label="Alert Type"
+                fullWidth
+                value={bType}
+                onChange={(e) => setBType(e.target.value as NotificationItem['type'])}
+                sx={textFieldStyle}
               >
                 <MenuItem value="INFO">ℹ️ Information</MenuItem>
                 <MenuItem value="WARNING">⚠️ Warning</MenuItem>
@@ -451,27 +565,40 @@ export default function CommunicationCenter() {
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
-                label="Target Role (optional)" fullWidth value={bTargetRole}
-                onChange={(e) => setBTargetRole(e.target.value)} sx={textFieldStyle}
+                label="Target Role (optional)"
+                fullWidth
+                value={bTargetRole}
+                onChange={(e) => setBTargetRole(e.target.value)}
+                sx={textFieldStyle}
                 helperText="Leave blank to broadcast to all users"
                 placeholder="e.g. cashier, manager, admin"
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Notification Title" fullWidth value={bTitle}
-                onChange={(e) => setBTitle(e.target.value)} sx={textFieldStyle}
+                label="Notification Title"
+                fullWidth
+                value={bTitle}
+                onChange={(e) => setBTitle(e.target.value)}
+                sx={textFieldStyle}
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Message Body" fullWidth multiline rows={3} value={bBody}
-                onChange={(e) => setBBody(e.target.value)} sx={textFieldStyle}
+                label="Message Body"
+                fullWidth
+                multiline
+                rows={3}
+                value={bBody}
+                onChange={(e) => setBBody(e.target.value)}
+                sx={textFieldStyle}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
-                select label="Delivery Channels" fullWidth
+                select
+                label="Delivery Channels"
+                fullWidth
                 value={bChannels.join(',')}
                 onChange={(e) => setBChannels(e.target.value.split(','))}
                 sx={textFieldStyle}
@@ -487,7 +614,12 @@ export default function CommunicationCenter() {
             </Grid>
             <Grid item xs={12} sm={6}>
               <FormControlLabel
-                control={<Switch checked={bUseSchedule} onChange={(e) => setBUseSchedule(e.target.checked)} />}
+                control={
+                  <Switch
+                    checked={bUseSchedule}
+                    onChange={(e) => setBUseSchedule(e.target.checked)}
+                  />
+                }
                 label="Schedule for later"
                 sx={{ mt: 2 }}
               />
@@ -495,9 +627,13 @@ export default function CommunicationCenter() {
             {bUseSchedule && (
               <Grid item xs={12}>
                 <TextField
-                  type="datetime-local" label="Scheduled Date & Time" fullWidth
-                  InputLabelProps={{ shrink: true }} value={bScheduledAt}
-                  onChange={(e) => setBScheduledAt(e.target.value)} sx={textFieldStyle}
+                  type="datetime-local"
+                  label="Scheduled Date & Time"
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                  value={bScheduledAt}
+                  onChange={(e) => setBScheduledAt(e.target.value)}
+                  sx={textFieldStyle}
                 />
               </Grid>
             )}
@@ -517,7 +653,12 @@ export default function CommunicationCenter() {
       </Dialog>
 
       {/* Template Dialog */}
-      <Dialog open={openTemplateDialog} onClose={() => setOpenTemplateDialog(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={openTemplateDialog}
+        onClose={() => setOpenTemplateDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <CodeIcon color="primary" />
@@ -526,27 +667,41 @@ export default function CommunicationCenter() {
         </DialogTitle>
         <DialogContent>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-            Use <code style={{ background: 'rgba(139,92,246,0.15)', padding: '2px 6px', borderRadius: 4 }}>{`{{variableName}}`}</code> placeholders in templates. They will be interpolated at send time.
+            Use{' '}
+            <code
+              style={{ background: 'rgba(139,92,246,0.15)', padding: '2px 6px', borderRadius: 4 }}
+            >{`{{variableName}}`}</code>{' '}
+            placeholders in templates. They will be interpolated at send time.
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <TextField
-                label="Template Key (unique code)" fullWidth value={tKey}
-                onChange={(e) => setTKey(e.target.value)} sx={textFieldStyle}
+                label="Template Key (unique code)"
+                fullWidth
+                value={tKey}
+                onChange={(e) => setTKey(e.target.value)}
+                sx={textFieldStyle}
                 disabled={!!editingTemplate}
                 placeholder="e.g. ORDER_CONFIRMED"
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
-                label="Display Name" fullWidth value={tName}
-                onChange={(e) => setTName(e.target.value)} sx={textFieldStyle}
+                label="Display Name"
+                fullWidth
+                value={tName}
+                onChange={(e) => setTName(e.target.value)}
+                sx={textFieldStyle}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
-                select label="Notification Type" fullWidth value={tType}
-                onChange={(e) => setTType(e.target.value)} sx={textFieldStyle}
+                select
+                label="Notification Type"
+                fullWidth
+                value={tType}
+                onChange={(e) => setTType(e.target.value)}
+                sx={textFieldStyle}
               >
                 <MenuItem value="INFO">Information</MenuItem>
                 <MenuItem value="WARNING">Warning</MenuItem>
@@ -558,15 +713,23 @@ export default function CommunicationCenter() {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Title Template" fullWidth value={tTitleTemplate}
-                onChange={(e) => setTTitleTemplate(e.target.value)} sx={textFieldStyle}
+                label="Title Template"
+                fullWidth
+                value={tTitleTemplate}
+                onChange={(e) => setTTitleTemplate(e.target.value)}
+                sx={textFieldStyle}
                 placeholder="e.g. Order {{orderNumber}} has been confirmed"
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Body Template" fullWidth multiline rows={3} value={tBodyTemplate}
-                onChange={(e) => setTBodyTemplate(e.target.value)} sx={textFieldStyle}
+                label="Body Template"
+                fullWidth
+                multiline
+                rows={3}
+                value={tBodyTemplate}
+                onChange={(e) => setTBodyTemplate(e.target.value)}
+                sx={textFieldStyle}
                 placeholder="e.g. Hi {{customerName}}, your order {{orderNumber}} is ready for pickup."
               />
             </Grid>
@@ -574,8 +737,16 @@ export default function CommunicationCenter() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenTemplateDialog(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSaveTemplate} disabled={templateMutation.isPending}>
-            {templateMutation.isPending ? 'Saving…' : editingTemplate ? 'Update' : 'Create Template'}
+          <Button
+            variant="contained"
+            onClick={handleSaveTemplate}
+            disabled={templateMutation.isPending}
+          >
+            {templateMutation.isPending
+              ? 'Saving…'
+              : editingTemplate
+                ? 'Update'
+                : 'Create Template'}
           </Button>
         </DialogActions>
       </Dialog>

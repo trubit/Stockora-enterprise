@@ -56,10 +56,12 @@ const ProductVariantSchema = new Schema<IProductVariant>({
   name: { type: String, required: true },
   price: { type: Number },
   quantity: { type: Number, required: true, default: 0 },
-  attributes: [{
-    key: { type: String, required: true },
-    value: { type: String, required: true }
-  }]
+  attributes: [
+    {
+      key: { type: String, required: true },
+      value: { type: String, required: true },
+    },
+  ],
 });
 
 const ProductSchema = new Schema<IProduct>(
@@ -72,7 +74,12 @@ const ProductSchema = new Schema<IProduct>(
     brand: { type: String, index: true },
     uom: { type: String, default: 'pcs' },
     isActive: { type: Boolean, default: true, index: true },
-    status: { type: String, enum: ['ACTIVE', 'INACTIVE', 'DRAFT', 'OUT_OF_STOCK'], default: 'ACTIVE', index: true },
+    status: {
+      type: String,
+      enum: ['ACTIVE', 'INACTIVE', 'DRAFT', 'OUT_OF_STOCK'],
+      default: 'ACTIVE',
+      index: true,
+    },
     costPrice: { type: Number, required: true, min: 0 },
     sellingPrice: { type: Number, required: true, min: 0 },
     price: { type: Number, required: true, min: 0, default: 0 },
@@ -90,10 +97,12 @@ const ProductSchema = new Schema<IProduct>(
     isTaxInclusive: { type: Boolean, default: false },
     currency: { type: String, default: 'USD' },
     variants: [ProductVariantSchema],
-    attributes: [{
-      key: { type: String },
-      value: { type: String }
-    }],
+    attributes: [
+      {
+        key: { type: String },
+        value: { type: String },
+      },
+    ],
     width: { type: Number },
     height: { type: Number },
     depth: { type: Number },

@@ -27,7 +27,11 @@ export class BranchSyncController {
   // -------------------------------------------------------------------------
   // POST /branch-sync/sync
   // -------------------------------------------------------------------------
-  public static async syncTransactions(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async syncTransactions(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { transactions } = req.body;
     if (!transactions || !Array.isArray(transactions)) {
       return next(new ValidationError('An array of transactions is required.'));
@@ -62,7 +66,9 @@ export class BranchSyncController {
           const product = await Product.findById(item.productId);
           if (!product || product.quantity < item.quantity) {
             stockAvailable = false;
-            job.logs.push(`Failure: Insufficient stock for product [${item.productId}] in [${tx.transactionNumber}].`);
+            job.logs.push(
+              `Failure: Insufficient stock for product [${item.productId}] in [${tx.transactionNumber}].`
+            );
             break;
           }
         }
@@ -112,7 +118,9 @@ export class BranchSyncController {
 
       job.status = 'COMPLETED';
       job.completedAt = new Date();
-      logger.info(`[BranchSync] Job ${jobId}: synced=${job.synced}, conflicts=${job.conflicts}, failures=${job.failures}`);
+      logger.info(
+        `[BranchSync] Job ${jobId}: synced=${job.synced}, conflicts=${job.conflicts}, failures=${job.failures}`
+      );
 
       res.json({
         jobId,
@@ -131,7 +139,11 @@ export class BranchSyncController {
   // -------------------------------------------------------------------------
   // GET /branch-sync/status
   // -------------------------------------------------------------------------
-  public static async getSyncStatus(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getSyncStatus(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const totalSynced = await Transaction.countDocuments({ status: 'COMPLETED' });
       const recentJobs = syncHistory.slice(0, 10);
@@ -160,20 +172,32 @@ export class BranchSyncController {
   // POST /branch-sync/retry/:jobId
   // Marks a FAILED job for retry (triggers re-sync from the client).
   // -------------------------------------------------------------------------
-  public static async retryFailedSync(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async retryFailedSync(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { jobId } = req.params;
     try {
       const job = syncHistory.find((j) => j.jobId === jobId);
       if (!job) return next(new NotFoundError(`Sync job [${jobId}] not found in history.`));
       if (job.status !== 'FAILED') {
-        return next(new ValidationError(`Job [${jobId}] is not in FAILED state (current: ${job.status}).`));
+        return next(
+          new ValidationError(`Job [${jobId}] is not in FAILED state (current: ${job.status}).`)
+        );
       }
 
       // Reset for retry (client must re-submit transactions)
       job.status = 'RUNNING';
-      job.logs.push(`[${new Date().toISOString()}] Retry requested by ${req.user?.username || req.user?.id}`);
+      job.logs.push(
+        `[${new Date().toISOString()}] Retry requested by ${req.user?.username || req.user?.id}`
+      );
 
-      res.json({ success: true, jobId, message: 'Job flagged for retry. Client should re-submit transactions.' });
+      res.json({
+        success: true,
+        jobId,
+        message: 'Job flagged for retry. Client should re-submit transactions.',
+      });
     } catch (err: unknown) {
       next(err);
     }
@@ -182,7 +206,11 @@ export class BranchSyncController {
   // -------------------------------------------------------------------------
   // GET /branch-sync/lookup?sku=<sku>
   // -------------------------------------------------------------------------
-  public static async crossBranchLookup(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async crossBranchLookup(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { sku } = req.query;
     if (!sku) return next(new ValidationError('Product SKU is required for lookups.'));
 

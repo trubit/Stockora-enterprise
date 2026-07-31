@@ -6,7 +6,11 @@ import { ValidationError, NotFoundError } from '../errors/AppError.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 
 export class QuoteController {
-  public static async listQuotes(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async listQuotes(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const quotes = await SalesQuote.find()
         .populate('customerId', 'name code email')
@@ -19,7 +23,11 @@ export class QuoteController {
     }
   }
 
-  public static async createQuote(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async createQuote(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { customerId, items, discount, validUntil, notes } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0 || !validUntil) {
@@ -73,7 +81,11 @@ export class QuoteController {
     }
   }
 
-  public static async acceptQuote(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async acceptQuote(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const quote = await SalesQuote.findById(id);

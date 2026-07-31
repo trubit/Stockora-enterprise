@@ -22,7 +22,9 @@ export class ERPSyncService {
       throw new Error(`Transaction [${transactionId}] not found.`);
     }
 
-    const dateStr = tx.createdAt ? new Date(tx.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+    const dateStr = tx.createdAt
+      ? new Date(tx.createdAt).toISOString().split('T')[0]
+      : new Date().toISOString().split('T')[0];
 
     const entry: ERPJournalEntry = {
       date: dateStr,

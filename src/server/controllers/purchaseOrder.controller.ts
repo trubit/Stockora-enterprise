@@ -10,7 +10,11 @@ import { ValidationError, NotFoundError } from '../errors/AppError.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 
 export class PurchaseOrderController {
-  public static async listPOs(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async listPOs(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const pos = await PurchaseOrder.find()
         .populate('supplierId', 'name code email')
@@ -24,7 +28,11 @@ export class PurchaseOrderController {
     }
   }
 
-  public static async createPO(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async createPO(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { supplierId, requisitionId, items, notes } = req.body;
 
     if (!supplierId || !items || !Array.isArray(items) || items.length === 0) {
@@ -71,7 +79,11 @@ export class PurchaseOrderController {
     }
   }
 
-  public static async approvePO(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async approvePO(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const po = await PurchaseOrder.findById(id);
@@ -103,7 +115,11 @@ export class PurchaseOrderController {
     }
   }
 
-  public static async receiveGoods(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async receiveGoods(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     const { items, notes } = req.body;
 
@@ -119,7 +135,9 @@ export class PurchaseOrderController {
 
       const validStatuses = ['APPROVED', 'SENT', 'PARTIALLY_RECEIVED'];
       if (!validStatuses.includes(po.status)) {
-        return next(new ValidationError(`Cannot receive goods for a Purchase Order in status: ${po.status}`));
+        return next(
+          new ValidationError(`Cannot receive goods for a Purchase Order in status: ${po.status}`)
+        );
       }
 
       const oldPOValues = po.toObject();
@@ -130,7 +148,11 @@ export class PurchaseOrderController {
       for (const receiveItem of items) {
         const poItem = po.items.find((i) => i.productId.toString() === receiveItem.productId);
         if (!poItem) {
-          return next(new ValidationError(`Product [${receiveItem.productId}] is not part of this Purchase Order.`));
+          return next(
+            new ValidationError(
+              `Product [${receiveItem.productId}] is not part of this Purchase Order.`
+            )
+          );
         }
 
         const qtyToReceive = Number(receiveItem.quantityReceived || 0);
@@ -138,7 +160,11 @@ export class PurchaseOrderController {
 
         const maxReceivable = poItem.quantity - poItem.receivedQuantity;
         if (qtyToReceive > maxReceivable) {
-          return next(new ValidationError(`Cannot receive more than ordered. Ordered: ${poItem.quantity}, Already received: ${poItem.receivedQuantity}, Trying to receive: ${qtyToReceive}`));
+          return next(
+            new ValidationError(
+              `Cannot receive more than ordered. Ordered: ${poItem.quantity}, Already received: ${poItem.receivedQuantity}, Trying to receive: ${qtyToReceive}`
+            )
+          );
         }
 
         poItem.receivedQuantity += qtyToReceive;

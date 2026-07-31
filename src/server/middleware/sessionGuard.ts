@@ -9,7 +9,11 @@ import { AuthenticationError } from '../errors/AppError.js';
  * Detects if the current request session exists, is active,
  * matches the current IP and User Agent to prevent session hijacking.
  */
-export async function sessionGuard(req: AuthenticatedRequest, _res: Response, next: NextFunction): Promise<void> {
+export async function sessionGuard(
+  req: AuthenticatedRequest,
+  _res: Response,
+  next: NextFunction
+): Promise<void> {
   if (!req.user) {
     return next(new AuthenticationError('Authentication required.'));
   }
@@ -26,7 +30,8 @@ export async function sessionGuard(req: AuthenticatedRequest, _res: Response, ne
     }
 
     // IP or User Agent hijacking prevention check
-    const currentIp = req.ipAddress || (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '';
+    const currentIp =
+      req.ipAddress || (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '';
     const currentUserAgent = req.headers['user-agent'] || '';
 
     // If either IP or UA changes dramatically, reject & flag (basic risk detection)
@@ -34,7 +39,11 @@ export async function sessionGuard(req: AuthenticatedRequest, _res: Response, ne
       // In production, we might want to flag risk instead of strict block, but strict block is secure!
       session.isActive = false;
       await session.save();
-      return next(new AuthenticationError('Security violation: session properties changed. Please log in again.'));
+      return next(
+        new AuthenticationError(
+          'Security violation: session properties changed. Please log in again.'
+        )
+      );
     }
 
     next();

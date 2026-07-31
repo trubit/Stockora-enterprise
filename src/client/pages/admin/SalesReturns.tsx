@@ -1,5 +1,24 @@
 import { useState } from 'react';
-import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, Grid } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  MenuItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  Grid,
+} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm, useFieldArray } from 'react-hook-form';
@@ -102,9 +121,21 @@ export default function SalesReturns() {
 
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
-      <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-          <Typography variant="h4" sx={{ fontWeight: 800, background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 800,
+              background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
             Customer Returns & Refunds
           </Typography>
           <Button
@@ -129,10 +160,20 @@ export default function SalesReturns() {
           </Button>
         </Box>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-          Register customer returns, reconcile returned products into active stock, and log refund parameters.
+          Register customer returns, reconcile returned products into active stock, and log refund
+          parameters.
         </Typography>
 
-        <TableContainer component={Paper} className="glass-panel" sx={{ border: '1px solid rgba(255,255,255,0.05)', background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)', borderRadius: 3 }}>
+        <TableContainer
+          component={Paper}
+          className="glass-panel"
+          sx={{
+            border: '1px solid rgba(255,255,255,0.05)',
+            background:
+              'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
+            borderRadius: 3,
+          }}
+        >
           <Table>
             <TableHead sx={{ bgcolor: 'rgba(17, 24, 39, 0.5)' }}>
               <TableRow>
@@ -148,7 +189,13 @@ export default function SalesReturns() {
             <TableBody>
               {returns.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 6, color: 'text.secondary', border: 'none' }}>No returns records logged.</TableCell>
+                  <TableCell
+                    colSpan={7}
+                    align="center"
+                    sx={{ py: 6, color: 'text.secondary', border: 'none' }}
+                  >
+                    No returns records logged.
+                  </TableCell>
                 </TableRow>
               ) : (
                 returns.map((r) => (
@@ -156,11 +203,18 @@ export default function SalesReturns() {
                     <TableCell sx={{ fontWeight: 700 }}>{r.returnNumber}</TableCell>
                     <TableCell>{r.customerId?.name || 'Walk-in Customer'}</TableCell>
                     <TableCell>{r.items.reduce((acc, i) => acc + i.quantity, 0)} items</TableCell>
-                    <TableCell sx={{ fontWeight: 800 }}>${r.items.reduce((acc, i) => acc + i.refundAmount, 0).toFixed(2)}</TableCell>
+                    <TableCell sx={{ fontWeight: 800 }}>
+                      ${r.items.reduce((acc, i) => acc + i.refundAmount, 0).toFixed(2)}
+                    </TableCell>
                     <TableCell color="text.secondary">{r.reason}</TableCell>
                     <TableCell>{new Date(r.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell>
-                      <Chip label={r.status} size="small" color="success" sx={{ fontWeight: 700 }} />
+                      <Chip
+                        label={r.status}
+                        size="small"
+                        color="success"
+                        sx={{ fontWeight: 700 }}
+                      />
                     </TableCell>
                   </TableRow>
                 ))
@@ -170,56 +224,166 @@ export default function SalesReturns() {
         </TableContainer>
 
         {/* Process Return Dialog */}
-        <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth PaperProps={{ sx: { background: 'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%)', backdropFilter: 'blur(20px)', border: '1px solid rgba(139, 92, 246, 0.2)', borderRadius: 4 } }}>
+        <Dialog
+          open={open}
+          onClose={() => setOpen(false)}
+          maxWidth="md"
+          fullWidth
+          PaperProps={{
+            sx: {
+              background:
+                'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(139, 92, 246, 0.2)',
+              borderRadius: 4,
+            },
+          }}
+        >
           <form onSubmit={handleSubmit(onSubmit)}>
-            <DialogTitle sx={{ fontWeight: 800, background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Process Customer Return & Refund</DialogTitle>
+            <DialogTitle
+              sx={{
+                fontWeight: 800,
+                background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              Process Customer Return & Refund
+            </DialogTitle>
             <DialogContent sx={{ pt: 2 }}>
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
-                  <TextField select label="Customer Link" fullWidth defaultValue="" {...register('customerId', { required: true })} sx={textFieldStyle} InputLabelProps={{ shrink: true }}>
+                  <TextField
+                    select
+                    label="Customer Link"
+                    fullWidth
+                    defaultValue=""
+                    {...register('customerId', { required: true })}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  >
                     {customers.map((c) => (
-                      <MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>
+                      <MenuItem key={c._id} value={c._id}>
+                        {c.name}
+                      </MenuItem>
                     ))}
                   </TextField>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <TextField label="Associated SO Number (Optional)" fullWidth {...register('orderId')} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                  <TextField
+                    label="Associated SO Number (Optional)"
+                    fullWidth
+                    {...register('orderId')}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  />
                 </Grid>
                 <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 700 }}>Returned Line Items</Typography>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ mb: 1, fontWeight: 700 }}
+                  >
+                    Returned Line Items
+                  </Typography>
                   {fields.map((field, index) => (
                     <Grid container spacing={2} key={field.id} sx={{ mb: 2, alignItems: 'center' }}>
                       <Grid item xs={4}>
-                        <TextField select label="Product" fullWidth defaultValue="" {...register(`items.${index}.productId` as const, { required: true })} sx={textFieldStyle} InputLabelProps={{ shrink: true }}>
+                        <TextField
+                          select
+                          label="Product"
+                          fullWidth
+                          defaultValue=""
+                          {...register(`items.${index}.productId` as const, { required: true })}
+                          sx={textFieldStyle}
+                          InputLabelProps={{ shrink: true }}
+                        >
                           {products.map((p) => (
-                            <MenuItem key={p._id || p.id} value={p._id || p.id}>{p.name}</MenuItem>
+                            <MenuItem key={p._id || p.id} value={p._id || p.id}>
+                              {p.name}
+                            </MenuItem>
                           ))}
                         </TextField>
                       </Grid>
                       <Grid item xs={2}>
-                        <TextField label="Qty" type="number" fullWidth {...register(`items.${index}.quantity` as const, { required: true })} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                        <TextField
+                          label="Qty"
+                          type="number"
+                          fullWidth
+                          {...register(`items.${index}.quantity` as const, { required: true })}
+                          sx={textFieldStyle}
+                          InputLabelProps={{ shrink: true }}
+                        />
                       </Grid>
                       <Grid item xs={3}>
-                        <TextField label="Sale Price ($)" type="number" fullWidth {...register(`items.${index}.price` as const, { required: true })} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                        <TextField
+                          label="Sale Price ($)"
+                          type="number"
+                          fullWidth
+                          {...register(`items.${index}.price` as const, { required: true })}
+                          sx={textFieldStyle}
+                          InputLabelProps={{ shrink: true }}
+                        />
                       </Grid>
                       <Grid item xs={2}>
-                        <TextField label="Refund ($)" type="number" fullWidth {...register(`items.${index}.refundAmount` as const, { required: true })} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                        <TextField
+                          label="Refund ($)"
+                          type="number"
+                          fullWidth
+                          {...register(`items.${index}.refundAmount` as const, { required: true })}
+                          sx={textFieldStyle}
+                          InputLabelProps={{ shrink: true }}
+                        />
                       </Grid>
                       <Grid item xs={1}>
-                        <Button color="error" onClick={() => remove(index)}>X</Button>
+                        <Button color="error" onClick={() => remove(index)}>
+                          X
+                        </Button>
                       </Grid>
                     </Grid>
                   ))}
-                  <Button variant="outlined" onClick={() => append({ productId: '', quantity: 1, price: 0, refundAmount: 0 })} sx={{ textTransform: 'none', borderColor: 'rgba(255,255,255,0.08)' }}>Add Line Item</Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() =>
+                      append({ productId: '', quantity: 1, price: 0, refundAmount: 0 })
+                    }
+                    sx={{ textTransform: 'none', borderColor: 'rgba(255,255,255,0.08)' }}
+                  >
+                    Add Line Item
+                  </Button>
                 </Grid>
                 <Grid item xs={12}>
-                  <TextField label="Reason for Return / Defect details" multiline rows={3} fullWidth {...register('reason', { required: true })} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                  <TextField
+                    label="Reason for Return / Defect details"
+                    multiline
+                    rows={3}
+                    fullWidth
+                    {...register('reason', { required: true })}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  />
                 </Grid>
               </Grid>
             </DialogContent>
             <DialogActions sx={{ p: 3, gap: 1.5 }}>
-              <Button onClick={() => setOpen(false)} sx={{ color: 'text.secondary', textTransform: 'none' }}>Cancel</Button>
-              <Button variant="contained" type="submit" sx={{ px: 4, py: 1.2, fontWeight: 700, background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)' }}>Complete Return</Button>
+              <Button
+                onClick={() => setOpen(false)}
+                sx={{ color: 'text.secondary', textTransform: 'none' }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                type="submit"
+                sx={{
+                  px: 4,
+                  py: 1.2,
+                  fontWeight: 700,
+                  background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                }}
+              >
+                Complete Return
+              </Button>
             </DialogActions>
           </form>
         </Dialog>

@@ -6,10 +6,17 @@ import { SupplierInvoice } from '../models/SupplierInvoice.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 
 export class FinanceController {
-  public static async getFinancialReport(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getFinancialReport(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       // 1. Revenue
-      const salesTransactions = await Transaction.find({ type: 'SALE', status: 'COMPLETED' }).lean();
+      const salesTransactions = await Transaction.find({
+        type: 'SALE',
+        status: 'COMPLETED',
+      }).lean();
       const revenue = salesTransactions.reduce((acc, t) => acc + (t.total || 0), 0);
       const taxCollected = salesTransactions.reduce((acc, t) => acc + (t.tax || 0), 0);
 
@@ -26,7 +33,10 @@ export class FinanceController {
 
       // 3. Balance Sheet Assets: Inventory Valuation
       const products = await Product.find({ isActive: true }).lean();
-      const inventoryValuation = products.reduce((acc, p) => acc + (p.quantity || 0) * (p.costPrice || p.cost || 0), 0);
+      const inventoryValuation = products.reduce(
+        (acc, p) => acc + (p.quantity || 0) * (p.costPrice || p.cost || 0),
+        0
+      );
       const cashOnHand = revenue; // Simplifying cash on hand as total completed revenues
       const totalAssets = inventoryValuation + cashOnHand;
 
@@ -43,7 +53,9 @@ export class FinanceController {
       const netCashFlow = cashOnHand - cashOutflow;
 
       // 7. Best Selling Products
-      const productSalesMap: { [key: string]: { name: string; sku: string; qty: number; revenue: number } } = {};
+      const productSalesMap: {
+        [key: string]: { name: string; sku: string; qty: number; revenue: number };
+      } = {};
       for (const t of salesTransactions) {
         for (const item of t.items) {
           if (!productSalesMap[item.productId]) {

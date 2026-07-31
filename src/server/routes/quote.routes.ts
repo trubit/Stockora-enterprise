@@ -8,6 +8,18 @@ export const quoteRouter = Router();
 
 quoteRouter.use(authMiddleware);
 
-quoteRouter.get('/', rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_READ]), QuoteController.listQuotes);
-quoteRouter.post('/', rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]), QuoteController.createQuote);
-quoteRouter.put('/:id/accept', rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]), QuoteController.acceptQuote);
+quoteRouter.get(
+  '/',
+  rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_READ]),
+  QuoteController.listQuotes
+);
+quoteRouter.post(
+  '/',
+  rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]),
+  QuoteController.createQuote
+);
+quoteRouter.put(
+  '/:id/accept',
+  rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]),
+  QuoteController.acceptQuote
+);

@@ -93,7 +93,7 @@ describe('Phases 19 - 22 Enterprise Capabilities', () => {
 
       expect(debitLine?.amount).toBe(1080);
       expect(debitLine?.accountCode).toBe('1000-CASH');
-      
+
       expect(creditRevenueLine?.amount).toBe(1000);
       expect(creditRevenueLine?.type).toBe('CREDIT');
 

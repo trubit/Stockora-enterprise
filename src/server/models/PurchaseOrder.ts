@@ -13,7 +13,15 @@ export interface IPurchaseOrder extends Document {
   supplierId: mongoose.Types.ObjectId;
   items: IPurchaseOrderItem[];
   totalAmount: number;
-  status: 'DRAFT' | 'PENDING_APPROVAL' | 'APPROVED' | 'SENT' | 'PARTIALLY_RECEIVED' | 'RECEIVED' | 'BILLED' | 'CANCELLED';
+  status:
+    | 'DRAFT'
+    | 'PENDING_APPROVAL'
+    | 'APPROVED'
+    | 'SENT'
+    | 'PARTIALLY_RECEIVED'
+    | 'RECEIVED'
+    | 'BILLED'
+    | 'CANCELLED';
   approvedBy?: mongoose.Types.ObjectId;
   notes?: string;
   createdAt: Date;
@@ -36,7 +44,16 @@ const PurchaseOrderSchema = new Schema<IPurchaseOrder>(
     totalAmount: { type: Number, required: true, min: 0 },
     status: {
       type: String,
-      enum: ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'SENT', 'PARTIALLY_RECEIVED', 'RECEIVED', 'BILLED', 'CANCELLED'],
+      enum: [
+        'DRAFT',
+        'PENDING_APPROVAL',
+        'APPROVED',
+        'SENT',
+        'PARTIALLY_RECEIVED',
+        'RECEIVED',
+        'BILLED',
+        'CANCELLED',
+      ],
       default: 'PENDING_APPROVAL',
       required: true,
       index: true,

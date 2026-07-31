@@ -11,7 +11,11 @@ import type { AuthenticatedRequest } from '../middleware/auth.js';
 const io = SocketManager.getInstance();
 
 export class InventoryController {
-  public static async adjustStock(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async adjustStock(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { productId, type, reason, quantity, notes } = req.body;
 
     if (!productId || !type || !reason || quantity === undefined) {
@@ -37,7 +41,11 @@ export class InventoryController {
         newQty += qtyNumber;
       } else if (type === 'REMOVE') {
         if (product.quantity < qtyNumber) {
-          return next(new ValidationError(`Insufficient stock. Current: ${product.quantity}, Adjust-Out: ${qtyNumber}`));
+          return next(
+            new ValidationError(
+              `Insufficient stock. Current: ${product.quantity}, Adjust-Out: ${qtyNumber}`
+            )
+          );
         }
         newQty -= qtyNumber;
       } else if (type === 'SET') {
@@ -71,7 +79,8 @@ export class InventoryController {
         userId: req.user?.id,
       });
 
-      const signedQty = type === 'REMOVE' ? -qtyNumber : (type === 'SET' ? (qtyNumber - priorQty) : qtyNumber);
+      const signedQty =
+        type === 'REMOVE' ? -qtyNumber : type === 'SET' ? qtyNumber - priorQty : qtyNumber;
 
       const movement = await StockMovement.create({
         productId,
@@ -113,7 +122,11 @@ export class InventoryController {
     }
   }
 
-  public static async getMovements(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getMovements(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const movements = await StockMovement.find()
         .populate('productId', 'name sku brand category')
@@ -126,7 +139,11 @@ export class InventoryController {
     }
   }
 
-  public static async getValuation(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getValuation(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const products = await Product.find({ isActive: true }).lean();
 

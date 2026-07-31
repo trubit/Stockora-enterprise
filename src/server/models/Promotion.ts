@@ -25,7 +25,12 @@ export interface IPromotion extends Document {
 const PromotionSchema = new Schema<IPromotion>(
   {
     code: { type: String, required: true, unique: true, index: true, uppercase: true, trim: true },
-    type: { type: String, required: true, enum: ['PERCENTAGE', 'FIXED', 'BOGO', 'BUNDLE'], default: 'PERCENTAGE' },
+    type: {
+      type: String,
+      required: true,
+      enum: ['PERCENTAGE', 'FIXED', 'BOGO', 'BUNDLE'],
+      default: 'PERCENTAGE',
+    },
     value: { type: Number, required: true, min: 0 },
     minPurchase: { type: Number, required: true, default: 0, min: 0 },
     usageLimit: { type: Number },
@@ -46,4 +51,3 @@ const PromotionSchema = new Schema<IPromotion>(
 PromotionSchema.index({ expiresAt: 1, isActive: 1 });
 
 export const Promotion = mongoose.model<IPromotion>('Promotion', PromotionSchema);
-

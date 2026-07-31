@@ -27,7 +27,8 @@ const SYNC_ENDPOINT = '/api/branch-sync/sync';
 
 // ---- Event emitter (lightweight, no npm dep) --------------------------------
 
-type SyncEventType = 'sync:start' | 'sync:progress' | 'sync:complete' | 'sync:error' | 'pending:change';
+type SyncEventType =
+  'sync:start' | 'sync:progress' | 'sync:complete' | 'sync:error' | 'pending:change';
 
 type SyncProgressPayload = {
   type: SyncEventType;
@@ -51,7 +52,10 @@ export function on(event: SyncEventType, handler: (payload: SyncProgressPayload)
   listeners.get(event)!.push(handler);
   return () => {
     const arr = listeners.get(event) ?? [];
-    listeners.set(event, arr.filter((h) => h !== handler));
+    listeners.set(
+      event,
+      arr.filter((h) => h !== handler)
+    );
   };
 }
 
@@ -103,7 +107,9 @@ export async function runSync(authToken: string): Promise<{
       } else if (data.conflicts > 0) {
         results.conflicts++;
         await deletePendingTransaction(tx.id); // Conflict = already exists, remove from queue
-        await addSyncLogEntry(buildLogEntry(tx, 'CONFLICT', data.logs[0] ?? 'Conflict: already exists.'));
+        await addSyncLogEntry(
+          buildLogEntry(tx, 'CONFLICT', data.logs[0] ?? 'Conflict: already exists.')
+        );
       } else {
         throw new Error(data.logs[0] ?? 'Server rejected transaction.');
       }
@@ -115,7 +121,9 @@ export async function runSync(authToken: string): Promise<{
       if (tx.retryCount >= MAX_RETRIES) {
         results.failures++;
         await deletePendingTransaction(tx.id);
-        await addSyncLogEntry(buildLogEntry(tx, 'FAILURE', `Failed after ${MAX_RETRIES} retries: ${message}`));
+        await addSyncLogEntry(
+          buildLogEntry(tx, 'FAILURE', `Failed after ${MAX_RETRIES} retries: ${message}`)
+        );
       } else {
         // Put back with incremented retry count
         await savePendingTransaction(tx);
@@ -132,7 +140,11 @@ export async function runSync(authToken: string): Promise<{
   return results;
 }
 
-function buildLogEntry(tx: PendingTransaction, status: SyncLogEntry['status'], message: string): SyncLogEntry {
+function buildLogEntry(
+  tx: PendingTransaction,
+  status: SyncLogEntry['status'],
+  message: string
+): SyncLogEntry {
   return {
     id: `log-${tx.id}-${Date.now()}`,
     transactionId: tx.id,
@@ -164,7 +176,10 @@ export async function queueOfflineTransaction(
 ): Promise<void> {
   await savePendingTransaction({ ...tx, retryCount: 0 });
   const count = await getPendingCount();
-  emit('pending:change', { pendingCount: count, message: `Queued offline: ${tx.transactionNumber}` });
+  emit('pending:change', {
+    pendingCount: count,
+    message: `Queued offline: ${tx.transactionNumber}`,
+  });
 }
 
 // ---- Query pending count (for UI badge) ------------------------------------

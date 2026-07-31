@@ -1,5 +1,26 @@
 import { useState } from 'react';
-import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, Grid, Tab, Tabs } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  MenuItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  Grid,
+  Tab,
+  Tabs,
+} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -27,7 +48,12 @@ interface SalesOrder {
   _id: string;
   orderNumber: string;
   customerId?: { name: string; code: string };
-  items: { productId: { _id: string; name: string; sku: string }; quantity: number; price: number; shippedQuantity: number }[];
+  items: {
+    productId: { _id: string; name: string; sku: string };
+    quantity: number;
+    price: number;
+    shippedQuantity: number;
+  }[];
   total: number;
   status: string;
 }
@@ -53,7 +79,9 @@ interface ShipForm {
   trackingNumber?: string;
 }
 
-const DEFAULT_VALID_UNTIL = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+const DEFAULT_VALID_UNTIL = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+  .toISOString()
+  .split('T')[0];
 
 export default function SalesBackOffice() {
   const [activeTab, setActiveTab] = useState(0);
@@ -99,7 +127,12 @@ export default function SalesBackOffice() {
   });
 
   // Quote Form
-  const { register: qReg, control: qControl, handleSubmit: qSubmit, reset: qReset } = useForm<QuoteForm>({
+  const {
+    register: qReg,
+    control: qControl,
+    handleSubmit: qSubmit,
+    reset: qReset,
+  } = useForm<QuoteForm>({
     defaultValues: {
       customerId: '',
       items: [{ productId: '', quantity: 1, price: 0 }],
@@ -108,13 +141,22 @@ export default function SalesBackOffice() {
       notes: '',
     },
   });
-  const { fields: qFields, append: qAppend, remove: qRemove } = useFieldArray({
+  const {
+    fields: qFields,
+    append: qAppend,
+    remove: qRemove,
+  } = useFieldArray({
     control: qControl,
     name: 'items',
   });
 
   // Order Form
-  const { register: oReg, control: oControl, handleSubmit: oSubmit, reset: oReset } = useForm<OrderForm>({
+  const {
+    register: oReg,
+    control: oControl,
+    handleSubmit: oSubmit,
+    reset: oReset,
+  } = useForm<OrderForm>({
     defaultValues: {
       customerId: '',
       items: [{ productId: '', quantity: 1, price: 0 }],
@@ -122,13 +164,22 @@ export default function SalesBackOffice() {
       notes: '',
     },
   });
-  const { fields: oFields, append: oAppend, remove: oRemove } = useFieldArray({
+  const {
+    fields: oFields,
+    append: oAppend,
+    remove: oRemove,
+  } = useFieldArray({
     control: oControl,
     name: 'items',
   });
 
   // Ship Form
-  const { register: sReg, control: sControl, handleSubmit: sSubmit, reset: sReset } = useForm<ShipForm>({
+  const {
+    register: sReg,
+    control: sControl,
+    handleSubmit: sSubmit,
+    reset: sReset,
+  } = useForm<ShipForm>({
     defaultValues: {
       items: [{ productId: '', quantityShipped: 0, productName: '' }],
       carrier: '',
@@ -216,7 +267,11 @@ export default function SalesBackOffice() {
     createQuoteMutation.mutate({
       ...data,
       discount: Number(data.discount),
-      items: data.items.map((i) => ({ ...i, quantity: Number(i.quantity), price: Number(i.price) })),
+      items: data.items.map((i) => ({
+        ...i,
+        quantity: Number(i.quantity),
+        price: Number(i.price),
+      })),
     });
   };
 
@@ -224,7 +279,11 @@ export default function SalesBackOffice() {
     createOrderMutation.mutate({
       ...data,
       discount: Number(data.discount),
-      items: data.items.map((i) => ({ ...i, quantity: Number(i.quantity), price: Number(i.price) })),
+      items: data.items.map((i) => ({
+        ...i,
+        quantity: Number(i.quantity),
+        price: Number(i.price),
+      })),
     });
   };
 
@@ -260,9 +319,21 @@ export default function SalesBackOffice() {
 
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
-      <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-          <Typography variant="h4" sx={{ fontWeight: 800, background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 800,
+              background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
             Commercial Sales & Back Office
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
@@ -300,13 +371,26 @@ export default function SalesBackOffice() {
           Manage customer sales quotes, process sales orders, and coordinate warehouse dispatches.
         </Typography>
 
-        <Tabs value={activeTab} onChange={(_e, v) => setActiveTab(v)} sx={{ mb: 3, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <Tabs
+          value={activeTab}
+          onChange={(_e, v) => setActiveTab(v)}
+          sx={{ mb: 3, borderBottom: '1px solid rgba(255,255,255,0.08)' }}
+        >
           <Tab label="Sales Quotes" sx={{ textTransform: 'none', fontWeight: 700 }} />
           <Tab label="Sales Orders (SO)" sx={{ textTransform: 'none', fontWeight: 700 }} />
         </Tabs>
 
         {activeTab === 0 && (
-          <TableContainer component={Paper} className="glass-panel" sx={{ border: '1px solid rgba(255,255,255,0.05)', background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)', borderRadius: 3 }}>
+          <TableContainer
+            component={Paper}
+            className="glass-panel"
+            sx={{
+              border: '1px solid rgba(255,255,255,0.05)',
+              background:
+                'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
+              borderRadius: 3,
+            }}
+          >
             <Table>
               <TableHead sx={{ bgcolor: 'rgba(17, 24, 39, 0.5)' }}>
                 <TableRow>
@@ -322,7 +406,13 @@ export default function SalesBackOffice() {
               <TableBody>
                 {quotes.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 6, color: 'text.secondary', border: 'none' }}>No sales quotes registered.</TableCell>
+                    <TableCell
+                      colSpan={7}
+                      align="center"
+                      sx={{ py: 6, color: 'text.secondary', border: 'none' }}
+                    >
+                      No sales quotes registered.
+                    </TableCell>
                   </TableRow>
                 ) : (
                   quotes.map((q) => (
@@ -333,7 +423,12 @@ export default function SalesBackOffice() {
                       <TableCell sx={{ fontWeight: 800 }}>${q.total.toFixed(2)}</TableCell>
                       <TableCell>{new Date(q.validUntil).toLocaleDateString()}</TableCell>
                       <TableCell>
-                        <Chip label={q.status} size="small" color={getStatusColor(q.status)} sx={{ fontWeight: 700 }} />
+                        <Chip
+                          label={q.status}
+                          size="small"
+                          color={getStatusColor(q.status)}
+                          sx={{ fontWeight: 700 }}
+                        />
                       </TableCell>
                       <TableCell sx={{ textAlign: 'right' }}>
                         {q.status === 'PENDING' && (
@@ -342,13 +437,19 @@ export default function SalesBackOffice() {
                             size="small"
                             startIcon={<CheckCircleIcon />}
                             onClick={() => acceptQuoteMutation.mutate(q._id)}
-                            sx={{ textTransform: 'none', bgcolor: 'success.main', '&:hover': { bgcolor: 'success.dark' } }}
+                            sx={{
+                              textTransform: 'none',
+                              bgcolor: 'success.main',
+                              '&:hover': { bgcolor: 'success.dark' },
+                            }}
                           >
                             Accept
                           </Button>
                         )}
                         {q.status !== 'PENDING' && (
-                          <Typography variant="caption" color="text.secondary">Finalized</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Finalized
+                          </Typography>
                         )}
                       </TableCell>
                     </TableRow>
@@ -360,7 +461,16 @@ export default function SalesBackOffice() {
         )}
 
         {activeTab === 1 && (
-          <TableContainer component={Paper} className="glass-panel" sx={{ border: '1px solid rgba(255,255,255,0.05)', background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)', borderRadius: 3 }}>
+          <TableContainer
+            component={Paper}
+            className="glass-panel"
+            sx={{
+              border: '1px solid rgba(255,255,255,0.05)',
+              background:
+                'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
+              borderRadius: 3,
+            }}
+          >
             <Table>
               <TableHead sx={{ bgcolor: 'rgba(17, 24, 39, 0.5)' }}>
                 <TableRow>
@@ -375,17 +485,34 @@ export default function SalesBackOffice() {
               <TableBody>
                 {orders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 6, color: 'text.secondary', border: 'none' }}>No sales orders confirmed.</TableCell>
+                    <TableCell
+                      colSpan={6}
+                      align="center"
+                      sx={{ py: 6, color: 'text.secondary', border: 'none' }}
+                    >
+                      No sales orders confirmed.
+                    </TableCell>
                   </TableRow>
                 ) : (
                   orders.map((so) => (
-                    <TableRow key={so._id} sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.01)' } }}>
+                    <TableRow
+                      key={so._id}
+                      sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.01)' } }}
+                    >
                       <TableCell sx={{ fontWeight: 700 }}>{so.orderNumber}</TableCell>
                       <TableCell>{so.customerId?.name || 'Walk-in Customer'}</TableCell>
                       <TableCell sx={{ fontWeight: 800 }}>${so.total.toFixed(2)}</TableCell>
-                      <TableCell>{so.items.reduce((acc, i) => acc + i.shippedQuantity, 0)} / {so.items.reduce((acc, i) => acc + i.quantity, 0)} shipped</TableCell>
                       <TableCell>
-                        <Chip label={so.status} size="small" color={getStatusColor(so.status)} sx={{ fontWeight: 700 }} />
+                        {so.items.reduce((acc, i) => acc + i.shippedQuantity, 0)} /{' '}
+                        {so.items.reduce((acc, i) => acc + i.quantity, 0)} shipped
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={so.status}
+                          size="small"
+                          color={getStatusColor(so.status)}
+                          sx={{ fontWeight: 700 }}
+                        />
                       </TableCell>
                       <TableCell sx={{ textAlign: 'right' }}>
                         {['PENDING', 'APPROVED', 'PARTIALLY_SHIPPED'].includes(so.status) && (
@@ -394,13 +521,18 @@ export default function SalesBackOffice() {
                             size="small"
                             startIcon={<LocalShippingIcon />}
                             onClick={() => handleOpenShip(so)}
-                            sx={{ textTransform: 'none', background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)' }}
+                            sx={{
+                              textTransform: 'none',
+                              background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                            }}
                           >
                             Dispatch Shipment
                           </Button>
                         )}
                         {so.status === 'SHIPPED' && (
-                          <Typography variant="caption" color="text.secondary">All Dispatched</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            All Dispatched
+                          </Typography>
                         )}
                       </TableCell>
                     </TableRow>
@@ -412,120 +544,360 @@ export default function SalesBackOffice() {
         )}
 
         {/* Create Quote Dialog */}
-        <Dialog open={quoteOpen} onClose={() => setQuoteOpen(false)} maxWidth="md" fullWidth PaperProps={{ sx: { background: 'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%)', backdropFilter: 'blur(20px)', border: '1px solid rgba(139, 92, 246, 0.2)', borderRadius: 4 } }}>
+        <Dialog
+          open={quoteOpen}
+          onClose={() => setQuoteOpen(false)}
+          maxWidth="md"
+          fullWidth
+          PaperProps={{
+            sx: {
+              background:
+                'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(139, 92, 246, 0.2)',
+              borderRadius: 4,
+            },
+          }}
+        >
           <form onSubmit={qSubmit(onQuoteSubmit)}>
-            <DialogTitle sx={{ fontWeight: 800, background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Create Sales Quote Request</DialogTitle>
+            <DialogTitle
+              sx={{
+                fontWeight: 800,
+                background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              Create Sales Quote Request
+            </DialogTitle>
             <DialogContent sx={{ pt: 2 }}>
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
-                  <TextField select label="Customer Link" fullWidth defaultValue="" {...qReg('customerId')} sx={textFieldStyle} InputLabelProps={{ shrink: true }}>
+                  <TextField
+                    select
+                    label="Customer Link"
+                    fullWidth
+                    defaultValue=""
+                    {...qReg('customerId')}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  >
                     {customers.map((c) => (
-                      <MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>
+                      <MenuItem key={c._id} value={c._id}>
+                        {c.name}
+                      </MenuItem>
                     ))}
                   </TextField>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <TextField label="Valid Deadline" type="date" fullWidth {...qReg('validUntil')} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                  <TextField
+                    label="Valid Deadline"
+                    type="date"
+                    fullWidth
+                    {...qReg('validUntil')}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  />
                 </Grid>
                 <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 700 }}>Quote Line Items</Typography>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ mb: 1, fontWeight: 700 }}
+                  >
+                    Quote Line Items
+                  </Typography>
                   {qFields.map((field, index) => (
                     <Grid container spacing={2} key={field.id} sx={{ mb: 2, alignItems: 'center' }}>
                       <Grid item xs={5}>
-                        <TextField select label="Product" fullWidth defaultValue="" {...qReg(`items.${index}.productId` as const, { required: true })} sx={textFieldStyle} InputLabelProps={{ shrink: true }}>
+                        <TextField
+                          select
+                          label="Product"
+                          fullWidth
+                          defaultValue=""
+                          {...qReg(`items.${index}.productId` as const, { required: true })}
+                          sx={textFieldStyle}
+                          InputLabelProps={{ shrink: true }}
+                        >
                           {products.map((p) => (
-                            <MenuItem key={p._id || p.id} value={p._id || p.id}>{p.name} (${p.price})</MenuItem>
+                            <MenuItem key={p._id || p.id} value={p._id || p.id}>
+                              {p.name} (${p.price})
+                            </MenuItem>
                           ))}
                         </TextField>
                       </Grid>
                       <Grid item xs={3}>
-                        <TextField label="Quantity" type="number" fullWidth {...qReg(`items.${index}.quantity` as const, { required: true })} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                        <TextField
+                          label="Quantity"
+                          type="number"
+                          fullWidth
+                          {...qReg(`items.${index}.quantity` as const, { required: true })}
+                          sx={textFieldStyle}
+                          InputLabelProps={{ shrink: true }}
+                        />
                       </Grid>
                       <Grid item xs={3}>
-                        <TextField label="Unit Price ($)" type="number" fullWidth {...qReg(`items.${index}.price` as const, { required: true })} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                        <TextField
+                          label="Unit Price ($)"
+                          type="number"
+                          fullWidth
+                          {...qReg(`items.${index}.price` as const, { required: true })}
+                          sx={textFieldStyle}
+                          InputLabelProps={{ shrink: true }}
+                        />
                       </Grid>
                       <Grid item xs={1}>
-                        <Button color="error" onClick={() => qRemove(index)}>X</Button>
+                        <Button color="error" onClick={() => qRemove(index)}>
+                          X
+                        </Button>
                       </Grid>
                     </Grid>
                   ))}
-                  <Button variant="outlined" onClick={() => qAppend({ productId: '', quantity: 1, price: 0 })} sx={{ textTransform: 'none', borderColor: 'rgba(255,255,255,0.08)' }}>Add Line Item</Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => qAppend({ productId: '', quantity: 1, price: 0 })}
+                    sx={{ textTransform: 'none', borderColor: 'rgba(255,255,255,0.08)' }}
+                  >
+                    Add Line Item
+                  </Button>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <TextField label="Discount ($)" type="number" fullWidth {...qReg('discount')} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                  <TextField
+                    label="Discount ($)"
+                    type="number"
+                    fullWidth
+                    {...qReg('discount')}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  />
                 </Grid>
                 <Grid item xs={12}>
-                  <TextField label="Internal Notes / Terms" multiline rows={2} fullWidth {...qReg('notes')} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                  <TextField
+                    label="Internal Notes / Terms"
+                    multiline
+                    rows={2}
+                    fullWidth
+                    {...qReg('notes')}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  />
                 </Grid>
               </Grid>
             </DialogContent>
             <DialogActions sx={{ p: 3, gap: 1.5 }}>
-              <Button onClick={() => setQuoteOpen(false)} sx={{ color: 'text.secondary', textTransform: 'none' }}>Cancel</Button>
-              <Button variant="contained" type="submit" sx={{ px: 4, py: 1.2, fontWeight: 700, background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)' }}>Create Quote</Button>
+              <Button
+                onClick={() => setQuoteOpen(false)}
+                sx={{ color: 'text.secondary', textTransform: 'none' }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                type="submit"
+                sx={{
+                  px: 4,
+                  py: 1.2,
+                  fontWeight: 700,
+                  background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                }}
+              >
+                Create Quote
+              </Button>
             </DialogActions>
           </form>
         </Dialog>
 
         {/* Create Sales Order Dialog */}
-        <Dialog open={orderOpen} onClose={() => setOrderOpen(false)} maxWidth="md" fullWidth PaperProps={{ sx: { background: 'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%)', backdropFilter: 'blur(20px)', border: '1px solid rgba(139, 92, 246, 0.2)', borderRadius: 4 } }}>
+        <Dialog
+          open={orderOpen}
+          onClose={() => setOrderOpen(false)}
+          maxWidth="md"
+          fullWidth
+          PaperProps={{
+            sx: {
+              background:
+                'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(139, 92, 246, 0.2)',
+              borderRadius: 4,
+            },
+          }}
+        >
           <form onSubmit={oSubmit(onOrderSubmit)}>
-            <DialogTitle sx={{ fontWeight: 800, background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Confirm Customer Sales Order (SO)</DialogTitle>
+            <DialogTitle
+              sx={{
+                fontWeight: 800,
+                background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              Confirm Customer Sales Order (SO)
+            </DialogTitle>
             <DialogContent sx={{ pt: 2 }}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
-                  <TextField select label="Customer Link" fullWidth defaultValue="" {...oReg('customerId')} sx={textFieldStyle} InputLabelProps={{ shrink: true }}>
+                  <TextField
+                    select
+                    label="Customer Link"
+                    fullWidth
+                    defaultValue=""
+                    {...oReg('customerId')}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  >
                     {customers.map((c) => (
-                      <MenuItem key={c._id} value={c._id}>{c.name}</MenuItem>
+                      <MenuItem key={c._id} value={c._id}>
+                        {c.name}
+                      </MenuItem>
                     ))}
                   </TextField>
                 </Grid>
                 <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 700 }}>Order Line Items</Typography>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ mb: 1, fontWeight: 700 }}
+                  >
+                    Order Line Items
+                  </Typography>
                   {oFields.map((field, index) => (
                     <Grid container spacing={2} key={field.id} sx={{ mb: 2, alignItems: 'center' }}>
                       <Grid item xs={5}>
-                        <TextField select label="Product" fullWidth defaultValue="" {...oReg(`items.${index}.productId` as const, { required: true })} sx={textFieldStyle} InputLabelProps={{ shrink: true }}>
+                        <TextField
+                          select
+                          label="Product"
+                          fullWidth
+                          defaultValue=""
+                          {...oReg(`items.${index}.productId` as const, { required: true })}
+                          sx={textFieldStyle}
+                          InputLabelProps={{ shrink: true }}
+                        >
                           {products.map((p) => (
-                            <MenuItem key={p._id || p.id} value={p._id || p.id}>{p.name} (${p.price})</MenuItem>
+                            <MenuItem key={p._id || p.id} value={p._id || p.id}>
+                              {p.name} (${p.price})
+                            </MenuItem>
                           ))}
                         </TextField>
                       </Grid>
                       <Grid item xs={3}>
-                        <TextField label="Quantity" type="number" fullWidth {...oReg(`items.${index}.quantity` as const, { required: true })} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                        <TextField
+                          label="Quantity"
+                          type="number"
+                          fullWidth
+                          {...oReg(`items.${index}.quantity` as const, { required: true })}
+                          sx={textFieldStyle}
+                          InputLabelProps={{ shrink: true }}
+                        />
                       </Grid>
                       <Grid item xs={3}>
-                        <TextField label="Unit Price ($)" type="number" fullWidth {...oReg(`items.${index}.price` as const, { required: true })} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                        <TextField
+                          label="Unit Price ($)"
+                          type="number"
+                          fullWidth
+                          {...oReg(`items.${index}.price` as const, { required: true })}
+                          sx={textFieldStyle}
+                          InputLabelProps={{ shrink: true }}
+                        />
                       </Grid>
                       <Grid item xs={1}>
-                        <Button color="error" onClick={() => oRemove(index)}>X</Button>
+                        <Button color="error" onClick={() => oRemove(index)}>
+                          X
+                        </Button>
                       </Grid>
                     </Grid>
                   ))}
-                  <Button variant="outlined" onClick={() => oAppend({ productId: '', quantity: 1, price: 0 })} sx={{ textTransform: 'none', borderColor: 'rgba(255,255,255,0.08)' }}>Add Line Item</Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => oAppend({ productId: '', quantity: 1, price: 0 })}
+                    sx={{ textTransform: 'none', borderColor: 'rgba(255,255,255,0.08)' }}
+                  >
+                    Add Line Item
+                  </Button>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <TextField label="Discount ($)" type="number" fullWidth {...oReg('discount')} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                  <TextField
+                    label="Discount ($)"
+                    type="number"
+                    fullWidth
+                    {...oReg('discount')}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  />
                 </Grid>
                 <Grid item xs={12}>
-                  <TextField label="Internal Notes / Shipping Instructions" multiline rows={2} fullWidth {...oReg('notes')} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                  <TextField
+                    label="Internal Notes / Shipping Instructions"
+                    multiline
+                    rows={2}
+                    fullWidth
+                    {...oReg('notes')}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  />
                 </Grid>
               </Grid>
             </DialogContent>
             <DialogActions sx={{ p: 3, gap: 1.5 }}>
-              <Button onClick={() => setOrderOpen(false)} sx={{ color: 'text.secondary', textTransform: 'none' }}>Cancel</Button>
-              <Button variant="contained" type="submit" sx={{ px: 4, py: 1.2, fontWeight: 700, background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)' }}>Confirm Order</Button>
+              <Button
+                onClick={() => setOrderOpen(false)}
+                sx={{ color: 'text.secondary', textTransform: 'none' }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                type="submit"
+                sx={{
+                  px: 4,
+                  py: 1.2,
+                  fontWeight: 700,
+                  background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                }}
+              >
+                Confirm Order
+              </Button>
             </DialogActions>
           </form>
         </Dialog>
 
         {/* Dispatch Shipment Dialog */}
-        <Dialog open={shipOpen} onClose={() => setShipOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { background: 'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%)', backdropFilter: 'blur(20px)', border: '1px solid rgba(139, 92, 246, 0.2)', borderRadius: 4 } }}>
+        <Dialog
+          open={shipOpen}
+          onClose={() => setShipOpen(false)}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              background:
+                'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(139, 92, 246, 0.2)',
+              borderRadius: 4,
+            },
+          }}
+        >
           <form onSubmit={sSubmit(onShipSubmit)}>
-            <DialogTitle sx={{ fontWeight: 800, background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Dispatch Items for SO: {selectedSO?.orderNumber}</DialogTitle>
+            <DialogTitle
+              sx={{
+                fontWeight: 800,
+                background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              Dispatch Items for SO: {selectedSO?.orderNumber}
+            </DialogTitle>
             <DialogContent sx={{ pt: 2 }}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2, fontWeight: 700 }}>Record quantity shipped in dispatcher</Typography>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ mb: 2, fontWeight: 700 }}
+                  >
+                    Record quantity shipped in dispatcher
+                  </Typography>
                   {sFields.map((field, index) => (
                     <Grid container spacing={2} key={field.id} sx={{ mb: 2, alignItems: 'center' }}>
                       <Grid item xs={8}>
@@ -538,7 +910,10 @@ export default function SalesBackOffice() {
                           label="Qty Shipped"
                           type="number"
                           fullWidth
-                          {...sReg(`items.${index}.quantityShipped` as const, { required: true, min: 0 })}
+                          {...sReg(`items.${index}.quantityShipped` as const, {
+                            required: true,
+                            min: 0,
+                          })}
                           sx={textFieldStyle}
                           InputLabelProps={{ shrink: true }}
                         />
@@ -547,16 +922,44 @@ export default function SalesBackOffice() {
                   ))}
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <TextField label="Shipping Carrier" fullWidth {...sReg('carrier')} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                  <TextField
+                    label="Shipping Carrier"
+                    fullWidth
+                    {...sReg('carrier')}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  />
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <TextField label="Tracking Number" fullWidth {...sReg('trackingNumber')} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                  <TextField
+                    label="Tracking Number"
+                    fullWidth
+                    {...sReg('trackingNumber')}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  />
                 </Grid>
               </Grid>
             </DialogContent>
             <DialogActions sx={{ p: 3, gap: 1.5 }}>
-              <Button onClick={() => setShipOpen(false)} sx={{ color: 'text.secondary', textTransform: 'none' }}>Cancel</Button>
-              <Button variant="contained" type="submit" sx={{ px: 4, py: 1.2, fontWeight: 700, background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)' }}>Dispatch Shipment</Button>
+              <Button
+                onClick={() => setShipOpen(false)}
+                sx={{ color: 'text.secondary', textTransform: 'none' }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                type="submit"
+                sx={{
+                  px: 4,
+                  py: 1.2,
+                  fontWeight: 700,
+                  background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                }}
+              >
+                Dispatch Shipment
+              </Button>
             </DialogActions>
           </form>
         </Dialog>

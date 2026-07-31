@@ -7,7 +7,11 @@ import { ValidationError } from '../errors/AppError.js';
 import mongoose from 'mongoose';
 
 export class CurrencyController {
-  public static async listRates(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async listRates(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const rates = await ExchangeRate.find({ isActive: true });
       res.json(rates);
@@ -16,7 +20,11 @@ export class CurrencyController {
     }
   }
 
-  public static async updateRate(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async updateRate(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { code, symbol, rate } = req.body;
     if (!code || !symbol || rate === undefined) {
       return next(new ValidationError('Code, symbol, and rate value are required.'));
@@ -58,7 +66,11 @@ export class CurrencyController {
     }
   }
 
-  public static async getTaxConfig(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getTaxConfig(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       let config = await SystemConfig.findOne();
       if (!config) {
@@ -79,7 +91,11 @@ export class CurrencyController {
     }
   }
 
-  public static async updateTaxConfig(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async updateTaxConfig(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { taxRate, taxType } = req.body;
     if (taxRate === undefined || !taxType) {
       return next(new ValidationError('Tax rate and tax type are required.'));

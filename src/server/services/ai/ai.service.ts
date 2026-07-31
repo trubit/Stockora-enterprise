@@ -152,7 +152,11 @@ export class AIService {
       .trim();
   }
 
-  private calculateEstimatedCost(providerName: string, promptTokens: number, completionTokens: number): number {
+  private calculateEstimatedCost(
+    providerName: string,
+    promptTokens: number,
+    completionTokens: number
+  ): number {
     if (providerName.includes('OpenAI')) {
       // gpt-4o-mini: $0.15 / 1M prompt tokens, $0.60 / 1M completion tokens
       return (promptTokens * 0.15 + completionTokens * 0.6) / 1000000;

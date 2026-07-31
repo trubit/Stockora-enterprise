@@ -65,7 +65,6 @@ export class AuthService {
     userAgent = 'Unknown',
     deviceFingerprint?: string
   ): Promise<{ user: IUser; accessToken: string; refreshToken: string; sessionId: string }> {
-
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
       throw new AuthenticationError('Invalid email or password.');
@@ -73,7 +72,9 @@ export class AuthService {
 
     if (user.lockUntil && user.lockUntil > new Date()) {
       const diffMinutes = Math.ceil((user.lockUntil.getTime() - Date.now()) / 60000);
-      throw new AuthenticationError(`Account locked due to multiple login failures. Try again in ${diffMinutes} minutes.`);
+      throw new AuthenticationError(
+        `Account locked due to multiple login failures. Try again in ${diffMinutes} minutes.`
+      );
     }
 
     const isMatch = await user.comparePassword(password);
@@ -121,7 +122,9 @@ export class AuthService {
     }
 
     // 2. Concurrent Session Enforcement (invalidate oldest sessions if limit exceeded)
-    const activeSessions = await Session.find({ userId: user._id, isActive: true }).sort({ lastSeenAt: 1 });
+    const activeSessions = await Session.find({ userId: user._id, isActive: true }).sort({
+      lastSeenAt: 1,
+    });
     const maxSessions = sysConfig.maxConcurrentSessions || 3;
     if (activeSessions.length >= maxSessions) {
       const overage = activeSessions.length - maxSessions + 1;
@@ -176,7 +179,9 @@ export class AuthService {
     return { user, accessToken, refreshToken, sessionId: session._id.toString() };
   }
 
-  public static async rotateRefreshToken(tokenStr: string): Promise<{ accessToken: string; refreshToken: string }> {
+  public static async rotateRefreshToken(
+    tokenStr: string
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     const activeToken = await RefreshToken.findOne({ token: tokenStr });
     if (!activeToken || !activeToken.isActive) {
       throw new AuthenticationError('Session expired or invalid.');

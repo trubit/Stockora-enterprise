@@ -63,4 +63,3 @@ const CustomerSchema = new Schema<ICustomer>(
 CustomerSchema.index({ loyaltyTier: 1 });
 
 export const Customer = mongoose.model<ICustomer>('Customer', CustomerSchema);
-

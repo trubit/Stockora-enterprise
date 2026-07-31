@@ -11,14 +11,17 @@ export const resiliencyRouter = Router();
 resiliencyRouter.use(authMiddleware);
 
 // GET /api/v1/resiliency/metrics
-resiliencyRouter.get('/metrics', (_req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  try {
-    const registry = ResiliencyRegistry.getInstance();
-    res.json(registry.getMetricsList());
-  } catch (err) {
-    next(err);
+resiliencyRouter.get(
+  '/metrics',
+  (_req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const registry = ResiliencyRegistry.getInstance();
+      res.json(registry.getMetricsList());
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 // POST /api/v1/resiliency/reset
 resiliencyRouter.post('/reset', (_req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -32,33 +35,42 @@ resiliencyRouter.post('/reset', (_req: AuthenticatedRequest, res: Response, next
 });
 
 // POST /api/v1/resiliency/breaker/:name/reset
-resiliencyRouter.post('/breaker/:name/reset', (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  const name = String(req.params.name);
-  try {
-    const registry = ResiliencyRegistry.getInstance();
-    const breaker = registry.getBreaker(name);
-    if (!breaker) {
-      return next(new NotFoundError(`Circuit breaker [${name}] not found.`));
+resiliencyRouter.post(
+  '/breaker/:name/reset',
+  (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const name = String(req.params.name);
+    try {
+      const registry = ResiliencyRegistry.getInstance();
+      const breaker = registry.getBreaker(name);
+      if (!breaker) {
+        return next(new NotFoundError(`Circuit breaker [${name}] not found.`));
+      }
+      breaker.forceReset();
+      res.json({
+        success: true,
+        message: `Circuit breaker [${name}] forced back to CLOSED state.`,
+      });
+    } catch (err) {
+      next(err);
     }
-    breaker.forceReset();
-    res.json({ success: true, message: `Circuit breaker [${name}] forced back to CLOSED state.` });
-  } catch (err) {
-    next(err);
   }
-});
+);
 
 // POST /api/v1/resiliency/breaker/:name/open
-resiliencyRouter.post('/breaker/:name/open', (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  const name = String(req.params.name);
-  try {
-    const registry = ResiliencyRegistry.getInstance();
-    const breaker = registry.getBreaker(name);
-    if (!breaker) {
-      return next(new NotFoundError(`Circuit breaker [${name}] not found.`));
+resiliencyRouter.post(
+  '/breaker/:name/open',
+  (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const name = String(req.params.name);
+    try {
+      const registry = ResiliencyRegistry.getInstance();
+      const breaker = registry.getBreaker(name);
+      if (!breaker) {
+        return next(new NotFoundError(`Circuit breaker [${name}] not found.`));
+      }
+      breaker.forceOpen();
+      res.json({ success: true, message: `Circuit breaker [${name}] forced to OPEN state.` });
+    } catch (err) {
+      next(err);
     }
-    breaker.forceOpen();
-    res.json({ success: true, message: `Circuit breaker [${name}] forced to OPEN state.` });
-  } catch (err) {
-    next(err);
   }
-});
+);

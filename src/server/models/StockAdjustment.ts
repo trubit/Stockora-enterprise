@@ -17,7 +17,11 @@ const StockAdjustmentSchema = new Schema<IStockAdjustment>(
     productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true, index: true },
     adjustmentNumber: { type: String, required: true, unique: true, index: true },
     type: { type: String, enum: ['ADD', 'REMOVE', 'SET'], required: true },
-    reason: { type: String, enum: ['COUNT_MISMATCH', 'DAMAGED', 'EXPIRED', 'THEFT', 'PROMOTION'], required: true },
+    reason: {
+      type: String,
+      enum: ['COUNT_MISMATCH', 'DAMAGED', 'EXPIRED', 'THEFT', 'PROMOTION'],
+      required: true,
+    },
     quantity: { type: Number, required: true },
     notes: { type: String },
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
@@ -25,4 +29,7 @@ const StockAdjustmentSchema = new Schema<IStockAdjustment>(
   { timestamps: true }
 );
 
-export const StockAdjustment = mongoose.model<IStockAdjustment>('StockAdjustment', StockAdjustmentSchema);
+export const StockAdjustment = mongoose.model<IStockAdjustment>(
+  'StockAdjustment',
+  StockAdjustmentSchema
+);

@@ -185,7 +185,15 @@ export default function Layout() {
               }}
             />
           </Box>
-          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.68rem', letterSpacing: '0.02em' }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: 'text.secondary',
+              fontWeight: 700,
+              fontSize: '0.68rem',
+              letterSpacing: '0.02em',
+            }}
+          >
             ENTERPRISE PLATFORM
           </Typography>
         </Box>
@@ -237,7 +245,18 @@ export default function Layout() {
           {isAdmin && (
             <>
               <Divider sx={{ my: 2.5, borderColor: 'rgba(255,255,255,0.03)' }} />
-              <Typography variant="caption" sx={{ px: 2.5, color: '#a78bfa', fontWeight: 800, letterSpacing: '0.08em', display: 'block', mb: 1, fontSize: '0.68rem' }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  px: 2.5,
+                  color: '#a78bfa',
+                  fontWeight: 800,
+                  letterSpacing: '0.08em',
+                  display: 'block',
+                  mb: 1,
+                  fontSize: '0.68rem',
+                }}
+              >
                 ADMINISTRATION
               </Typography>
               {adminItems.map((item) => {
@@ -256,7 +275,9 @@ export default function Layout() {
                         bgcolor: isActive ? 'rgba(139, 92, 246, 0.08) !important' : 'transparent',
                         borderLeft: isActive ? '3px solid #8b5cf6' : '3px solid transparent',
                         '&:hover': {
-                          bgcolor: isActive ? 'rgba(139, 92, 246, 0.12)' : 'rgba(255, 255, 255, 0.02)',
+                          bgcolor: isActive
+                            ? 'rgba(139, 92, 246, 0.12)'
+                            : 'rgba(255, 255, 255, 0.02)',
                           color: '#ffffff',
                         },
                       }}
@@ -315,7 +336,9 @@ export default function Layout() {
 
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.04)' }} />
       {/* Footer Profile */}
-      <Box sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2, bgcolor: 'rgba(0,0,0,0.1)' }}>
+      <Box
+        sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2, bgcolor: 'rgba(0,0,0,0.1)' }}
+      >
         <Avatar
           src={user?.avatarUrl || undefined}
           sx={{
@@ -329,15 +352,28 @@ export default function Layout() {
         >
           {user?.username?.charAt(0).toUpperCase() || 'U'}
         </Avatar>
-        <Box sx={{ overflow: 'hidden', cursor: 'pointer', flexGrow: 1 }} onClick={() => navigate('/profile')}>
+        <Box
+          sx={{ overflow: 'hidden', cursor: 'pointer', flexGrow: 1 }}
+          onClick={() => navigate('/profile')}
+        >
           <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700, fontSize: '0.825rem' }}>
             {user?.username || 'Guest User'}
           </Typography>
-          <Typography variant="caption" color="text.secondary" noWrap display="block" sx={{ fontSize: '0.7rem' }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            noWrap
+            display="block"
+            sx={{ fontSize: '0.7rem' }}
+          >
             {user?.roleName || 'Employee'}
           </Typography>
         </Box>
-        <IconButton size="small" sx={{ color: 'text.secondary' }} onClick={() => navigate('/profile')}>
+        <IconButton
+          size="small"
+          sx={{ color: 'text.secondary' }}
+          onClick={() => navigate('/profile')}
+        >
           <SettingsIcon fontSize="small" />
         </IconButton>
       </Box>
@@ -425,10 +461,20 @@ export default function Layout() {
                     },
                   }}
                 >
-                  <OnlineIcon sx={{ color: isOnline ? 'secondary.main' : 'error.main', fontSize: '1.15rem' }} />
+                  <OnlineIcon
+                    sx={{ color: isOnline ? 'secondary.main' : 'error.main', fontSize: '1.15rem' }}
+                  />
                 </Badge>
               </Tooltip>
-              <Typography variant="caption" sx={{ color: isOnline ? 'secondary.light' : 'error.light', fontWeight: 800, letterSpacing: '0.05em', fontSize: '0.7rem' }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: isOnline ? 'secondary.light' : 'error.light',
+                  fontWeight: 800,
+                  letterSpacing: '0.05em',
+                  fontSize: '0.7rem',
+                }}
+              >
                 {isOnline ? 'ONLINE' : 'OFFLINE'}
               </Typography>
             </Box>

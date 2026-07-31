@@ -56,20 +56,30 @@ export default function CompanySettings() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 800,
+            mb: 1,
+            background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}
+        >
           Company Profile Settings
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 4, fontWeight: 500 }}>
           Initialize or modify the corporate tenancy details, tax codes, and addresses.
         </Typography>
 
-        <Card 
-          className="glass-panel" 
-          sx={{ 
-            maxWidth: 600, 
+        <Card
+          className="glass-panel"
+          sx={{
+            maxWidth: 600,
             boxShadow: '0 8px 32px rgba(139, 92, 246, 0.08)',
             border: '1px solid rgba(255, 255, 255, 0.05)',
-            background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%)',
+            background:
+              'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%)',
             borderRadius: 3,
             position: 'relative',
             overflow: 'hidden',
@@ -81,48 +91,51 @@ export default function CompanySettings() {
               right: 0,
               height: '3px',
               background: 'linear-gradient(90deg, #8b5cf6, #3b82f6)',
-            }
+            },
           }}
         >
           <CardContent sx={{ p: { xs: 3, md: 4 } }}>
-            <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-              <TextField 
-                label="Company Name" 
-                fullWidth 
-                {...register('name')} 
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
+            >
+              <TextField
+                label="Company Name"
+                fullWidth
+                {...register('name')}
                 sx={textFieldStyle}
                 InputLabelProps={{ shrink: true }}
               />
-              <TextField 
-                label="Tax/VAT ID" 
-                fullWidth 
-                {...register('taxId')} 
+              <TextField
+                label="Tax/VAT ID"
+                fullWidth
+                {...register('taxId')}
                 sx={textFieldStyle}
                 InputLabelProps={{ shrink: true }}
               />
-              <TextField 
-                label="Corporate Address" 
-                fullWidth 
-                {...register('address')} 
+              <TextField
+                label="Corporate Address"
+                fullWidth
+                {...register('address')}
                 sx={textFieldStyle}
                 InputLabelProps={{ shrink: true }}
               />
-              <TextField 
-                label="Contact Phone" 
-                fullWidth 
-                {...register('phone')} 
+              <TextField
+                label="Contact Phone"
+                fullWidth
+                {...register('phone')}
                 sx={textFieldStyle}
                 InputLabelProps={{ shrink: true }}
               />
-              
-              <Button 
-                variant="contained" 
-                type="submit" 
+
+              <Button
+                variant="contained"
+                type="submit"
                 disabled={mutation.isPending}
-                sx={{ 
-                  alignSelf: 'flex-start', 
-                  px: 5, 
-                  py: 1.4, 
+                sx={{
+                  alignSelf: 'flex-start',
+                  px: 5,
+                  py: 1.4,
                   fontWeight: 700,
                   borderRadius: 2.5,
                   textTransform: 'none',
@@ -134,7 +147,7 @@ export default function CompanySettings() {
                     background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
                     boxShadow: '0 6px 20px rgba(139, 92, 246, 0.45)',
                     transform: 'translateY(-1px)',
-                  }
+                  },
                 }}
               >
                 {mutation.isPending ? 'Saving Details...' : 'Save Details'}

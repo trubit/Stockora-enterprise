@@ -25,7 +25,11 @@ export default function SessionExpired() {
         <Typography variant="h6" sx={{ color: 'text.secondary' }}>
           Your user session has timed out. Please sign in again to resume.
         </Typography>
-        <Button variant="contained" onClick={() => navigate('/login')} sx={{ px: 4, py: 1.5, fontWeight: 700 }}>
+        <Button
+          variant="contained"
+          onClick={() => navigate('/login')}
+          sx={{ px: 4, py: 1.5, fontWeight: 700 }}
+        >
           Sign In
         </Button>
       </Box>

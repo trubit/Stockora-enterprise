@@ -72,7 +72,10 @@ export const StatCard: React.FC<StatCardProps> = ({
     >
       <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Typography variant="body2" sx={{ color: '#9ca3af', fontWeight: 600, letterSpacing: '0.02em' }}>
+          <Typography
+            variant="body2"
+            sx={{ color: '#9ca3af', fontWeight: 600, letterSpacing: '0.02em' }}
+          >
             {title}
           </Typography>
 
@@ -91,11 +94,22 @@ export const StatCard: React.FC<StatCardProps> = ({
           </Box>
         </Box>
 
-        <Typography variant="h4" sx={{ fontWeight: 800, color: '#f8fafc', mb: 1, letterSpacing: '-0.02em' }}>
+        <Typography
+          variant="h4"
+          sx={{ fontWeight: 800, color: '#f8fafc', mb: 1, letterSpacing: '-0.02em' }}
+        >
           {value}
         </Typography>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 1,
+          }}
+        >
           {subtitle && (
             <Typography variant="caption" sx={{ color: '#6b7280' }}>
               {subtitle}
@@ -104,7 +118,13 @@ export const StatCard: React.FC<StatCardProps> = ({
 
           {trend && (
             <Chip
-              icon={trendUp ? <TrendingUpIcon style={{ fontSize: 14 }} /> : <TrendingDownIcon style={{ fontSize: 14 }} />}
+              icon={
+                trendUp ? (
+                  <TrendingUpIcon style={{ fontSize: 14 }} />
+                ) : (
+                  <TrendingDownIcon style={{ fontSize: 14 }} />
+                )
+              }
               label={trend}
               size="small"
               sx={{

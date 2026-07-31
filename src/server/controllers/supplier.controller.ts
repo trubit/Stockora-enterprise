@@ -5,7 +5,11 @@ import { ValidationError, NotFoundError } from '../errors/AppError.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 
 export class SupplierController {
-  public static async getSuppliers(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getSuppliers(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const suppliers = await Supplier.find().lean();
       res.json(suppliers);
@@ -14,7 +18,11 @@ export class SupplierController {
     }
   }
 
-  public static async getSupplier(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getSupplier(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const supplier = await Supplier.findById(id).lean();
@@ -27,11 +35,17 @@ export class SupplierController {
     }
   }
 
-  public static async createSupplier(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async createSupplier(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { name, code, contactPerson, email, phone, address, ...rest } = req.body;
 
     if (!name || !code || !contactPerson || !email || !phone || !address) {
-      return next(new ValidationError('Name, code, contactPerson, email, phone, and address are required.'));
+      return next(
+        new ValidationError('Name, code, contactPerson, email, phone, and address are required.')
+      );
     }
 
     try {
@@ -64,7 +78,11 @@ export class SupplierController {
     }
   }
 
-  public static async updateSupplier(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async updateSupplier(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const supplier = await Supplier.findById(id);
@@ -109,7 +127,11 @@ export class SupplierController {
     }
   }
 
-  public static async deleteSupplier(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async deleteSupplier(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const supplier = await Supplier.findById(id);

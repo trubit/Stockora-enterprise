@@ -13,7 +13,11 @@ import { SocketManager } from '../sockets/manager.js';
 const io = SocketManager.getInstance();
 
 export class SalesOrderController {
-  public static async listOrders(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async listOrders(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const orders = await SalesOrder.find()
         .populate('customerId', 'name code email')
@@ -26,7 +30,11 @@ export class SalesOrderController {
     }
   }
 
-  public static async createOrder(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async createOrder(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { customerId, quoteId, items, discount, notes } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -81,7 +89,11 @@ export class SalesOrderController {
     }
   }
 
-  public static async dispatchShipment(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async dispatchShipment(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     const { items, carrier, trackingNumber } = req.body;
 
@@ -96,7 +108,9 @@ export class SalesOrderController {
       }
 
       if (order.status === 'SHIPPED' || order.status === 'CANCELLED') {
-        return next(new ValidationError(`Cannot dispatch shipment for order in status: ${order.status}`));
+        return next(
+          new ValidationError(`Cannot dispatch shipment for order in status: ${order.status}`)
+        );
       }
 
       const oldOrderValues = order.toObject();
@@ -107,7 +121,9 @@ export class SalesOrderController {
       for (const shipItem of items) {
         const orderLine = order.items.find((i) => i.productId.toString() === shipItem.productId);
         if (!orderLine) {
-          return next(new ValidationError(`Product [${shipItem.productId}] is not part of this Sales Order.`));
+          return next(
+            new ValidationError(`Product [${shipItem.productId}] is not part of this Sales Order.`)
+          );
         }
 
         const qtyToShip = Number(shipItem.quantityShipped || 0);
@@ -115,19 +131,30 @@ export class SalesOrderController {
 
         const maxShippable = orderLine.quantity - orderLine.shippedQuantity;
         if (qtyToShip > maxShippable) {
-          return next(new ValidationError(`Cannot ship more than ordered. Ordered: ${orderLine.quantity}, Shipped: ${orderLine.shippedQuantity}, Trying to ship: ${qtyToShip}`));
+          return next(
+            new ValidationError(
+              `Cannot ship more than ordered. Ordered: ${orderLine.quantity}, Shipped: ${orderLine.shippedQuantity}, Trying to ship: ${qtyToShip}`
+            )
+          );
         }
 
         const product = await Product.findById(shipItem.productId);
         if (!product || product.quantity < qtyToShip) {
-          return next(new ValidationError(`Insufficient inventory for product [${product?.name || shipItem.productId}]. Available: ${product?.quantity || 0}, Trying to ship: ${qtyToShip}`));
+          return next(
+            new ValidationError(
+              `Insufficient inventory for product [${product?.name || shipItem.productId}]. Available: ${product?.quantity || 0}, Trying to ship: ${qtyToShip}`
+            )
+          );
         }
 
         // Deduct from product inventory count
         product.quantity -= qtyToShip;
         await product.save();
 
-        io.emitGlobal('product:stock-updated', { productId: product._id, quantity: product.quantity });
+        io.emitGlobal('product:stock-updated', {
+          productId: product._id,
+          quantity: product.quantity,
+        });
 
         if (product.quantity <= product.lowStockAlert) {
           io.emitGlobal('notification:low-stock', {

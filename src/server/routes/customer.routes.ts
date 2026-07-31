@@ -8,8 +8,28 @@ export const customerRouter = Router();
 
 customerRouter.use(authMiddleware);
 
-customerRouter.get('/', rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_READ]), CustomerController.getCustomers);
-customerRouter.get('/:id', rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_READ]), CustomerController.getCustomer);
-customerRouter.post('/', rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_WRITE]), CustomerController.createCustomer);
-customerRouter.put('/:id', rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_WRITE]), CustomerController.updateCustomer);
-customerRouter.delete('/:id', rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_WRITE]), CustomerController.deleteCustomer);
+customerRouter.get(
+  '/',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_READ]),
+  CustomerController.getCustomers
+);
+customerRouter.get(
+  '/:id',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_READ]),
+  CustomerController.getCustomer
+);
+customerRouter.post(
+  '/',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_WRITE]),
+  CustomerController.createCustomer
+);
+customerRouter.put(
+  '/:id',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_WRITE]),
+  CustomerController.updateCustomer
+);
+customerRouter.delete(
+  '/:id',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_WRITE]),
+  CustomerController.deleteCustomer
+);

@@ -119,13 +119,10 @@ describe('Phase 17 Resiliency & Retry Engine', () => {
 
     it('should timeout when task execution exceeds limit', async () => {
       await expect(
-        ResilientExecutor.execute(
-          { name: 'TimeoutCall', timeoutMs: 30 },
-          async () => {
-            await new Promise((resolve) => setTimeout(resolve, 100));
-            return 'Slow';
-          }
-        )
+        ResilientExecutor.execute({ name: 'TimeoutCall', timeoutMs: 30 }, async () => {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          return 'Slow';
+        })
       ).rejects.toThrow('timed out');
     });
 

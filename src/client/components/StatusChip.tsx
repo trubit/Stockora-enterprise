@@ -21,18 +21,68 @@ interface StatusChipProps {
 }
 
 const statusConfig: Record<string, { bg: string; color: string; border: string; dot: string }> = {
-  ACTIVE: { bg: 'rgba(16, 185, 129, 0.12)', color: '#34d399', border: 'rgba(16, 185, 129, 0.25)', dot: '#10b981' },
-  IN_STOCK: { bg: 'rgba(16, 185, 129, 0.12)', color: '#34d399', border: 'rgba(16, 185, 129, 0.25)', dot: '#10b981' },
-  SUCCESS: { bg: 'rgba(16, 185, 129, 0.12)', color: '#34d399', border: 'rgba(16, 185, 129, 0.25)', dot: '#10b981' },
-  COMPLETED: { bg: 'rgba(16, 185, 129, 0.12)', color: '#34d399', border: 'rgba(16, 185, 129, 0.25)', dot: '#10b981' },
+  ACTIVE: {
+    bg: 'rgba(16, 185, 129, 0.12)',
+    color: '#34d399',
+    border: 'rgba(16, 185, 129, 0.25)',
+    dot: '#10b981',
+  },
+  IN_STOCK: {
+    bg: 'rgba(16, 185, 129, 0.12)',
+    color: '#34d399',
+    border: 'rgba(16, 185, 129, 0.25)',
+    dot: '#10b981',
+  },
+  SUCCESS: {
+    bg: 'rgba(16, 185, 129, 0.12)',
+    color: '#34d399',
+    border: 'rgba(16, 185, 129, 0.25)',
+    dot: '#10b981',
+  },
+  COMPLETED: {
+    bg: 'rgba(16, 185, 129, 0.12)',
+    color: '#34d399',
+    border: 'rgba(16, 185, 129, 0.25)',
+    dot: '#10b981',
+  },
 
-  PENDING: { bg: 'rgba(245, 158, 11, 0.12)', color: '#fbbf24', border: 'rgba(245, 158, 11, 0.25)', dot: '#f59e0b' },
-  LOW_STOCK: { bg: 'rgba(245, 158, 11, 0.12)', color: '#fbbf24', border: 'rgba(245, 158, 11, 0.25)', dot: '#f59e0b' },
+  PENDING: {
+    bg: 'rgba(245, 158, 11, 0.12)',
+    color: '#fbbf24',
+    border: 'rgba(245, 158, 11, 0.25)',
+    dot: '#f59e0b',
+  },
+  LOW_STOCK: {
+    bg: 'rgba(245, 158, 11, 0.12)',
+    color: '#fbbf24',
+    border: 'rgba(245, 158, 11, 0.25)',
+    dot: '#f59e0b',
+  },
 
-  INACTIVE: { bg: 'rgba(107, 114, 128, 0.15)', color: '#9ca3af', border: 'rgba(107, 114, 128, 0.25)', dot: '#6b7280' },
-  CANCELLED: { bg: 'rgba(239, 68, 68, 0.12)', color: '#f87171', border: 'rgba(239, 68, 68, 0.25)', dot: '#ef4444' },
-  OUT_OF_STOCK: { bg: 'rgba(239, 68, 68, 0.12)', color: '#f87171', border: 'rgba(239, 68, 68, 0.25)', dot: '#ef4444' },
-  FAILED: { bg: 'rgba(239, 68, 68, 0.12)', color: '#f87171', border: 'rgba(239, 68, 68, 0.25)', dot: '#ef4444' },
+  INACTIVE: {
+    bg: 'rgba(107, 114, 128, 0.15)',
+    color: '#9ca3af',
+    border: 'rgba(107, 114, 128, 0.25)',
+    dot: '#6b7280',
+  },
+  CANCELLED: {
+    bg: 'rgba(239, 68, 68, 0.12)',
+    color: '#f87171',
+    border: 'rgba(239, 68, 68, 0.25)',
+    dot: '#ef4444',
+  },
+  OUT_OF_STOCK: {
+    bg: 'rgba(239, 68, 68, 0.12)',
+    color: '#f87171',
+    border: 'rgba(239, 68, 68, 0.25)',
+    dot: '#ef4444',
+  },
+  FAILED: {
+    bg: 'rgba(239, 68, 68, 0.12)',
+    color: '#f87171',
+    border: 'rgba(239, 68, 68, 0.25)',
+    dot: '#ef4444',
+  },
 };
 
 export const StatusChip: React.FC<StatusChipProps> = ({ status, label, size = 'small' }) => {

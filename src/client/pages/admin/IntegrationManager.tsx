@@ -61,16 +61,22 @@ export default function IntegrationManager() {
           Integrations & ERP Connector
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Manage third-party bookkeeping connections, configure webhook endpoints, and sync sales ledgers.
+          Manage third-party bookkeeping connections, configure webhook endpoints, and sync sales
+          ledgers.
         </Typography>
       </Box>
 
       <Grid container spacing={3.5}>
         <Grid item xs={12} sm={4}>
-          <Card className="glass-panel" sx={{ p: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Card
+            className="glass-panel"
+            sx={{ p: 1, height: '100%', display: 'flex', flexDirection: 'column' }}
+          >
             <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, flexGrow: 1 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>QuickBooks Online</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                  QuickBooks Online
+                </Typography>
                 <Chip
                   label={qbConnected ? 'Connected' : 'Disconnected'}
                   color={qbConnected ? 'success' : 'default'}
@@ -78,7 +84,8 @@ export default function IntegrationManager() {
                 />
               </Box>
               <Typography variant="body2" color="text.secondary">
-                Publish POS transaction totals, invoices, taxes, and inventory adjustments to QuickBooks.
+                Publish POS transaction totals, invoices, taxes, and inventory adjustments to
+                QuickBooks.
               </Typography>
               <Box sx={{ flexGrow: 1 }} />
               <Box sx={{ display: 'flex', gap: 1.5, mt: 2 }}>
@@ -106,10 +113,15 @@ export default function IntegrationManager() {
         </Grid>
 
         <Grid item xs={12} sm={4}>
-          <Card className="glass-panel" sx={{ p: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Card
+            className="glass-panel"
+            sx={{ p: 1, height: '100%', display: 'flex', flexDirection: 'column' }}
+          >
             <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, flexGrow: 1 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>Xero Bookkeeping</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                  Xero Bookkeeping
+                </Typography>
                 <Chip
                   label={xeroConnected ? 'Connected' : 'Disconnected'}
                   color={xeroConnected ? 'success' : 'default'}
@@ -117,7 +129,8 @@ export default function IntegrationManager() {
                 />
               </Box>
               <Typography variant="body2" color="text.secondary">
-                Push standard accounting journals and balance sheet reconciliation reports automatically.
+                Push standard accounting journals and balance sheet reconciliation reports
+                automatically.
               </Typography>
               <Box sx={{ flexGrow: 1 }} />
               <Box sx={{ display: 'flex', gap: 1.5, mt: 2 }}>
@@ -145,10 +158,15 @@ export default function IntegrationManager() {
         </Grid>
 
         <Grid item xs={12} sm={4}>
-          <Card className="glass-panel" sx={{ p: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Card
+            className="glass-panel"
+            sx={{ p: 1, height: '100%', display: 'flex', flexDirection: 'column' }}
+          >
             <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, flexGrow: 1 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>Stripe Terminal</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                  Stripe Terminal
+                </Typography>
                 <Chip
                   label={stripeConnected ? 'Connected' : 'Disconnected'}
                   color={stripeConnected ? 'success' : 'default'}
@@ -156,7 +174,8 @@ export default function IntegrationManager() {
                 />
               </Box>
               <Typography variant="body2" color="text.secondary">
-                Receive card payments, synchronize POS checkout cash drawer sessions, and listen to payment status webhooks.
+                Receive card payments, synchronize POS checkout cash drawer sessions, and listen to
+                payment status webhooks.
               </Typography>
               <Box sx={{ flexGrow: 1 }} />
               <Box sx={{ display: 'flex', gap: 1.5, mt: 2 }}>
@@ -174,10 +193,15 @@ export default function IntegrationManager() {
         </Grid>
 
         <Grid item xs={12} md={7}>
-          <Paper className="glass-panel" sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Paper
+            className="glass-panel"
+            sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <PaymentIcon color="primary" />
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>Gateway Webhooks Console</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                Gateway Webhooks Console
+              </Typography>
             </Box>
             <Box>
               <Typography variant="caption" display="block" color="text.secondary">
@@ -187,11 +211,25 @@ export default function IntegrationManager() {
                 Paystack listener: `http://localhost:8080/api/v1/integrations/paystack-webhook`
               </Typography>
             </Box>
-            <Box sx={{ bgcolor: 'rgba(0,0,0,0.15)', borderRadius: 2, p: 2, minHeight: '160px', overflowY: 'auto' }}>
+            <Box
+              sx={{
+                bgcolor: 'rgba(0,0,0,0.15)',
+                borderRadius: 2,
+                p: 2,
+                minHeight: '160px',
+                overflowY: 'auto',
+              }}
+            >
               <List>
                 {webhookLogs.map((log, idx) => (
                   <ListItem key={idx} sx={{ p: 0.5 }}>
-                    <ListItemText primary={<Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{log}</Typography>} />
+                    <ListItemText
+                      primary={
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                          {log}
+                        </Typography>
+                      }
+                    />
                   </ListItem>
                 ))}
               </List>
@@ -200,13 +238,20 @@ export default function IntegrationManager() {
         </Grid>
 
         <Grid item xs={12} md={5}>
-          <Paper className="glass-panel" sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          <Paper
+            className="glass-panel"
+            sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', gap: 2.5 }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <CloudQueueIcon color="primary" />
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>Global Sync Configurations</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                Global Sync Configurations
+              </Typography>
             </Box>
             <FormControlLabel
-              control={<Switch checked={autoSync} onChange={(e) => setAutoSync(e.target.checked)} />}
+              control={
+                <Switch checked={autoSync} onChange={(e) => setAutoSync(e.target.checked)} />
+              }
               label="Real-time automatic sync on transaction completion"
             />
             <Divider sx={{ opacity: 0.05 }} />

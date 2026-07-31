@@ -47,4 +47,7 @@ const WarehouseTransferSchema = new Schema<IWarehouseTransfer>(
   { timestamps: true }
 );
 
-export const WarehouseTransfer = mongoose.model<IWarehouseTransfer>('WarehouseTransfer', WarehouseTransferSchema);
+export const WarehouseTransfer = mongoose.model<IWarehouseTransfer>(
+  'WarehouseTransfer',
+  WarehouseTransferSchema
+);

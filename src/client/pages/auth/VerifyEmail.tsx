@@ -30,10 +30,11 @@ export default function VerifyEmail() {
           width: 400,
           height: 400,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0) 70%)',
+          background:
+            'radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0) 70%)',
           filter: 'blur(40px)',
           zIndex: 0,
-        }
+        },
       }}
     >
       <motion.div
@@ -42,12 +43,13 @@ export default function VerifyEmail() {
         transition={{ duration: 0.6, ease: 'easeOut' }}
         style={{ zIndex: 1 }}
       >
-        <Card 
-          sx={{ 
-            width: 420, 
-            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4), 0 0 40px rgba(139, 92, 246, 0.08)', 
+        <Card
+          sx={{
+            width: 420,
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4), 0 0 40px rgba(139, 92, 246, 0.08)',
             border: '1px solid rgba(139, 92, 246, 0.15)',
-            background: 'linear-gradient(135deg, rgba(23, 27, 44, 0.75) 0%, rgba(11, 13, 26, 0.85) 100%)',
+            background:
+              'linear-gradient(135deg, rgba(23, 27, 44, 0.75) 0%, rgba(11, 13, 26, 0.85) 100%)',
             backdropFilter: 'blur(20px)',
             borderRadius: 4,
             overflow: 'hidden',
@@ -60,16 +62,24 @@ export default function VerifyEmail() {
               right: 0,
               height: '4px',
               background: 'linear-gradient(90deg, #8b5cf6, #3b82f6)',
-            }
+            },
           }}
         >
-          <CardContent sx={{ p: { xs: 4, md: 5 }, display: 'flex', flexDirection: 'column', gap: 3.5, alignItems: 'center' }}>
+          <CardContent
+            sx={{
+              p: { xs: 4, md: 5 },
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 3.5,
+              alignItems: 'center',
+            }}
+          >
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-              <Typography 
-                variant="h4" 
-                sx={{ 
-                  fontWeight: 900, 
-                  textAlign: 'center', 
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: 900,
+                  textAlign: 'center',
                   letterSpacing: '0.05em',
                   background: 'linear-gradient(90deg, #a78bfa 0%, #3b82f6 100%)',
                   WebkitBackgroundClip: 'text',
@@ -78,7 +88,10 @@ export default function VerifyEmail() {
               >
                 Verify Email
               </Typography>
-              <Typography variant="body2" sx={{ textAlign: 'center', color: 'text.secondary', fontWeight: 500 }}>
+              <Typography
+                variant="body2"
+                sx={{ textAlign: 'center', color: 'text.secondary', fontWeight: 500 }}
+              >
                 Confirm ownership of your registered user email address
               </Typography>
             </Box>
@@ -86,8 +99,8 @@ export default function VerifyEmail() {
             <Button
               variant="contained"
               onClick={handleVerify}
-              sx={{ 
-                py: 1.6, 
+              sx={{
+                py: 1.6,
                 px: 5,
                 fontWeight: 800,
                 borderRadius: 2.5,
@@ -100,7 +113,7 @@ export default function VerifyEmail() {
                   background: 'linear-gradient(90deg, #7c3aed 0%, #2563eb 100%)',
                   boxShadow: '0 6px 24px rgba(139, 92, 246, 0.45)',
                   transform: 'translateY(-1px)',
-                }
+                },
               }}
             >
               Confirm Verification

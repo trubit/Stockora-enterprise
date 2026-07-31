@@ -12,7 +12,11 @@ export class PromoController {
   // Promotions & Coupons
   // -------------------------------------------------------------------------
 
-  public static async listPromotions(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async listPromotions(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const promos = await Promotion.find().sort({ createdAt: -1 });
       res.json(promos);
@@ -21,7 +25,11 @@ export class PromoController {
     }
   }
 
-  public static async createPromotion(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async createPromotion(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const {
       code,
       type,
@@ -80,7 +88,11 @@ export class PromoController {
     }
   }
 
-  public static async togglePromotion(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async togglePromotion(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const promo = await Promotion.findById(id);
@@ -102,7 +114,11 @@ export class PromoController {
     }
   }
 
-  public static async validatePromotion(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async validatePromotion(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { code, purchaseAmount, cartItems, customerId } = req.body;
     if (!code || purchaseAmount === undefined) {
       return next(new ValidationError('Code and purchase amount are required.'));
@@ -125,7 +141,11 @@ export class PromoController {
   // Gift Cards
   // -------------------------------------------------------------------------
 
-  public static async listGiftCards(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async listGiftCards(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const cards = await GiftCard.find()
         .sort({ createdAt: -1 })
@@ -136,7 +156,11 @@ export class PromoController {
     }
   }
 
-  public static async createGiftCard(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async createGiftCard(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { code, balance, expiresAt, pinCode, customerId, purchasedByName } = req.body;
     if (!code || balance === undefined || !expiresAt) {
       return next(new ValidationError('Code, balance, and expiration date are required.'));
@@ -158,47 +182,79 @@ export class PromoController {
     }
   }
 
-  public static async topUpGiftCard(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async topUpGiftCard(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { code, amount, transactionNumber } = req.body;
     if (!code || amount === undefined || !transactionNumber) {
       return next(new ValidationError('Code, amount, and transaction number are required.'));
     }
 
     try {
-      const card = await PromoService.topUpGiftCard({ code, amount: Number(amount), transactionNumber, userId: req.user?.id });
+      const card = await PromoService.topUpGiftCard({
+        code,
+        amount: Number(amount),
+        transactionNumber,
+        userId: req.user?.id,
+      });
       res.json(card);
     } catch (err: unknown) {
       next(err);
     }
   }
 
-  public static async checkGiftCardBalance(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async checkGiftCardBalance(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const code = String(req.params.code);
     try {
       const card = await GiftCard.findOne({ code: code.toUpperCase() });
       if (!card) return next(new NotFoundError('Gift card not found.'));
-      if (new Date() > card.expiresAt) return next(new ValidationError('This gift card has expired.'));
-      res.json({ code: card.code, balance: card.balance, expiresAt: card.expiresAt, isActive: card.isActive });
+      if (new Date() > card.expiresAt)
+        return next(new ValidationError('This gift card has expired.'));
+      res.json({
+        code: card.code,
+        balance: card.balance,
+        expiresAt: card.expiresAt,
+        isActive: card.isActive,
+      });
     } catch (err: unknown) {
       next(err);
     }
   }
 
-  public static async redeemGiftCard(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async redeemGiftCard(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { code, amount, transactionNumber } = req.body;
     if (!code || amount === undefined || !transactionNumber) {
       return next(new ValidationError('Code, amount, and transaction number are required.'));
     }
 
     try {
-      const result = await PromoService.redeemGiftCard({ code, amount: Number(amount), transactionNumber, userId: req.user?.id });
+      const result = await PromoService.redeemGiftCard({
+        code,
+        amount: Number(amount),
+        transactionNumber,
+        userId: req.user?.id,
+      });
       res.json({ success: true, ...result });
     } catch (err: unknown) {
       next(err);
     }
   }
 
-  public static async deactivateGiftCard(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async deactivateGiftCard(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const code = String(req.params.code);
     try {
       const card = await PromoService.deactivateGiftCard(code, req.user?.id);
@@ -212,7 +268,11 @@ export class PromoController {
   // Loyalty Program
   // -------------------------------------------------------------------------
 
-  public static async manageLoyalty(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async manageLoyalty(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { customerId, points, type, reason, referenceId } = req.body;
     if (!customerId || points === undefined || !type) {
       return next(new ValidationError('Customer ID, points, and type (ADD|DEDUCT) are required.'));
@@ -242,7 +302,11 @@ export class PromoController {
     }
   }
 
-  public static async getLoyaltyLeaderboard(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getLoyaltyLeaderboard(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const leaderboard = await PromoService.getLoyaltyLeaderboard(20);
       res.json(leaderboard);
@@ -251,10 +315,16 @@ export class PromoController {
     }
   }
 
-  public static async getCustomerLoyaltyHistory(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getCustomerLoyaltyHistory(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { customerId } = req.params;
     try {
-      const customer = await Customer.findById(customerId).select('name email loyaltyPoints loyaltyTier loyaltyHistory');
+      const customer = await Customer.findById(customerId).select(
+        'name email loyaltyPoints loyaltyTier loyaltyHistory'
+      );
       if (!customer) return next(new NotFoundError('Customer not found.'));
       res.json(customer);
     } catch (err: unknown) {

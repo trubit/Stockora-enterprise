@@ -8,6 +8,18 @@ export const salesOrderRouter = Router();
 
 salesOrderRouter.use(authMiddleware);
 
-salesOrderRouter.get('/', rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_READ]), SalesOrderController.listOrders);
-salesOrderRouter.post('/', rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]), SalesOrderController.createOrder);
-salesOrderRouter.post('/:id/ship', rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]), SalesOrderController.dispatchShipment);
+salesOrderRouter.get(
+  '/',
+  rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_READ]),
+  SalesOrderController.listOrders
+);
+salesOrderRouter.post(
+  '/',
+  rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]),
+  SalesOrderController.createOrder
+);
+salesOrderRouter.post(
+  '/:id/ship',
+  rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]),
+  SalesOrderController.dispatchShipment
+);

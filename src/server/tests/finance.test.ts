@@ -63,15 +63,17 @@ describe('Corporate Finance & GAAP Reporting Integration', () => {
       transactionNumber: 'TX-FIN-001',
       type: 'SALE',
       status: 'COMPLETED',
-      items: [{
-        productId,
-        productName: 'Financial Ledger Binder',
-        sku: 'SKU-FIN-1',
-        quantity: 10,
-        price: 10.0,
-        discount: 0,
-        total: 100.0,
-      }],
+      items: [
+        {
+          productId,
+          productName: 'Financial Ledger Binder',
+          sku: 'SKU-FIN-1',
+          quantity: 10,
+          price: 10.0,
+          discount: 0,
+          total: 100.0,
+        },
+      ],
       subtotal: 92.0,
       tax: 8.0,
       discount: 0,
@@ -139,7 +141,10 @@ describe('Corporate Finance & GAAP Reporting Integration', () => {
 
     // Balance Sheet Assets
     const products = await Product.find({ isActive: true }).lean();
-    const inventoryValuation = products.reduce((acc, p) => acc + (p.quantity || 0) * (p.costPrice || p.cost || 0), 0);
+    const inventoryValuation = products.reduce(
+      (acc, p) => acc + (p.quantity || 0) * (p.costPrice || p.cost || 0),
+      0
+    );
     // 150 units * $4.00 = $600.00
     expect(inventoryValuation).toBe(600.0);
 

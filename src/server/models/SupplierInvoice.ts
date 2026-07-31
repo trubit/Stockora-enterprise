@@ -33,4 +33,7 @@ const SupplierInvoiceSchema = new Schema<ISupplierInvoice>(
   { timestamps: true }
 );
 
-export const SupplierInvoice = mongoose.model<ISupplierInvoice>('SupplierInvoice', SupplierInvoiceSchema);
+export const SupplierInvoice = mongoose.model<ISupplierInvoice>(
+  'SupplierInvoice',
+  SupplierInvoiceSchema
+);

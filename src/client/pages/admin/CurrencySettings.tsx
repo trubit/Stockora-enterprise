@@ -143,9 +143,19 @@ export default function CurrencySettings() {
       <Grid container spacing={3.5}>
         <Grid item xs={12} md={7}>
           <Paper className="glass-panel">
-            <Box sx={{ p: 2.5, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              sx={{
+                p: 2.5,
+                borderBottom: '1px solid rgba(255,255,255,0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
               <MonetizationOnIcon color="primary" />
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>Conversion Rates Ledger</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                Conversion Rates Ledger
+              </Typography>
             </Box>
             <TableContainer>
               <Table>
@@ -189,7 +199,9 @@ export default function CurrencySettings() {
             <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <PercentIcon color="primary" />
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>Tax Compliance Settings</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                  Tax Compliance Settings
+                </Typography>
               </Box>
 
               <Grid container spacing={2}>

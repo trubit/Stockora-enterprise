@@ -37,10 +37,10 @@ describe('Product Catalog, Suppliers & Customers Integration', () => {
           name: 'Organic Honey 1kg',
           price: 22.0,
           quantity: 20,
-          attributes: [{ key: 'Size', value: '1kg' }]
-        }
+          attributes: [{ key: 'Size', value: '1kg' }],
+        },
       ],
-      attributes: [{ key: 'Organic', value: 'Yes' }]
+      attributes: [{ key: 'Organic', value: 'Yes' }],
     });
 
     expect(product.name).toBe('Organic Honey 500g');
@@ -60,7 +60,7 @@ describe('Product Catalog, Suppliers & Customers Integration', () => {
       address: '789 Logistics Blvd, Dallas TX',
       paymentTerms: 'NET 45',
       creditLimit: 50000,
-      rating: 5
+      rating: 5,
     });
 
     expect(supplier.name).toBe('Global Pantry Distributors');
@@ -79,7 +79,7 @@ describe('Product Catalog, Suppliers & Customers Integration', () => {
       creditLimit: 1000,
       loyaltyPoints: 350,
       billingAddress: '456 Elm St, New York NY',
-      shippingAddress: '456 Elm St, New York NY'
+      shippingAddress: '456 Elm St, New York NY',
     });
 
     expect(customer.name).toBe('Sarah Smith');

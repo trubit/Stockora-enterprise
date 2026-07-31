@@ -256,7 +256,7 @@ export default function POS() {
       queueOfflineTransaction({
         id: generateOfflineId(),
         transactionNumber: generateOfflineTransactionNumber(),
-        items: cart.map(item => ({
+        items: cart.map((item) => ({
           productId: item.productId,
           productName: item.productName,
           sku: item.sku,
@@ -312,7 +312,13 @@ export default function POS() {
               }}
               sx={{ width: 220 }}
             />
-            <Button type="submit" variant="contained" color="primary" size="small" sx={{ px: 2.5, fontWeight: 700, borderRadius: '8px' }}>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              size="small"
+              sx={{ px: 2.5, fontWeight: 700, borderRadius: '8px' }}
+            >
               Scan
             </Button>
           </Box>
@@ -320,12 +326,33 @@ export default function POS() {
       />
 
       {!isOnline && (
-        <Box sx={{ bgcolor: 'rgba(245, 158, 11, 0.1)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.2)', p: 2, mb: 3, borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="body2" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
-            ⚠️ Operational status: Local Database Mode active. Local sales will sync when connection restores.
+        <Box
+          sx={{
+            bgcolor: 'rgba(245, 158, 11, 0.1)',
+            color: '#fbbf24',
+            border: '1px solid rgba(245,158,11,0.2)',
+            p: 2,
+            mb: 3,
+            borderRadius: '12px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}
+          >
+            ⚠️ Operational status: Local Database Mode active. Local sales will sync when connection
+            restores.
           </Typography>
           {offlineCount > 0 && (
-            <Chip label={`${offlineCount} transactions queued`} color="warning" size="small" sx={{ fontWeight: 800, fontSize: '0.725rem' }} />
+            <Chip
+              label={`${offlineCount} transactions queued`}
+              color="warning"
+              size="small"
+              sx={{ fontWeight: 800, fontSize: '0.725rem' }}
+            />
           )}
         </Box>
       )}
@@ -333,7 +360,6 @@ export default function POS() {
       <Grid container spacing={3}>
         {/* Product Catalog Pane */}
         <Grid item xs={12} lg={8}>
-
           {/* Search and Category Tabs */}
           <Card className="glass-panel" sx={{ mb: 3.5 }}>
             <CardContent sx={{ p: '16px !important' }}>
@@ -382,7 +408,15 @@ export default function POS() {
           <Grid container spacing={2}>
             {filteredProducts.length === 0 ? (
               <Grid item xs={12}>
-                <Box sx={{ py: 10, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.01)', border: '1px dashed rgba(255,255,255,0.05)', borderRadius: '12px' }}>
+                <Box
+                  sx={{
+                    py: 10,
+                    textAlign: 'center',
+                    bgcolor: 'rgba(255,255,255,0.01)',
+                    border: '1px dashed rgba(255,255,255,0.05)',
+                    borderRadius: '12px',
+                  }}
+                >
                   <Typography variant="body2" color="text.secondary">
                     No products found matching filters.
                   </Typography>
@@ -403,8 +437,17 @@ export default function POS() {
                         '&:active': { transform: 'scale(0.97)' },
                       }}
                     >
-                      <CardContent sx={{ flexGrow: 1, p: 2.5, display: 'flex', flexDirection: 'column' }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, alignItems: 'center' }}>
+                      <CardContent
+                        sx={{ flexGrow: 1, p: 2.5, display: 'flex', flexDirection: 'column' }}
+                      >
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            mb: 2,
+                            alignItems: 'center',
+                          }}
+                        >
                           <Chip
                             label={p.category}
                             size="small"
@@ -530,7 +573,10 @@ export default function POS() {
                               >
                                 <RemoveIcon fontSize="inherit" sx={{ fontSize: '0.75rem' }} />
                               </IconButton>
-                              <Typography variant="body2" sx={{ fontWeight: 800, px: 0.5, fontSize: '0.8rem' }}>
+                              <Typography
+                                variant="body2"
+                                sx={{ fontWeight: 800, px: 0.5, fontSize: '0.8rem' }}
+                              >
                                 {item.quantity}
                               </Typography>
                               <IconButton
@@ -544,7 +590,10 @@ export default function POS() {
                           </Box>
                         }
                       />
-                      <Typography variant="subtitle2" sx={{ mr: 2, fontWeight: 800, color: 'text.primary', fontSize: '0.85rem' }}>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{ mr: 2, fontWeight: 800, color: 'text.primary', fontSize: '0.85rem' }}
+                      >
                         ${item.total.toFixed(2)}
                       </Typography>
                     </ListItem>
@@ -610,17 +659,31 @@ export default function POS() {
                   <Typography variant="body2" color="error" sx={{ fontSize: '0.8rem' }}>
                     Discount
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.light', fontSize: '0.8rem' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 600, color: 'error.light', fontSize: '0.8rem' }}
+                  >
                     -${discount.toFixed(2)}
                   </Typography>
                 </Box>
               )}
               <Divider sx={{ my: 1.5, borderColor: 'rgba(255,255,255,0.03)' }} />
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2.5, alignItems: 'center' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  mb: 2.5,
+                  alignItems: 'center',
+                }}
+              >
                 <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
                   Total
                 </Typography>
-                <Typography variant="h5" color="#34d399" sx={{ fontWeight: 800, letterSpacing: '-0.01em' }}>
+                <Typography
+                  variant="h5"
+                  color="#34d399"
+                  sx={{ fontWeight: 800, letterSpacing: '-0.01em' }}
+                >
                   ${total.toFixed(2)}
                 </Typography>
               </Box>

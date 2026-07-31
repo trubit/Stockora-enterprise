@@ -45,7 +45,13 @@ interface SalesReturn {
   returnNumber: string;
   transactionNumber: string;
   items: ReturnItem[];
-  exchangeItems: { productId: string; productName: string; sku: string; quantity: number; price: number }[];
+  exchangeItems: {
+    productId: string;
+    productName: string;
+    sku: string;
+    quantity: number;
+    price: number;
+  }[];
   refundType: 'FULL' | 'PARTIAL';
   refundAmount: number;
   exchangePriceDifference: number;
@@ -101,11 +107,13 @@ export default function ReturnsLogistics() {
 
   // Form states for returns
   const [originalTx, setOriginalTx] = useState('');
-  const [refundMethod, setRefundMethod] = useState<'CASH' | 'CARD' | 'STORE_CREDIT' | 'WALLET'>('CASH');
+  const [refundMethod, setRefundMethod] = useState<'CASH' | 'CARD' | 'STORE_CREDIT' | 'WALLET'>(
+    'CASH'
+  );
   const [refundType, setRefundType] = useState<'FULL' | 'PARTIAL'>('FULL');
   const [partialRefundAmount, setPartialRefundAmount] = useState(0);
   const [rmaNotes, setRmaNotes] = useState('');
-  
+
   // Return items states
   const [retProductId, setRetProductId] = useState('');
   const [retQty, setRetQty] = useState(1);
@@ -124,7 +132,9 @@ export default function ReturnsLogistics() {
 
   // Form states for claims
   const [claimIssue, setClaimIssue] = useState('');
-  const [claimAction, setClaimAction] = useState<'REPAIR' | 'REPLACEMENT' | 'REFUND' | 'REJECTED'>('REPLACEMENT');
+  const [claimAction, setClaimAction] = useState<'REPAIR' | 'REPLACEMENT' | 'REFUND' | 'REJECTED'>(
+    'REPLACEMENT'
+  );
 
   const queryClient = useQueryClient();
 
@@ -246,7 +256,6 @@ export default function ReturnsLogistics() {
     });
   };
 
-
   const handleRegisterWarranty = () => {
     warrantyMutation.mutate({
       productId: warProductId,
@@ -332,12 +341,20 @@ export default function ReturnsLogistics() {
                   <TableRow key={ret._id}>
                     <TableCell sx={{ fontWeight: 700 }}>{ret.returnNumber}</TableCell>
                     <TableCell>{ret.transactionNumber}</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: 'success.light' }}>${ret.refundAmount.toFixed(2)}</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: 'success.light' }}>
+                      ${ret.refundAmount.toFixed(2)}
+                    </TableCell>
                     <TableCell>
                       <Chip
                         label={ret.refundMethod}
                         size="small"
-                        color={ret.refundMethod === 'WALLET' ? 'secondary' : ret.refundMethod === 'CARD' ? 'info' : 'default'}
+                        color={
+                          ret.refundMethod === 'WALLET'
+                            ? 'secondary'
+                            : ret.refundMethod === 'CARD'
+                              ? 'info'
+                              : 'default'
+                        }
                       />
                     </TableCell>
                     <TableCell>
@@ -348,8 +365,16 @@ export default function ReturnsLogistics() {
                         color={ret.refundType === 'PARTIAL' ? 'warning' : 'default'}
                       />
                     </TableCell>
-                    <TableCell sx={{ color: ret.exchangePriceDifference > 0 ? 'error.light' : 'success.light' }}>
-                      {ret.exchangePriceDifference !== 0 ? (ret.exchangePriceDifference > 0 ? '+' : '') + '$' + ret.exchangePriceDifference.toFixed(2) : '—'}
+                    <TableCell
+                      sx={{
+                        color: ret.exchangePriceDifference > 0 ? 'error.light' : 'success.light',
+                      }}
+                    >
+                      {ret.exchangePriceDifference !== 0
+                        ? (ret.exchangePriceDifference > 0 ? '+' : '') +
+                          '$' +
+                          ret.exchangePriceDifference.toFixed(2)
+                        : '—'}
                     </TableCell>
                     <TableCell sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
                       {ret.createdBy?.username || 'Unknown'}
@@ -361,8 +386,8 @@ export default function ReturnsLogistics() {
                           ret.status === 'COMPLETED' || ret.status === 'APPROVED'
                             ? 'success'
                             : ret.status === 'REJECTED'
-                            ? 'error'
-                            : 'warning'
+                              ? 'error'
+                              : 'warning'
                         }
                         size="small"
                       />
@@ -374,7 +399,9 @@ export default function ReturnsLogistics() {
                             color="success"
                             size="small"
                             title="Approve RMA"
-                            onClick={() => approveMutation.mutate({ id: ret._id, status: 'APPROVED' })}
+                            onClick={() =>
+                              approveMutation.mutate({ id: ret._id, status: 'APPROVED' })
+                            }
                           >
                             <CheckCircleIcon />
                           </IconButton>
@@ -382,7 +409,9 @@ export default function ReturnsLogistics() {
                             color="error"
                             size="small"
                             title="Reject RMA"
-                            onClick={() => approveMutation.mutate({ id: ret._id, status: 'REJECTED' })}
+                            onClick={() =>
+                              approveMutation.mutate({ id: ret._id, status: 'REJECTED' })
+                            }
                           >
                             <GavelIcon />
                           </IconButton>
@@ -393,7 +422,9 @@ export default function ReturnsLogistics() {
                           color="primary"
                           size="small"
                           title="Mark Complete"
-                          onClick={() => approveMutation.mutate({ id: ret._id, status: 'COMPLETED' })}
+                          onClick={() =>
+                            approveMutation.mutate({ id: ret._id, status: 'COMPLETED' })
+                          }
                         >
                           <CheckCircleIcon />
                         </IconButton>
@@ -439,10 +470,16 @@ export default function ReturnsLogistics() {
                       {new Date(war.expiresAt) < new Date() ? (
                         <Chip label="EXPIRED" color="error" size="small" />
                       ) : (
-                        <Chip label={new Date(war.expiresAt).toLocaleDateString()} color="success" size="small" />
+                        <Chip
+                          label={new Date(war.expiresAt).toLocaleDateString()}
+                          color="success"
+                          size="small"
+                        />
                       )}
                     </TableCell>
-                    <TableCell>{war.claims.length} {war.claims.length === 1 ? 'claim' : 'claims'} filed</TableCell>
+                    <TableCell>
+                      {war.claims.length} {war.claims.length === 1 ? 'claim' : 'claims'} filed
+                    </TableCell>
                     <TableCell>
                       <Button
                         size="small"
@@ -483,7 +520,9 @@ export default function ReturnsLogistics() {
                 label="Refund Method"
                 fullWidth
                 value={refundMethod}
-                onChange={(e) => setRefundMethod(e.target.value as 'CASH' | 'CARD' | 'STORE_CREDIT' | 'WALLET')}
+                onChange={(e) =>
+                  setRefundMethod(e.target.value as 'CASH' | 'CARD' | 'STORE_CREDIT' | 'WALLET')
+                }
                 sx={textFieldStyle}
               >
                 <MenuItem value="CASH">Cash Payment</MenuItem>
@@ -609,9 +648,18 @@ export default function ReturnsLogistics() {
                   ITEMS TO PROCESS:
                 </Typography>
                 {addedItems.map((it, idx) => (
-                  <Box key={idx} sx={{ p: 1, border: '1px solid rgba(255,255,255,0.05)', mb: 1, borderRadius: 1 }}>
+                  <Box
+                    key={idx}
+                    sx={{
+                      p: 1,
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      mb: 1,
+                      borderRadius: 1,
+                    }}
+                  >
                     <Typography variant="body2">
-                      {it.productName} ({it.sku}) x{it.quantity} @ ${it.price.toFixed(2)} - [{it.condition} / {it.action}]
+                      {it.productName} ({it.sku}) x{it.quantity} @ ${it.price.toFixed(2)} - [
+                      {it.condition} / {it.action}]
                     </Typography>
                   </Box>
                 ))}
@@ -737,7 +785,9 @@ export default function ReturnsLogistics() {
                 label="Resolution Action"
                 fullWidth
                 value={claimAction}
-                onChange={(e) => setClaimAction(e.target.value as 'REPAIR' | 'REPLACEMENT' | 'REFUND' | 'REJECTED')}
+                onChange={(e) =>
+                  setClaimAction(e.target.value as 'REPAIR' | 'REPLACEMENT' | 'REFUND' | 'REJECTED')
+                }
                 sx={textFieldStyle}
               >
                 <MenuItem value="REPAIR">Complete Technical Repair</MenuItem>

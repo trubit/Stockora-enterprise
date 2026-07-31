@@ -17,17 +17,23 @@ const VALID_TASKS = [
   'WARRANTY_EXPIRY_ALERT',
 ] as const;
 
-type ValidTask = typeof VALID_TASKS[number];
+type ValidTask = (typeof VALID_TASKS)[number];
 
 export class AutomationController {
   // -------------------------------------------------------------------------
   // POST /automation/trigger
   // -------------------------------------------------------------------------
-  public static async triggerJob(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async triggerJob(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { task } = req.body;
     if (!task) return next(new ValidationError('Task type is required.'));
     if (!VALID_TASKS.includes(task as ValidTask)) {
-      return next(new ValidationError(`Unknown task "${task}". Valid tasks: ${VALID_TASKS.join(', ')}`));
+      return next(
+        new ValidationError(`Unknown task "${task}". Valid tasks: ${VALID_TASKS.join(', ')}`)
+      );
     }
 
     try {
@@ -60,7 +66,11 @@ export class AutomationController {
   // -------------------------------------------------------------------------
   // GET /automation/metrics
   // -------------------------------------------------------------------------
-  public static async listQueueMetrics(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async listQueueMetrics(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const manager = QueueManager.getInstance();
       const [metrics, workers] = await Promise.all([
@@ -80,7 +90,11 @@ export class AutomationController {
   // -------------------------------------------------------------------------
   // GET /automation/cron-jobs
   // -------------------------------------------------------------------------
-  public static async listCronJobs(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async listCronJobs(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const cronJobs = QueueManager.getInstance().listCronJobs();
       res.json(cronJobs);
@@ -92,7 +106,11 @@ export class AutomationController {
   // -------------------------------------------------------------------------
   // POST /automation/queue/:name/pause
   // -------------------------------------------------------------------------
-  public static async pauseQueue(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async pauseQueue(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const name = String(req.params.name);
     try {
       const ok = await QueueManager.getInstance().pauseQueue(name);
@@ -106,7 +124,11 @@ export class AutomationController {
   // -------------------------------------------------------------------------
   // POST /automation/queue/:name/resume
   // -------------------------------------------------------------------------
-  public static async resumeQueue(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async resumeQueue(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const name = String(req.params.name);
     try {
       const ok = await QueueManager.getInstance().resumeQueue(name);

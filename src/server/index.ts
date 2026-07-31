@@ -79,7 +79,9 @@ const dbManager = DBConnectionManager.getInstance();
 
 // Graceful Shutdown Handler
 async function gracefulShutdown(signal: string) {
-  logger.warn(`Shutdown signal received [${signal}] on worker [${process.pid}]. Terminating processes...`);
+  logger.warn(
+    `Shutdown signal received [${signal}] on worker [${process.pid}]. Terminating processes...`
+  );
 
   await new Promise<void>((resolve) => {
     httpServer.close(() => {
@@ -125,14 +127,18 @@ async function startServer() {
 if (config.isProduction) {
   if (cluster.isPrimary) {
     const numCPUs = os.cpus().length;
-    logger.info(`Stockora Primary Process running (PID: ${process.pid}). Forking ${numCPUs} cluster workers...`);
+    logger.info(
+      `Stockora Primary Process running (PID: ${process.pid}). Forking ${numCPUs} cluster workers...`
+    );
 
     for (let i = 0; i < numCPUs; i++) {
       cluster.fork();
     }
 
     cluster.on('exit', (worker, code, signal) => {
-      logger.warn(`Worker process ${worker.process.pid} exited (code: ${code}, signal: ${signal}). Reviving worker...`);
+      logger.warn(
+        `Worker process ${worker.process.pid} exited (code: ${code}, signal: ${signal}). Reviving worker...`
+      );
       cluster.fork();
     });
   } else {

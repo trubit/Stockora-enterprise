@@ -54,8 +54,6 @@ apiRouter.get('/health', async (_req, res) => {
   });
 });
 
-
-
 apiRouter.get('/transactions', async (_req, res, next) => {
   try {
     const cached = await redis.get('transactions:all');
@@ -84,7 +82,7 @@ apiRouter.post('/transactions', async (req, res, next) => {
   try {
     for (const item of items) {
       const isObjectId = mongoose.Types.ObjectId.isValid(item.productId);
-      const query = isObjectId 
+      const query = isObjectId
         ? { $or: [{ _id: item.productId }, { sku: item.sku }] }
         : { sku: item.sku };
 
@@ -92,7 +90,10 @@ apiRouter.post('/transactions', async (req, res, next) => {
       if (product) {
         product.quantity = Math.max(0, product.quantity - item.quantity);
         await product.save();
-        io.emitGlobal('product:stock-updated', { productId: product._id, quantity: product.quantity });
+        io.emitGlobal('product:stock-updated', {
+          productId: product._id,
+          quantity: product.quantity,
+        });
 
         if (product.quantity <= product.lowStockAlert) {
           io.emitGlobal('notification:low-stock', {

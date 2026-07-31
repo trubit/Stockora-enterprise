@@ -40,7 +40,6 @@ import WarehouseVisualizer from './pages/admin/WarehouseVisualizer.tsx';
 import LandingPage from './pages/LandingPage.tsx';
 import { ProtectedRoute } from './routes/ProtectedRoute.tsx';
 
-
 function App() {
   useEffect(() => {
     // Standard WebSocket alerts for enterprise inventory monitoring (SRE/Reliability guidelines)

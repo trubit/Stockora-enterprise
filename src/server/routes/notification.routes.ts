@@ -14,15 +14,39 @@ router.patch('/:id/read', authenticate, NotificationController.markRead);
 router.delete('/:id', authenticate, NotificationController.deleteNotification);
 
 // --- Broadcast (admin/manager) ---
-router.post('/broadcast', authenticate, rbacMiddleware([SYSTEM_PERMISSIONS.NOTIFICATIONS_WRITE]), NotificationController.broadcast);
+router.post(
+  '/broadcast',
+  authenticate,
+  rbacMiddleware([SYSTEM_PERMISSIONS.NOTIFICATIONS_WRITE]),
+  NotificationController.broadcast
+);
 
 // --- Templates ---
 // /templates/* must also come before /:id routes
 router.get('/templates', authenticate, NotificationController.listTemplates);
-router.post('/templates', authenticate, rbacMiddleware([SYSTEM_PERMISSIONS.NOTIFICATIONS_WRITE]), NotificationController.createTemplate);
-router.post('/templates/send', authenticate, rbacMiddleware([SYSTEM_PERMISSIONS.NOTIFICATIONS_WRITE]), NotificationController.sendFromTemplate);
-router.put('/templates/:id', authenticate, rbacMiddleware([SYSTEM_PERMISSIONS.NOTIFICATIONS_WRITE]), NotificationController.updateTemplate);
-router.delete('/templates/:id', authenticate, rbacMiddleware([SYSTEM_PERMISSIONS.NOTIFICATIONS_WRITE]), NotificationController.deleteTemplate);
+router.post(
+  '/templates',
+  authenticate,
+  rbacMiddleware([SYSTEM_PERMISSIONS.NOTIFICATIONS_WRITE]),
+  NotificationController.createTemplate
+);
+router.post(
+  '/templates/send',
+  authenticate,
+  rbacMiddleware([SYSTEM_PERMISSIONS.NOTIFICATIONS_WRITE]),
+  NotificationController.sendFromTemplate
+);
+router.put(
+  '/templates/:id',
+  authenticate,
+  rbacMiddleware([SYSTEM_PERMISSIONS.NOTIFICATIONS_WRITE]),
+  NotificationController.updateTemplate
+);
+router.delete(
+  '/templates/:id',
+  authenticate,
+  rbacMiddleware([SYSTEM_PERMISSIONS.NOTIFICATIONS_WRITE]),
+  NotificationController.deleteTemplate
+);
 
 export { router as notificationRouter };
-

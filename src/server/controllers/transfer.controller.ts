@@ -9,7 +9,11 @@ import { ValidationError, NotFoundError } from '../errors/AppError.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 
 export class TransferController {
-  public static async listTransfers(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async listTransfers(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const transfers = await WarehouseTransfer.find()
         .populate('fromWarehouseId', 'name code')
@@ -25,11 +29,25 @@ export class TransferController {
     }
   }
 
-  public static async createTransfer(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async createTransfer(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { fromWarehouseId, toWarehouseId, items, notes } = req.body;
 
-    if (!fromWarehouseId || !toWarehouseId || !items || !Array.isArray(items) || items.length === 0) {
-      return next(new ValidationError('fromWarehouseId, toWarehouseId, and a non-empty items array are required.'));
+    if (
+      !fromWarehouseId ||
+      !toWarehouseId ||
+      !items ||
+      !Array.isArray(items) ||
+      items.length === 0
+    ) {
+      return next(
+        new ValidationError(
+          'fromWarehouseId, toWarehouseId, and a non-empty items array are required.'
+        )
+      );
     }
 
     if (fromWarehouseId === toWarehouseId) {
@@ -44,7 +62,11 @@ export class TransferController {
           return next(new NotFoundError(`Product [${item.productId}] not found.`));
         }
         if (product.quantity < Number(item.quantity)) {
-          return next(new ValidationError(`Insufficient stock for product [${product.name}]. Available: ${product.quantity}, Transfer request: ${item.quantity}`));
+          return next(
+            new ValidationError(
+              `Insufficient stock for product [${product.name}]. Available: ${product.quantity}, Transfer request: ${item.quantity}`
+            )
+          );
         }
       }
 
@@ -74,12 +96,18 @@ export class TransferController {
     }
   }
 
-  public static async updateTransferStatus(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async updateTransferStatus(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     const { status } = req.body;
 
     if (!status || !['IN_TRANSIT', 'COMPLETED', 'CANCELLED'].includes(status)) {
-      return next(new ValidationError('Valid status (IN_TRANSIT, COMPLETED, CANCELLED) is required.'));
+      return next(
+        new ValidationError('Valid status (IN_TRANSIT, COMPLETED, CANCELLED) is required.')
+      );
     }
 
     try {

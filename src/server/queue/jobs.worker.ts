@@ -57,7 +57,10 @@ async function processLowStockCheck(): Promise<void> {
   await NotificationService.send({
     type: 'WARNING',
     title: `⚠️ Low Stock Alert — ${products.length} item(s)`,
-    body: `Items critically low: ${products.slice(0, 3).map(p => p.name).join(', ')}${products.length > 3 ? '…' : ''}`,
+    body: `Items critically low: ${products
+      .slice(0, 3)
+      .map((p) => p.name)
+      .join(', ')}${products.length > 3 ? '…' : ''}`,
     channels: ['IN_APP'],
     targetRole: 'admin',
   });
@@ -67,7 +70,9 @@ async function processLowStockCheck(): Promise<void> {
 async function processLogRotation(): Promise<void> {
   const cutoff = new Date(Date.now() - 90 * 86400000);
   const result = await AuditLog.deleteMany({ createdAt: { $lt: cutoff } });
-  logger.info(`[Job] DB_CLEANUP: Deleted ${result.deletedCount} audit log entries older than 90 days.`);
+  logger.info(
+    `[Job] DB_CLEANUP: Deleted ${result.deletedCount} audit log entries older than 90 days.`
+  );
 }
 
 async function processExpirePromotions(): Promise<void> {
@@ -97,7 +102,10 @@ async function processReorderSuggestions(): Promise<void> {
   await NotificationService.send({
     type: 'INFO',
     title: `📦 Reorder Suggestions — ${items.length} item(s)`,
-    body: `Consider restocking: ${items.slice(0, 3).map(p => p.name).join(', ')}${items.length > 3 ? '…' : ''}`,
+    body: `Consider restocking: ${items
+      .slice(0, 3)
+      .map((p) => p.name)
+      .join(', ')}${items.length > 3 ? '…' : ''}`,
     channels: ['IN_APP'],
     targetRole: 'admin',
   });
@@ -109,10 +117,7 @@ async function processLoyaltyTierRecalc(): Promise<void> {
   let updated = 0;
   for (const customer of customers) {
     const pts = customer.loyaltyPoints ?? 0;
-    const tier =
-      pts >= 5000 ? 'PLATINUM' :
-      pts >= 2000 ? 'GOLD'     :
-      pts >= 500  ? 'SILVER'   : 'BRONZE';
+    const tier = pts >= 5000 ? 'PLATINUM' : pts >= 2000 ? 'GOLD' : pts >= 500 ? 'SILVER' : 'BRONZE';
     if (customer.loyaltyTier !== tier) {
       customer.loyaltyTier = tier as 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
       await customer.save();
@@ -130,7 +135,8 @@ async function processFlushScheduledNotifs(): Promise<void> {
     notif.status = 'READ';
     await notif.save();
   }
-  if (due.length > 0) logger.info(`[Job] FLUSH_SCHEDULED_NOTIFS: Dispatched ${due.length} scheduled notifications.`);
+  if (due.length > 0)
+    logger.info(`[Job] FLUSH_SCHEDULED_NOTIFS: Dispatched ${due.length} scheduled notifications.`);
 }
 
 async function processSyncOfflineStats(): Promise<void> {
@@ -139,8 +145,10 @@ async function processSyncOfflineStats(): Promise<void> {
 
 async function processGenerateDailyReport(): Promise<void> {
   const { Transaction } = await import('../models/Transaction.js');
-  const start = new Date(); start.setHours(0, 0, 0, 0);
-  const end   = new Date(); end.setHours(23, 59, 59, 999);
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
   const txCount = await Transaction.countDocuments({ createdAt: { $gte: start, $lte: end } });
   const revenue = await Transaction.aggregate([
     { $match: { createdAt: { $gte: start, $lte: end }, status: 'COMPLETED' } },
@@ -160,7 +168,9 @@ async function processGenerateDailyReport(): Promise<void> {
 async function processWarrantyExpiryAlert(): Promise<void> {
   const { Warranty } = await import('../models/Warranty.js');
   const in30Days = new Date(Date.now() + 30 * 86400000);
-  const expiring = await Warranty.find({ expiresAt: { $lte: in30Days, $gte: new Date() } }).limit(50);
+  const expiring = await Warranty.find({ expiresAt: { $lte: in30Days, $gte: new Date() } }).limit(
+    50
+  );
   if (expiring.length === 0) return;
   await NotificationService.send({
     type: 'WARNING',
@@ -169,7 +179,9 @@ async function processWarrantyExpiryAlert(): Promise<void> {
     channels: ['IN_APP'],
     targetRole: 'admin',
   });
-  logger.info(`[Job] WARRANTY_EXPIRY_ALERT: ${expiring.length} warranties expiring within 30 days.`);
+  logger.info(
+    `[Job] WARRANTY_EXPIRY_ALERT: ${expiring.length} warranties expiring within 30 days.`
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -178,16 +190,26 @@ async function processWarrantyExpiryAlert(): Promise<void> {
 
 export async function directDispatch(task: TaskType): Promise<void> {
   switch (task) {
-    case 'CHECK_LOW_STOCK':         return processLowStockCheck();
-    case 'DB_CLEANUP':              return processLogRotation();
-    case 'EXPIRE_PROMOTIONS':       return processExpirePromotions();
-    case 'EXPIRE_GIFT_CARDS':       return processExpireGiftCards();
-    case 'REORDER_SUGGESTIONS':     return processReorderSuggestions();
-    case 'LOYALTY_TIER_RECALC':     return processLoyaltyTierRecalc();
-    case 'FLUSH_SCHEDULED_NOTIFS':  return processFlushScheduledNotifs();
-    case 'SYNC_OFFLINE_STATS':      return processSyncOfflineStats();
-    case 'GENERATE_DAILY_REPORT':   return processGenerateDailyReport();
-    case 'WARRANTY_EXPIRY_ALERT':   return processWarrantyExpiryAlert();
+    case 'CHECK_LOW_STOCK':
+      return processLowStockCheck();
+    case 'DB_CLEANUP':
+      return processLogRotation();
+    case 'EXPIRE_PROMOTIONS':
+      return processExpirePromotions();
+    case 'EXPIRE_GIFT_CARDS':
+      return processExpireGiftCards();
+    case 'REORDER_SUGGESTIONS':
+      return processReorderSuggestions();
+    case 'LOYALTY_TIER_RECALC':
+      return processLoyaltyTierRecalc();
+    case 'FLUSH_SCHEDULED_NOTIFS':
+      return processFlushScheduledNotifs();
+    case 'SYNC_OFFLINE_STATS':
+      return processSyncOfflineStats();
+    case 'GENERATE_DAILY_REPORT':
+      return processGenerateDailyReport();
+    case 'WARRANTY_EXPIRY_ALERT':
+      return processWarrantyExpiryAlert();
     default:
       logger.warn(`[Scheduler] Unknown task: ${task}`);
   }
@@ -208,9 +230,9 @@ async function dispatchTask(job: Job<any>): Promise<void> {
 // ---------------------------------------------------------------------------
 
 const MS = {
-  MINUTE:  60_000,
-  HOUR:    3_600_000,
-  DAY:    86_400_000,
+  MINUTE: 60_000,
+  HOUR: 3_600_000,
+  DAY: 86_400_000,
 };
 
 function scheduleInterval(name: TaskType, intervalMs: number): void {
@@ -223,20 +245,24 @@ function scheduleInterval(name: TaskType, intervalMs: number): void {
     }
   };
   setInterval(fn, intervalMs);
-  logger.info(`[Scheduler] Fallback setInterval registered: [${name}] every ${Math.round(intervalMs / 1000)}s`);
+  logger.info(
+    `[Scheduler] Fallback setInterval registered: [${name}] every ${Math.round(intervalMs / 1000)}s`
+  );
 }
 
 function startFallbackScheduler(): void {
-  logger.warn('[Scheduler] Redis < 5 detected — BullMQ disabled. Starting Node.js setInterval fallback.');
-  scheduleInterval('CHECK_LOW_STOCK',        MS.HOUR);
-  scheduleInterval('DB_CLEANUP',             MS.DAY);
-  scheduleInterval('EXPIRE_PROMOTIONS',      MS.DAY);
-  scheduleInterval('EXPIRE_GIFT_CARDS',      MS.DAY);
-  scheduleInterval('REORDER_SUGGESTIONS',    8  * MS.HOUR);
-  scheduleInterval('LOYALTY_TIER_RECALC',    7  * MS.DAY);
-  scheduleInterval('FLUSH_SCHEDULED_NOTIFS', 5  * MS.MINUTE);
-  scheduleInterval('GENERATE_DAILY_REPORT',  MS.DAY);
-  scheduleInterval('WARRANTY_EXPIRY_ALERT',  MS.DAY);
+  logger.warn(
+    '[Scheduler] Redis < 5 detected — BullMQ disabled. Starting Node.js setInterval fallback.'
+  );
+  scheduleInterval('CHECK_LOW_STOCK', MS.HOUR);
+  scheduleInterval('DB_CLEANUP', MS.DAY);
+  scheduleInterval('EXPIRE_PROMOTIONS', MS.DAY);
+  scheduleInterval('EXPIRE_GIFT_CARDS', MS.DAY);
+  scheduleInterval('REORDER_SUGGESTIONS', 8 * MS.HOUR);
+  scheduleInterval('LOYALTY_TIER_RECALC', 7 * MS.DAY);
+  scheduleInterval('FLUSH_SCHEDULED_NOTIFS', 5 * MS.MINUTE);
+  scheduleInterval('GENERATE_DAILY_REPORT', MS.DAY);
+  scheduleInterval('WARRANTY_EXPIRY_ALERT', MS.DAY);
 }
 
 // ---------------------------------------------------------------------------
@@ -259,15 +285,35 @@ export async function initializeBackgroundWorkers(): Promise<void> {
   manager.registerWorker(QUEUE, dispatchTask);
 
   await Promise.all([
-    manager.registerCronJob({ queueName: QUEUE, jobName: 'CHECK_LOW_STOCK',         cron: '0 * * * *'     }),
-    manager.registerCronJob({ queueName: QUEUE, jobName: 'DB_CLEANUP',              cron: '0 2 * * *'     }),
-    manager.registerCronJob({ queueName: QUEUE, jobName: 'EXPIRE_PROMOTIONS',       cron: '30 0 * * *'    }),
-    manager.registerCronJob({ queueName: QUEUE, jobName: 'EXPIRE_GIFT_CARDS',       cron: '45 0 * * *'    }),
-    manager.registerCronJob({ queueName: QUEUE, jobName: 'REORDER_SUGGESTIONS',     cron: '0 8 * * 1-5'   }),
-    manager.registerCronJob({ queueName: QUEUE, jobName: 'LOYALTY_TIER_RECALC',     cron: '0 3 * * 0'     }),
-    manager.registerCronJob({ queueName: QUEUE, jobName: 'FLUSH_SCHEDULED_NOTIFS',  cron: '*/5 * * * *'   }),
-    manager.registerCronJob({ queueName: QUEUE, jobName: 'GENERATE_DAILY_REPORT',   cron: '55 23 * * *'   }),
-    manager.registerCronJob({ queueName: QUEUE, jobName: 'WARRANTY_EXPIRY_ALERT',   cron: '0 9 * * *'     }),
+    manager.registerCronJob({ queueName: QUEUE, jobName: 'CHECK_LOW_STOCK', cron: '0 * * * *' }),
+    manager.registerCronJob({ queueName: QUEUE, jobName: 'DB_CLEANUP', cron: '0 2 * * *' }),
+    manager.registerCronJob({ queueName: QUEUE, jobName: 'EXPIRE_PROMOTIONS', cron: '30 0 * * *' }),
+    manager.registerCronJob({ queueName: QUEUE, jobName: 'EXPIRE_GIFT_CARDS', cron: '45 0 * * *' }),
+    manager.registerCronJob({
+      queueName: QUEUE,
+      jobName: 'REORDER_SUGGESTIONS',
+      cron: '0 8 * * 1-5',
+    }),
+    manager.registerCronJob({
+      queueName: QUEUE,
+      jobName: 'LOYALTY_TIER_RECALC',
+      cron: '0 3 * * 0',
+    }),
+    manager.registerCronJob({
+      queueName: QUEUE,
+      jobName: 'FLUSH_SCHEDULED_NOTIFS',
+      cron: '*/5 * * * *',
+    }),
+    manager.registerCronJob({
+      queueName: QUEUE,
+      jobName: 'GENERATE_DAILY_REPORT',
+      cron: '55 23 * * *',
+    }),
+    manager.registerCronJob({
+      queueName: QUEUE,
+      jobName: 'WARRANTY_EXPIRY_ALERT',
+      cron: '0 9 * * *',
+    }),
   ]);
 
   logger.info('[BullMQ] All background workers and cron schedules registered (9 jobs total).');

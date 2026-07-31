@@ -8,7 +8,11 @@ import { verifyPaystackSignature } from '../utils/paystack.js';
 import mongoose from 'mongoose';
 
 export class IntegrationController {
-  public static async triggerSync(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async triggerSync(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { platform } = req.body; // 'QUICKBOOKS' or 'XERO'
     if (!platform || (platform !== 'QUICKBOOKS' && platform !== 'XERO')) {
       return next(new ValidationError('Platform selection must be QUICKBOOKS or XERO.'));
@@ -20,7 +24,7 @@ export class IntegrationController {
 
       for (const tx of transactions) {
         const journal = await ERPSyncService.buildJournalEntry(tx._id.toString());
-        
+
         let success = false;
         if (platform === 'QUICKBOOKS') {
           success = await ERPSyncService.pushToQuickBooks(journal);
@@ -50,7 +54,11 @@ export class IntegrationController {
     }
   }
 
-  public static async stripeWebhook(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async stripeWebhook(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { event, data } = req.body;
     if (!event || !data) {
       return next(new ValidationError('Invalid webhook event payload.'));
@@ -76,7 +84,11 @@ export class IntegrationController {
     }
   }
 
-  public static async paystackWebhook(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public static async paystackWebhook(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const signature = req.headers['x-paystack-signature'] as string;
     if (!signature) {
       return next(new ValidationError('Missing x-paystack-signature.'));

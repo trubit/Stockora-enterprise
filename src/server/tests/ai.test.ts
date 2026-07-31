@@ -102,7 +102,9 @@ describe('Phase 18 AI Business Intelligence & Forecasting', () => {
 
       const stats = await ForecastingEngine.generateReport();
       expect(stats.totalSalesRevenue).toBeGreaterThan(0);
-      expect(stats.reorderProposals.some((item) => item.name === 'AI Test Unit Scanner')).toBe(true);
+      expect(stats.reorderProposals.some((item) => item.name === 'AI Test Unit Scanner')).toBe(
+        true
+      );
 
       // Clean up seed data
       await Product.deleteOne({ _id: p._id });

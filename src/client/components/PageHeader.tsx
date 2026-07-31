@@ -36,7 +36,12 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           aria-label="breadcrumb"
           sx={{ mb: 0.5 }}
         >
-          <Link underline="hover" color="inherit" href="/" sx={{ fontSize: '0.8rem', color: '#9ca3af' }}>
+          <Link
+            underline="hover"
+            color="inherit"
+            href="/"
+            sx={{ fontSize: '0.8rem', color: '#9ca3af' }}
+          >
             {category}
           </Link>
           <Typography sx={{ fontSize: '0.8rem', color: '#a78bfa', fontWeight: 600 }}>

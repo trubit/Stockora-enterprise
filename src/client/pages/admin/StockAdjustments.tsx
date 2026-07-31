@@ -1,5 +1,24 @@
 import { useState } from 'react';
-import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, Grid } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  MenuItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  Grid,
+} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestore';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -14,18 +33,22 @@ const textFieldStyle = {};
 interface Adjustment {
   _id: string;
   adjustmentNumber: string;
-  productId: {
-    _id: string;
-    name: string;
-    sku: string;
-  } | string;
+  productId:
+    | {
+        _id: string;
+        name: string;
+        sku: string;
+      }
+    | string;
   type: 'ADD' | 'REMOVE' | 'SET';
   reason: 'COUNT_MISMATCH' | 'DAMAGED' | 'EXPIRED' | 'THEFT' | 'PROMOTION';
   quantity: number;
   notes?: string;
-  userId: {
-    username: string;
-  } | string;
+  userId:
+    | {
+        username: string;
+      }
+    | string;
   createdAt: string;
 }
 
@@ -107,9 +130,21 @@ export default function StockAdjustments() {
 
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
-      <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-          <Typography variant="h4" sx={{ fontWeight: 800, background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 800,
+              background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
             Inventory Adjustments
           </Typography>
           <Button
@@ -152,7 +187,8 @@ export default function StockAdjustments() {
           className="glass-panel"
           sx={{
             border: '1px solid rgba(255, 255, 255, 0.05)',
-            background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
+            background:
+              'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
             boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
             borderRadius: 3,
           }}
@@ -160,29 +196,64 @@ export default function StockAdjustments() {
           <Table>
             <TableHead sx={{ bgcolor: 'rgba(17, 24, 39, 0.5)' }}>
               <TableRow>
-                <TableCell sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Product</TableCell>
-                <TableCell sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Type</TableCell>
-                <TableCell sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Qty Changed</TableCell>
-                <TableCell sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Reason / Notes</TableCell>
-                <TableCell sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Auditor</TableCell>
-                <TableCell sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Date</TableCell>
+                <TableCell
+                  sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                >
+                  Product
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                >
+                  Type
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                >
+                  Qty Changed
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                >
+                  Reason / Notes
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                >
+                  Auditor
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                >
+                  Date
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredAdjustments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 6, color: 'text.secondary', border: 'none' }}>
+                  <TableCell
+                    colSpan={6}
+                    align="center"
+                    sx={{ py: 6, color: 'text.secondary', border: 'none' }}
+                  >
                     No stock adjustments logged.
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredAdjustments.map((adj) => (
-                  <TableRow key={adj._id} sx={{ '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.01)' } }}>
+                  <TableRow
+                    key={adj._id}
+                    sx={{ '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.01)' } }}
+                  >
                     <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', py: 2 }}>
                       {typeof adj.productId === 'object' && adj.productId ? (
                         <Box>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{adj.productId.name}</Typography>
-                          <Typography variant="caption" color="text.secondary">{adj.productId.sku}</Typography>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                            {adj.productId.name}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {adj.productId.sku}
+                          </Typography>
                         </Box>
                       ) : (
                         'Unknown Product'
@@ -196,16 +267,24 @@ export default function StockAdjustments() {
                         sx={{ fontWeight: 700 }}
                       />
                     </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontWeight: 700 }}>
+                    <TableCell
+                      sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontWeight: 700 }}
+                    >
                       {adj.quantity > 0 ? `+${adj.quantity}` : adj.quantity}
                     </TableCell>
                     <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                       <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{adj.notes || 'Manual Adjustment'}</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {adj.notes || 'Manual Adjustment'}
+                        </Typography>
                       </Box>
                     </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontWeight: 500 }}>
-                      {typeof adj.userId === 'object' && adj.userId ? adj.userId.username : 'System'}
+                    <TableCell
+                      sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontWeight: 500 }}
+                    >
+                      {typeof adj.userId === 'object' && adj.userId
+                        ? adj.userId.username
+                        : 'System'}
                     </TableCell>
                     <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                       {new Date(adj.createdAt).toLocaleString()}
@@ -224,7 +303,8 @@ export default function StockAdjustments() {
           fullWidth
           PaperProps={{
             sx: {
-              background: 'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%)',
+              background:
+                'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%)',
               backdropFilter: 'blur(20px)',
               border: '1px solid rgba(139, 92, 246, 0.2)',
               borderRadius: 4,
@@ -232,7 +312,14 @@ export default function StockAdjustments() {
           }}
         >
           <form onSubmit={handleSubmit(onSubmit)}>
-            <DialogTitle sx={{ fontWeight: 800, background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <DialogTitle
+              sx={{
+                fontWeight: 800,
+                background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
               Create Inventory Stock Adjustment
             </DialogTitle>
             <DialogContent sx={{ pt: 2 }}>
@@ -287,16 +374,46 @@ export default function StockAdjustments() {
                   </TextField>
                 </Grid>
                 <Grid item xs={12}>
-                  <TextField label="Quantity" type="number" fullWidth {...register('quantity', { required: true, min: 1 })} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                  <TextField
+                    label="Quantity"
+                    type="number"
+                    fullWidth
+                    {...register('quantity', { required: true, min: 1 })}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  />
                 </Grid>
                 <Grid item xs={12}>
-                  <TextField label="Audit Notes / Reason explanation" multiline rows={3} fullWidth {...register('notes')} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                  <TextField
+                    label="Audit Notes / Reason explanation"
+                    multiline
+                    rows={3}
+                    fullWidth
+                    {...register('notes')}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  />
                 </Grid>
               </Grid>
             </DialogContent>
             <DialogActions sx={{ p: 3, gap: 1.5 }}>
-              <Button onClick={() => setOpen(false)} sx={{ color: 'text.secondary', textTransform: 'none', fontWeight: 600 }}>Cancel</Button>
-              <Button variant="contained" type="submit" startIcon={<SettingsBackupRestoreIcon />} sx={{ px: 4, py: 1.2, fontWeight: 700, background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)' }}>
+              <Button
+                onClick={() => setOpen(false)}
+                sx={{ color: 'text.secondary', textTransform: 'none', fontWeight: 600 }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                type="submit"
+                startIcon={<SettingsBackupRestoreIcon />}
+                sx={{
+                  px: 4,
+                  py: 1.2,
+                  fontWeight: 700,
+                  background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                }}
+              >
                 Complete Adjustment
               </Button>
             </DialogActions>

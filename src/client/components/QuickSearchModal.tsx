@@ -31,16 +31,76 @@ interface QuickSearchModalProps {
 }
 
 const searchItems = [
-  { title: 'Dashboard Overview', desc: 'Main sales & stock KPIs', path: '/', icon: <DashboardIcon />, category: 'Core' },
-  { title: 'POS Checkout Terminal', desc: 'Process customer orders & receipt generation', path: '/pos', icon: <PosIcon />, category: 'Core' },
-  { title: 'Product Catalog', desc: 'Manage products, SKUs, and pricing', path: '/products', icon: <CategoryIcon />, category: 'Catalog' },
-  { title: 'Inventory Stock Catalog', desc: 'Track stock counts, batches, and reorders', path: '/inventory', icon: <InventoryIcon />, category: 'Inventory' },
-  { title: 'Stock Adjustments', desc: 'Reconcile stock count discrepancies', path: '/adjustments', icon: <SwapHorizIcon />, category: 'Logistics' },
-  { title: 'Warehouse Transfers', desc: 'Move stock between warehouse branches', path: '/transfers', icon: <StorefrontIcon />, category: 'Logistics' },
-  { title: 'Purchase Orders', desc: 'Manage supplier restock procurement', path: '/purchase-orders', icon: <ShoppingCartIcon />, category: 'Procurement' },
-  { title: 'Financial Reports', desc: 'Profitability, sales tax & revenue analytics', path: '/finance', icon: <AnalyticsIcon />, category: 'Finance' },
-  { title: 'AI Copilot Assistant', desc: 'Smart reorder suggestions & anomaly analysis', path: '/ai-assistant', icon: <AutoAwesomeIcon />, category: 'AI Tools' },
-  { title: 'Company Settings', desc: 'Manage workspace details and preferences', path: '/company', icon: <SettingsIcon />, category: 'Settings' },
+  {
+    title: 'Dashboard Overview',
+    desc: 'Main sales & stock KPIs',
+    path: '/',
+    icon: <DashboardIcon />,
+    category: 'Core',
+  },
+  {
+    title: 'POS Checkout Terminal',
+    desc: 'Process customer orders & receipt generation',
+    path: '/pos',
+    icon: <PosIcon />,
+    category: 'Core',
+  },
+  {
+    title: 'Product Catalog',
+    desc: 'Manage products, SKUs, and pricing',
+    path: '/products',
+    icon: <CategoryIcon />,
+    category: 'Catalog',
+  },
+  {
+    title: 'Inventory Stock Catalog',
+    desc: 'Track stock counts, batches, and reorders',
+    path: '/inventory',
+    icon: <InventoryIcon />,
+    category: 'Inventory',
+  },
+  {
+    title: 'Stock Adjustments',
+    desc: 'Reconcile stock count discrepancies',
+    path: '/adjustments',
+    icon: <SwapHorizIcon />,
+    category: 'Logistics',
+  },
+  {
+    title: 'Warehouse Transfers',
+    desc: 'Move stock between warehouse branches',
+    path: '/transfers',
+    icon: <StorefrontIcon />,
+    category: 'Logistics',
+  },
+  {
+    title: 'Purchase Orders',
+    desc: 'Manage supplier restock procurement',
+    path: '/purchase-orders',
+    icon: <ShoppingCartIcon />,
+    category: 'Procurement',
+  },
+  {
+    title: 'Financial Reports',
+    desc: 'Profitability, sales tax & revenue analytics',
+    path: '/finance',
+    icon: <AnalyticsIcon />,
+    category: 'Finance',
+  },
+  {
+    title: 'AI Copilot Assistant',
+    desc: 'Smart reorder suggestions & anomaly analysis',
+    path: '/ai-assistant',
+    icon: <AutoAwesomeIcon />,
+    category: 'AI Tools',
+  },
+  {
+    title: 'Company Settings',
+    desc: 'Manage workspace details and preferences',
+    path: '/company',
+    icon: <SettingsIcon />,
+    category: 'Settings',
+  },
 ];
 
 export const QuickSearchModal: React.FC<QuickSearchModalProps> = ({ open, onClose }) => {
@@ -97,7 +157,15 @@ export const QuickSearchModal: React.FC<QuickSearchModalProps> = ({ open, onClos
             ),
             endAdornment: (
               <InputAdornment position="end">
-                <Chip label="ESC to exit" size="small" sx={{ fontSize: '0.68rem', backgroundColor: 'rgba(255,255,255,0.06)', color: '#9ca3af' }} />
+                <Chip
+                  label="ESC to exit"
+                  size="small"
+                  sx={{
+                    fontSize: '0.68rem',
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                    color: '#9ca3af',
+                  }}
+                />
               </InputAdornment>
             ),
             sx: {
@@ -153,7 +221,11 @@ export const QuickSearchModal: React.FC<QuickSearchModalProps> = ({ open, onClos
                       />
                     </Box>
                   }
-                  secondary={<Typography variant="caption" sx={{ color: '#9ca3af' }}>{item.desc}</Typography>}
+                  secondary={
+                    <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                      {item.desc}
+                    </Typography>
+                  }
                 />
               </ListItemButton>
             ))}

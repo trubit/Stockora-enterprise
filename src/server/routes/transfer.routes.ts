@@ -8,6 +8,18 @@ export const transferRouter = Router();
 
 transferRouter.use(authMiddleware);
 
-transferRouter.get('/', rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_READ]), TransferController.listTransfers);
-transferRouter.post('/', rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]), TransferController.createTransfer);
-transferRouter.put('/:id/status', rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]), TransferController.updateTransferStatus);
+transferRouter.get(
+  '/',
+  rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_READ]),
+  TransferController.listTransfers
+);
+transferRouter.post(
+  '/',
+  rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]),
+  TransferController.createTransfer
+);
+transferRouter.put(
+  '/:id/status',
+  rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]),
+  TransferController.updateTransferStatus
+);

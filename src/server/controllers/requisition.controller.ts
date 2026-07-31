@@ -6,7 +6,11 @@ import { ValidationError, NotFoundError } from '../errors/AppError.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 
 export class RequisitionController {
-  public static async listRequisitions(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async listRequisitions(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const requisitions = await PurchaseRequisition.find()
         .populate('requestedBy', 'username email')
@@ -20,7 +24,11 @@ export class RequisitionController {
     }
   }
 
-  public static async createRequisition(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async createRequisition(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { items, notes } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -56,7 +64,11 @@ export class RequisitionController {
     }
   }
 
-  public static async approveRequisition(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async approveRequisition(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const requisition = await PurchaseRequisition.findById(id);
@@ -88,7 +100,11 @@ export class RequisitionController {
     }
   }
 
-  public static async rejectRequisition(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async rejectRequisition(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const requisition = await PurchaseRequisition.findById(id);

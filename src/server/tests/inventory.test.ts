@@ -151,7 +151,9 @@ describe('Inventory Logistics, Adjustments & Transfers Integration', () => {
     const movements = await StockMovement.find({
       productId,
       quantity: { $gt: 0 },
-    }).sort({ createdAt: -1 }).lean();
+    })
+      .sort({ createdAt: -1 })
+      .lean();
 
     let fifoVal = 0;
     let fifoRemaining = Q;

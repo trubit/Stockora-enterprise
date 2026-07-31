@@ -49,7 +49,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         {title}
       </Typography>
 
-      <Typography variant="body2" sx={{ color: '#9ca3af', maxWidth: '400px', mb: actionLabel ? 3 : 0 }}>
+      <Typography
+        variant="body2"
+        sx={{ color: '#9ca3af', maxWidth: '400px', mb: actionLabel ? 3 : 0 }}
+      >
         {description}
       </Typography>
 

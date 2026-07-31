@@ -14,7 +14,11 @@ export class SecurityController {
   // GET /security/sessions
   // List active sessions for the current user (or for a target user if admin)
   // -------------------------------------------------------------------------
-  public static async listActiveSessions(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async listActiveSessions(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const targetUserId = req.query.userId as string;
       let queryUserId = req.user!.id;
@@ -23,7 +27,9 @@ export class SecurityController {
         queryUserId = targetUserId;
       }
 
-      const sessions = await Session.find({ userId: queryUserId, isActive: true }).sort({ lastSeenAt: -1 });
+      const sessions = await Session.find({ userId: queryUserId, isActive: true }).sort({
+        lastSeenAt: -1,
+      });
       res.json(sessions);
     } catch (err) {
       next(err);
@@ -34,7 +40,11 @@ export class SecurityController {
   // POST /security/sessions/:id/revoke
   // Revoke a specific session
   // -------------------------------------------------------------------------
-  public static async revokeSession(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async revokeSession(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const session = await Session.findById(id);
@@ -44,7 +54,7 @@ export class SecurityController {
 
       // Check authorization (must be own session or user is admin)
       if (session.userId.toString() !== req.user!.id && req.user!.roleName !== 'admin') {
-        return next(new ValidationError('Access Denied: Cannot revoke another user\'s session.'));
+        return next(new ValidationError("Access Denied: Cannot revoke another user's session."));
       }
 
       session.isActive = false;
@@ -72,7 +82,11 @@ export class SecurityController {
   // POST /security/users/:id/force-logout
   // Force logout user across all devices/refresh tokens (Admin only)
   // -------------------------------------------------------------------------
-  public static async forceLogoutUser(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async forceLogoutUser(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const userExists = await User.findById(id);
@@ -82,7 +96,10 @@ export class SecurityController {
 
       await AuthService.forceLogoutUser(String(id), String(req.user!.id));
 
-      res.json({ success: true, message: `User [${userExists.username}] has been logged out from all active sessions.` });
+      res.json({
+        success: true,
+        message: `User [${userExists.username}] has been logged out from all active sessions.`,
+      });
     } catch (err) {
       next(err);
     }
@@ -92,7 +109,11 @@ export class SecurityController {
   // GET /security/gdpr/:userId
   // Export all personal data belonging to the user for GDPR compliance
   // -------------------------------------------------------------------------
-  public static async exportGDPRData(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async exportGDPRData(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { userId } = req.params;
     try {
       // Must be admin or exporting own data
@@ -138,7 +159,11 @@ export class SecurityController {
   // GET /security/health
   // Comprehensive server health diagnostics (Mongoose, Redis, Node specs)
   // -------------------------------------------------------------------------
-  public static async getHealthReport(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getHealthReport(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       let redisPing = 'FAILED';
       try {
@@ -176,16 +201,22 @@ export class SecurityController {
   // -------------------------------------------------------------------------
   // GET /security/password-policy
   // -------------------------------------------------------------------------
-  public static async getPasswordPolicy(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getPasswordPolicy(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const config = await SystemConfig.findOne();
-      res.json(config?.passwordPolicy || {
-        minLength: 8,
-        requireUppercase: true,
-        requireLowercase: true,
-        requireNumbers: true,
-        requireSpecialChars: true,
-      });
+      res.json(
+        config?.passwordPolicy || {
+          minLength: 8,
+          requireUppercase: true,
+          requireLowercase: true,
+          requireNumbers: true,
+          requireSpecialChars: true,
+        }
+      );
     } catch (err) {
       next(err);
     }

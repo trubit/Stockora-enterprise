@@ -1,5 +1,26 @@
 import { useState } from 'react';
-import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, Grid, IconButton, Tooltip } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  MenuItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  Grid,
+  IconButton,
+  Tooltip,
+} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -164,9 +185,21 @@ export default function WarehouseTransfers() {
 
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
-      <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-          <Typography variant="h4" sx={{ fontWeight: 800, background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 800,
+              background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
             Warehouse Transfers
           </Typography>
           <Button
@@ -199,7 +232,8 @@ export default function WarehouseTransfers() {
           className="glass-panel"
           sx={{
             border: '1px solid rgba(255, 255, 255, 0.05)',
-            background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
+            background:
+              'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
             boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
             borderRadius: 3,
           }}
@@ -207,54 +241,123 @@ export default function WarehouseTransfers() {
           <Table>
             <TableHead sx={{ bgcolor: 'rgba(17, 24, 39, 0.5)' }}>
               <TableRow>
-                <TableCell sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Transfer Order</TableCell>
-                <TableCell sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Logistics Path</TableCell>
-                <TableCell sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Items Count</TableCell>
-                <TableCell sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Status</TableCell>
-                <TableCell sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Dispatched By</TableCell>
-                <TableCell sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'right' }}>Actions</TableCell>
+                <TableCell
+                  sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                >
+                  Transfer Order
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                >
+                  Logistics Path
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                >
+                  Items Count
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                >
+                  Status
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                >
+                  Dispatched By
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: 800,
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    textAlign: 'right',
+                  }}
+                >
+                  Actions
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {transfers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 6, color: 'text.secondary', border: 'none' }}>
+                  <TableCell
+                    colSpan={6}
+                    align="center"
+                    sx={{ py: 6, color: 'text.secondary', border: 'none' }}
+                  >
                     No warehouse transfers logged.
                   </TableCell>
                 </TableRow>
               ) : (
                 transfers.map((t) => (
-                  <TableRow key={t._id} sx={{ '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.01)' } }}>
-                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', py: 2, fontWeight: 700 }}>
+                  <TableRow
+                    key={t._id}
+                    sx={{ '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.01)' } }}
+                  >
+                    <TableCell
+                      sx={{
+                        borderBottom: '1px solid rgba(255,255,255,0.03)',
+                        py: 2,
+                        fontWeight: 700,
+                      }}
+                    >
                       <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{t.transferNumber}</Typography>
-                        <Typography variant="caption" color="text.secondary">{new Date(t.createdAt).toLocaleDateString()}</Typography>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                          {t.transferNumber}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {new Date(t.createdAt).toLocaleDateString()}
+                        </Typography>
                       </Box>
                     </TableCell>
                     <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {t.fromWarehouseId?.name || 'Origin'} → {t.toWarehouseId?.name || 'Destination'}
+                        {t.fromWarehouseId?.name || 'Origin'} →{' '}
+                        {t.toWarehouseId?.name || 'Destination'}
                       </Typography>
                     </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontWeight: 600 }}>
+                    <TableCell
+                      sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontWeight: 600 }}
+                    >
                       {t.items.reduce((acc, i) => acc + i.quantity, 0)} units
                     </TableCell>
                     <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                      <Chip label={t.status} size="small" color={getStatusColor(t.status)} sx={{ fontWeight: 700 }} />
+                      <Chip
+                        label={t.status}
+                        size="small"
+                        color={getStatusColor(t.status)}
+                        sx={{ fontWeight: 700 }}
+                      />
                     </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontWeight: 500 }}>
+                    <TableCell
+                      sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontWeight: 500 }}
+                    >
                       {t.createdBy?.username || 'Employee'}
                     </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', textAlign: 'right' }}>
+                    <TableCell
+                      sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', textAlign: 'right' }}
+                    >
                       {t.status === 'PENDING' && (
                         <>
                           <Tooltip title="Ship Transfer">
-                            <IconButton onClick={() => statusMutation.mutate({ id: t._id, status: 'IN_TRANSIT' })} sx={{ color: 'primary.light' }} size="small">
+                            <IconButton
+                              onClick={() =>
+                                statusMutation.mutate({ id: t._id, status: 'IN_TRANSIT' })
+                              }
+                              sx={{ color: 'primary.light' }}
+                              size="small"
+                            >
                               <LocalShippingIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Cancel Transfer">
-                            <IconButton onClick={() => statusMutation.mutate({ id: t._id, status: 'CANCELLED' })} sx={{ color: 'error.light', ml: 1 }} size="small">
+                            <IconButton
+                              onClick={() =>
+                                statusMutation.mutate({ id: t._id, status: 'CANCELLED' })
+                              }
+                              sx={{ color: 'error.light', ml: 1 }}
+                              size="small"
+                            >
                               <CancelIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
@@ -263,19 +366,33 @@ export default function WarehouseTransfers() {
                       {t.status === 'IN_TRANSIT' && (
                         <>
                           <Tooltip title="Receive / Complete">
-                            <IconButton onClick={() => statusMutation.mutate({ id: t._id, status: 'COMPLETED' })} sx={{ color: 'success.light' }} size="small">
+                            <IconButton
+                              onClick={() =>
+                                statusMutation.mutate({ id: t._id, status: 'COMPLETED' })
+                              }
+                              sx={{ color: 'success.light' }}
+                              size="small"
+                            >
                               <CheckCircleIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Cancel Transfer">
-                            <IconButton onClick={() => statusMutation.mutate({ id: t._id, status: 'CANCELLED' })} sx={{ color: 'error.light', ml: 1 }} size="small">
+                            <IconButton
+                              onClick={() =>
+                                statusMutation.mutate({ id: t._id, status: 'CANCELLED' })
+                              }
+                              sx={{ color: 'error.light', ml: 1 }}
+                              size="small"
+                            >
                               <CancelIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                         </>
                       )}
                       {(t.status === 'COMPLETED' || t.status === 'CANCELLED') && (
-                        <Typography variant="caption" color="text.secondary">Order Closed</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Order Closed
+                        </Typography>
                       )}
                     </TableCell>
                   </TableRow>
@@ -292,7 +409,8 @@ export default function WarehouseTransfers() {
           fullWidth
           PaperProps={{
             sx: {
-              background: 'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%)',
+              background:
+                'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%)',
               backdropFilter: 'blur(20px)',
               border: '1px solid rgba(139, 92, 246, 0.2)',
               borderRadius: 4,
@@ -300,7 +418,14 @@ export default function WarehouseTransfers() {
           }}
         >
           <form onSubmit={handleSubmit(onSubmit)}>
-            <DialogTitle sx={{ fontWeight: 800, background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <DialogTitle
+              sx={{
+                fontWeight: 800,
+                background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
               Create Warehouse Transfer Shipment
             </DialogTitle>
             <DialogContent sx={{ pt: 2 }}>
@@ -341,7 +466,11 @@ export default function WarehouseTransfers() {
                 </Grid>
 
                 <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 700 }}>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ mb: 1, fontWeight: 700 }}
+                  >
                     Transfer Items
                   </Typography>
                   {fields.map((field, index) => (
@@ -374,25 +503,57 @@ export default function WarehouseTransfers() {
                         />
                       </Grid>
                       <Grid item xs={2}>
-                        <Button color="error" onClick={() => remove(index)} sx={{ fontWeight: 700 }}>
+                        <Button
+                          color="error"
+                          onClick={() => remove(index)}
+                          sx={{ fontWeight: 700 }}
+                        >
                           Remove
                         </Button>
                       </Grid>
                     </Grid>
                   ))}
-                  <Button variant="outlined" startIcon={<AddIcon />} onClick={() => append({ productId: '', quantity: 1 })} sx={{ textTransform: 'none', borderColor: 'rgba(255,255,255,0.08)' }}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={() => append({ productId: '', quantity: 1 })}
+                    sx={{ textTransform: 'none', borderColor: 'rgba(255,255,255,0.08)' }}
+                  >
                     Add Line Item
                   </Button>
                 </Grid>
 
                 <Grid item xs={12}>
-                  <TextField label="Shipment Notes / Reference Info" multiline rows={3} fullWidth {...register('notes')} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                  <TextField
+                    label="Shipment Notes / Reference Info"
+                    multiline
+                    rows={3}
+                    fullWidth
+                    {...register('notes')}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  />
                 </Grid>
               </Grid>
             </DialogContent>
             <DialogActions sx={{ p: 3, gap: 1.5 }}>
-              <Button onClick={() => setOpen(false)} sx={{ color: 'text.secondary', textTransform: 'none', fontWeight: 600 }}>Cancel</Button>
-              <Button variant="contained" type="submit" startIcon={<LocalShippingIcon />} sx={{ px: 4, py: 1.2, fontWeight: 700, background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)' }}>
+              <Button
+                onClick={() => setOpen(false)}
+                sx={{ color: 'text.secondary', textTransform: 'none', fontWeight: 600 }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                type="submit"
+                startIcon={<LocalShippingIcon />}
+                sx={{
+                  px: 4,
+                  py: 1.2,
+                  fontWeight: 700,
+                  background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                }}
+              >
                 Create Transfer
               </Button>
             </DialogActions>

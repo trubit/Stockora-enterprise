@@ -18,7 +18,11 @@ export class OrgController {
     }
   }
 
-  public static async createCompany(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async createCompany(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { name, currency, timeZone } = req.body;
     if (!name) {
       return next(new ValidationError('Company name is required.'));
@@ -31,7 +35,7 @@ export class OrgController {
       }
 
       const company = await Company.create({ name, currency, timeZone });
-      
+
       await AuditLog.create({
         userId: req.user?.id,
         action: 'CREATE',
@@ -46,7 +50,11 @@ export class OrgController {
     }
   }
 
-  public static async updateCompany(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async updateCompany(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const company = await Company.findOne();
       if (!company) {
@@ -79,7 +87,11 @@ export class OrgController {
   }
 
   // --- Branch ---
-  public static async listBranches(_req: Request, res: Response, next: NextFunction): Promise<void> {
+  public static async listBranches(
+    _req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const branches = await Branch.find();
       res.json(branches);
@@ -88,7 +100,11 @@ export class OrgController {
     }
   }
 
-  public static async createBranch(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async createBranch(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { companyId, name, code, address, phone } = req.body;
     if (!companyId || !name || !code) {
       return next(new ValidationError('Company ID, name, and code are required.'));
@@ -100,8 +116,14 @@ export class OrgController {
         return next(new ValidationError(`Branch code [${code.toUpperCase()}] already exists.`));
       }
 
-      const branch = await Branch.create({ companyId, name, code: code.toUpperCase(), address, phone });
-      
+      const branch = await Branch.create({
+        companyId,
+        name,
+        code: code.toUpperCase(),
+        address,
+        phone,
+      });
+
       await AuditLog.create({
         userId: req.user?.id,
         action: 'CREATE',
@@ -117,7 +139,11 @@ export class OrgController {
   }
 
   // --- Warehouse ---
-  public static async listWarehouses(_req: Request, res: Response, next: NextFunction): Promise<void> {
+  public static async listWarehouses(
+    _req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const warehouses = await Warehouse.find();
       res.json(warehouses);
@@ -126,7 +152,11 @@ export class OrgController {
     }
   }
 
-  public static async createWarehouse(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async createWarehouse(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { branchId, name, code, zones, capacity } = req.body;
     if (!branchId || !name || !code) {
       return next(new ValidationError('Branch ID, name, and code are required.'));
@@ -138,7 +168,13 @@ export class OrgController {
         return next(new ValidationError(`Warehouse code [${code.toUpperCase()}] already exists.`));
       }
 
-      const warehouse = await Warehouse.create({ branchId, name, code: code.toUpperCase(), zones, capacity });
+      const warehouse = await Warehouse.create({
+        branchId,
+        name,
+        code: code.toUpperCase(),
+        zones,
+        capacity,
+      });
 
       await AuditLog.create({
         userId: req.user?.id,
@@ -155,7 +191,11 @@ export class OrgController {
   }
 
   // --- Master Data ---
-  public static async listMasterData(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public static async listMasterData(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { type } = req.query;
     const filter = type ? { type: String(type).toUpperCase() } : {};
     try {
@@ -166,7 +206,11 @@ export class OrgController {
     }
   }
 
-  public static async createMasterData(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async createMasterData(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { type, name, code, value } = req.body;
     if (!type || !name || !code) {
       return next(new ValidationError('Type, name, and code are required.'));

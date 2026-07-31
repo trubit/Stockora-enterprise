@@ -78,7 +78,9 @@ export class SocketManager {
     if (!this.io) return;
 
     this.io.on('connection', (socket: Socket) => {
-      logger.info(`Client connected: ${socket.id} (user=${socket.data.userId ?? 'anon'}, role=${socket.data.roleName ?? 'none'})`);
+      logger.info(
+        `Client connected: ${socket.id} (user=${socket.data.userId ?? 'anon'}, role=${socket.data.roleName ?? 'none'})`
+      );
 
       // Join personal user room
       if (socket.data.userId) {

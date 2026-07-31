@@ -11,11 +11,15 @@ export class EmailService {
 
     const host = process.env.SMTP_HOST;
     if (!host || host === 'your_smtp_host_here') {
-      logger.warn('[Email Service] SMTP configurations missing. Falling back to local console mock.');
+      logger.warn(
+        '[Email Service] SMTP configurations missing. Falling back to local console mock.'
+      );
       this.transporter = {
         /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
         sendMail: async (options: any) => {
-          logger.info(`[MOCK MAIL to: ${options.to}] | Subject: ${options.subject} | Text: ${options.text}`);
+          logger.info(
+            `[MOCK MAIL to: ${options.to}] | Subject: ${options.subject} | Text: ${options.text}`
+          );
           return { messageId: 'mock-uuid-12345' };
         },
       } as unknown as nodemailer.Transporter;

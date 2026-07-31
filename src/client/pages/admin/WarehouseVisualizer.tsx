@@ -29,7 +29,9 @@ const textFieldStyle = { mt: 1 };
 
 export default function WarehouseVisualizer() {
   const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
-  const [activeSlot, setActiveSlot] = useState<{ row: number; shelf: number; bin: number } | null>(null);
+  const [activeSlot, setActiveSlot] = useState<{ row: number; shelf: number; bin: number } | null>(
+    null
+  );
 
   const { data: warehouses = [] } = useQuery<WarehouseData[]>({
     queryKey: ['warehouses-visualizer'],
@@ -74,7 +76,8 @@ export default function WarehouseVisualizer() {
             3D Warehouse Visualizer
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Isometric spatial map tracking inventory layouts, shelf assignments, and bin utilization heatmaps.
+            Isometric spatial map tracking inventory layouts, shelf assignments, and bin utilization
+            heatmaps.
           </Typography>
         </Box>
         <Box sx={{ minWidth: 200 }}>
@@ -118,7 +121,10 @@ export default function WarehouseVisualizer() {
               {Array.from({ length: rows }).map((_, rIdx) => {
                 const rNum = rIdx + 1;
                 return (
-                  <Box key={rNum} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                  <Box
+                    key={rNum}
+                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}
+                  >
                     <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>
                       Row {rNum}
                     </Typography>
@@ -137,7 +143,11 @@ export default function WarehouseVisualizer() {
                               bgcolor: 'rgba(0,0,0,0.1)',
                             }}
                           >
-                            <Typography variant="caption" align="center" sx={{ fontSize: '0.65rem', mb: 0.5, color: 'text.disabled' }}>
+                            <Typography
+                              variant="caption"
+                              align="center"
+                              sx={{ fontSize: '0.65rem', mb: 0.5, color: 'text.disabled' }}
+                            >
                               Shelf {sNum}
                             </Typography>
                             <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -150,7 +160,9 @@ export default function WarehouseVisualizer() {
                                 return (
                                   <Box
                                     key={bNum}
-                                    onClick={() => setActiveSlot({ row: rNum, shelf: sNum, bin: bNum })}
+                                    onClick={() =>
+                                      setActiveSlot({ row: rNum, shelf: sNum, bin: bNum })
+                                    }
                                     sx={{
                                       width: 20,
                                       height: 20,
@@ -182,20 +194,35 @@ export default function WarehouseVisualizer() {
             {/* Heatmap Legend */}
             <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', mt: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Box sx={{ width: 12, height: 12, borderRadius: 0.5, bgcolor: 'rgba(255, 255, 255, 0.04)' }} />
-                <Typography variant="caption" color="text.secondary">Empty Slot</Typography>
+                <Box
+                  sx={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: 0.5,
+                    bgcolor: 'rgba(255, 255, 255, 0.04)',
+                  }}
+                />
+                <Typography variant="caption" color="text.secondary">
+                  Empty Slot
+                </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Box sx={{ width: 12, height: 12, borderRadius: 0.5, bgcolor: '#10b981' }} />
-                <Typography variant="caption" color="text.secondary">Low utilization</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Low utilization
+                </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Box sx={{ width: 12, height: 12, borderRadius: 0.5, bgcolor: '#f59e0b' }} />
-                <Typography variant="caption" color="text.secondary">Half Full</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Half Full
+                </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Box sx={{ width: 12, height: 12, borderRadius: 0.5, bgcolor: '#ef4444' }} />
-                <Typography variant="caption" color="text.secondary">Near Capacity</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Near Capacity
+                </Typography>
               </Box>
             </Box>
           </Paper>
@@ -206,7 +233,9 @@ export default function WarehouseVisualizer() {
             <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <InfoIcon color="primary" />
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>Shelf Inspector</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                  Shelf Inspector
+                </Typography>
               </Box>
 
               {activeSlot ? (
@@ -214,36 +243,64 @@ export default function WarehouseVisualizer() {
                   <Typography variant="subtitle2" sx={{ fontWeight: 750 }}>
                     Bin coordinates: R-{activeSlot.row} / S-{activeSlot.shelf} / B-{activeSlot.bin}
                   </Typography>
-                  
+
                   {(() => {
                     const prod = getProductAtSlot(activeSlot.row, activeSlot.shelf, activeSlot.bin);
                     if (!prod) {
                       return (
-                        <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, textAlign: 'center' }}>
-                          <Chip label="Empty Shelf Bin" color="default" size="small" sx={{ mb: 1 }} />
+                        <Box
+                          sx={{
+                            p: 2,
+                            bgcolor: 'rgba(255,255,255,0.02)',
+                            borderRadius: 2,
+                            textAlign: 'center',
+                          }}
+                        >
+                          <Chip
+                            label="Empty Shelf Bin"
+                            color="default"
+                            size="small"
+                            sx={{ mb: 1 }}
+                          />
                           <Typography variant="body2" color="text.secondary">
                             This coordinate is currently available for catalog allocation.
                           </Typography>
                         </Box>
                       );
                     }
-                      <Box sx={{ p: 2, bgcolor: 'rgba(139,92,246,0.04)', borderRadius: 2, border: '1px solid rgba(139,92,246,0.1)' }}>
-                        <Box sx={{ width: '100%' }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                            {prod.name}
+                    <Box
+                      sx={{
+                        p: 2,
+                        bgcolor: 'rgba(139,92,246,0.04)',
+                        borderRadius: 2,
+                        border: '1px solid rgba(139,92,246,0.1)',
+                      }}
+                    >
+                      <Box sx={{ width: '100%' }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                          {prod.name}
+                        </Typography>
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="caption" display="block" color="text.secondary">
+                            SKU: {prod.sku}
                           </Typography>
-                          <Box sx={{ mt: 1 }}>
-                            <Typography variant="caption" display="block" color="text.secondary">SKU: {prod.sku}</Typography>
-                            <Typography variant="subtitle2" sx={{ mt: 1, fontWeight: 800, color: 'secondary.light' }}>
-                              Current Qty: {prod.qty} units
-                            </Typography>
-                          </Box>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ mt: 1, fontWeight: 800, color: 'secondary.light' }}
+                          >
+                            Current Qty: {prod.qty} units
+                          </Typography>
                         </Box>
                       </Box>
+                    </Box>;
                   })()}
                 </Box>
               ) : (
-                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', textAlign: 'center', py: 8 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ fontStyle: 'italic', textAlign: 'center', py: 8 }}
+                >
                   Click any slot on the grid visualizer to inspect shelves.
                 </Typography>
               )}

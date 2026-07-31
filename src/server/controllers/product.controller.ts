@@ -6,7 +6,11 @@ import { ValidationError, NotFoundError } from '../errors/AppError.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 
 export class ProductController {
-  public static async getProducts(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getProducts(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const cached = await redis.get('products:all');
       if (cached) {
@@ -22,7 +26,11 @@ export class ProductController {
     }
   }
 
-  public static async getProduct(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getProduct(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const product = await Product.findById(id).lean();
@@ -35,11 +43,20 @@ export class ProductController {
     }
   }
 
-  public static async createProduct(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
-    const { name, category, costPrice, sellingPrice, price, cost, sku, barcode, ...rest } = req.body;
+  public static async createProduct(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    const { name, category, costPrice, sellingPrice, price, cost, sku, barcode, ...rest } =
+      req.body;
 
-    const finalCostPrice = Number(costPrice !== undefined ? costPrice : (cost !== undefined ? cost : 0));
-    const finalSellingPrice = Number(sellingPrice !== undefined ? sellingPrice : (price !== undefined ? price : 0));
+    const finalCostPrice = Number(
+      costPrice !== undefined ? costPrice : cost !== undefined ? cost : 0
+    );
+    const finalSellingPrice = Number(
+      sellingPrice !== undefined ? sellingPrice : price !== undefined ? price : 0
+    );
 
     if (!name || !category) {
       return next(new ValidationError('Name and category are required.'));
@@ -48,8 +65,14 @@ export class ProductController {
     try {
       let finalSku = sku;
       if (!finalSku) {
-        const cleanName = name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase();
-        const cleanCat = category.replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase();
+        const cleanName = name
+          .replace(/[^a-zA-Z0-9]/g, '')
+          .slice(0, 4)
+          .toUpperCase();
+        const cleanCat = category
+          .replace(/[^a-zA-Z0-9]/g, '')
+          .slice(0, 3)
+          .toUpperCase();
         finalSku = `PRD-${cleanCat}-${cleanName}-${Math.round(Math.random() * 1e5)}`;
       }
 
@@ -88,7 +111,11 @@ export class ProductController {
     }
   }
 
-  public static async updateProduct(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async updateProduct(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const product = await Product.findById(id);
@@ -110,7 +137,7 @@ export class ProductController {
       delete updatableData.createdAt;
       delete updatableData.updatedAt;
       delete updatableData.__v;
-      
+
       if (sku && sku !== product.sku) {
         const existingSku = await Product.findOne({ sku });
         if (existingSku) {
@@ -155,7 +182,11 @@ export class ProductController {
     }
   }
 
-  public static async deleteProduct(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async deleteProduct(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const product = await Product.findById(id);

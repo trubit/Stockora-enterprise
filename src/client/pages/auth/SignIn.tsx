@@ -23,7 +23,11 @@ export default function SignIn() {
   const navigate = useNavigate();
   const setSession = useAuthStore((s) => s.setSession);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<SignInInputs>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignInInputs>({
     resolver: zodResolver(signInSchema),
   });
 
@@ -62,7 +66,8 @@ export default function SignIn() {
           width: 400,
           height: 400,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, rgba(139, 92, 246, 0) 70%)',
+          background:
+            'radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, rgba(139, 92, 246, 0) 70%)',
           filter: 'blur(40px)',
           zIndex: 0,
         },
@@ -74,10 +79,11 @@ export default function SignIn() {
           width: 400,
           height: 400,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0) 70%)',
+          background:
+            'radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0) 70%)',
           filter: 'blur(40px)',
           zIndex: 0,
-        }
+        },
       }}
     >
       <motion.div
@@ -86,12 +92,13 @@ export default function SignIn() {
         transition={{ duration: 0.6, ease: 'easeOut' }}
         style={{ zIndex: 1 }}
       >
-        <Card 
-          sx={{ 
-            width: 420, 
-            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4), 0 0 40px rgba(139, 92, 246, 0.08)', 
+        <Card
+          sx={{
+            width: 420,
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4), 0 0 40px rgba(139, 92, 246, 0.08)',
             border: '1px solid rgba(139, 92, 246, 0.15)',
-            background: 'linear-gradient(135deg, rgba(23, 27, 44, 0.75) 0%, rgba(11, 13, 26, 0.85) 100%)',
+            background:
+              'linear-gradient(135deg, rgba(23, 27, 44, 0.75) 0%, rgba(11, 13, 26, 0.85) 100%)',
             backdropFilter: 'blur(20px)',
             borderRadius: 4,
             overflow: 'hidden',
@@ -104,38 +111,55 @@ export default function SignIn() {
               right: 0,
               height: '4px',
               background: 'linear-gradient(90deg, #8b5cf6, #3b82f6)',
-            }
+            },
           }}
         >
-          <CardContent sx={{ p: { xs: 3.5, md: 5 }, display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+          <CardContent
+            sx={{ p: { xs: 3.5, md: 5 }, display: 'flex', flexDirection: 'column', gap: 3.5 }}
+          >
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.4 }}
               >
-                <img src="/logo.png" alt="Stockora Logo" style={{ height: 64, width: 64, objectFit: 'contain', filter: 'drop-shadow(0 4px 10px rgba(139, 92, 246, 0.3))' }} />
+                <img
+                  src="/logo.png"
+                  alt="Stockora Logo"
+                  style={{
+                    height: 64,
+                    width: 64,
+                    objectFit: 'contain',
+                    filter: 'drop-shadow(0 4px 10px rgba(139, 92, 246, 0.3))',
+                  }}
+                />
               </motion.div>
-              <Typography 
-                variant="h4" 
-                sx={{ 
-                  fontWeight: 900, 
-                  textAlign: 'center', 
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: 900,
+                  textAlign: 'center',
                   letterSpacing: '0.08em',
                   background: 'linear-gradient(90deg, #a78bfa 0%, #3b82f6 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
-                  mt: 1
+                  mt: 1,
                 }}
               >
                 STOCKORA
               </Typography>
-              <Typography variant="body2" sx={{ textAlign: 'center', color: 'text.secondary', fontWeight: 500 }}>
+              <Typography
+                variant="body2"
+                sx={{ textAlign: 'center', color: 'text.secondary', fontWeight: 500 }}
+              >
                 Sign in to manage your inventory and POS terminals
               </Typography>
             </Box>
 
-            <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
+            >
               <TextField
                 label="Email Address"
                 fullWidth
@@ -160,8 +184,8 @@ export default function SignIn() {
                 type="submit"
                 fullWidth
                 disabled={mutation.isPending}
-                sx={{ 
-                  py: 1.6, 
+                sx={{
+                  py: 1.6,
                   fontWeight: 800,
                   borderRadius: 2.5,
                   textTransform: 'none',
@@ -173,38 +197,46 @@ export default function SignIn() {
                     background: 'linear-gradient(90deg, #7c3aed 0%, #2563eb 100%)',
                     boxShadow: '0 6px 24px rgba(139, 92, 246, 0.45)',
                     transform: 'translateY(-1px)',
-                  }
+                  },
                 }}
               >
                 {mutation.isPending ? 'Signing In...' : 'Sign In'}
               </Button>
             </form>
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, borderTop: '1px solid rgba(255,255,255,0.05)', pt: 2.5 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1.5,
+                borderTop: '1px solid rgba(255,255,255,0.05)',
+                pt: 2.5,
+              }}
+            >
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Link 
-                  onClick={() => navigate('/forgot-password')} 
-                  sx={{ 
-                    cursor: 'pointer', 
-                    fontSize: '0.85rem', 
-                    color: 'text.secondary', 
+                <Link
+                  onClick={() => navigate('/forgot-password')}
+                  sx={{
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    color: 'text.secondary',
                     textDecoration: 'none',
                     transition: 'color 0.2s',
-                    '&:hover': { color: 'primary.light' } 
+                    '&:hover': { color: 'primary.light' },
                   }}
                 >
                   Forgot Password?
                 </Link>
-                <Link 
-                  onClick={() => navigate('/signup')} 
-                  sx={{ 
-                    cursor: 'pointer', 
-                    fontSize: '0.85rem', 
-                    color: 'primary.light', 
+                <Link
+                  onClick={() => navigate('/signup')}
+                  sx={{
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    color: 'primary.light',
                     fontWeight: 600,
                     textDecoration: 'none',
                     transition: 'color 0.2s',
-                    '&:hover': { color: 'primary.main' } 
+                    '&:hover': { color: 'primary.main' },
                   }}
                 >
                   Create Account
@@ -214,7 +246,12 @@ export default function SignIn() {
               <Typography variant="caption" sx={{ textAlign: 'center', mt: 1 }}>
                 <Link
                   onClick={() => navigate('/landing')}
-                  sx={{ cursor: 'pointer', color: '#9ca3af', textDecoration: 'none', '&:hover': { color: '#34d399' } }}
+                  sx={{
+                    cursor: 'pointer',
+                    color: '#9ca3af',
+                    textDecoration: 'none',
+                    '&:hover': { color: '#34d399' },
+                  }}
                 >
                   ← Back to Enterprise Landing Page
                 </Link>
@@ -226,4 +263,3 @@ export default function SignIn() {
     </Box>
   );
 }
-

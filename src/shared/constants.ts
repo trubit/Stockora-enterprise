@@ -91,4 +91,3 @@ export const MASTER_DATA_TYPES = {
 } as const;
 
 export type MasterDataType = (typeof MASTER_DATA_TYPES)[keyof typeof MASTER_DATA_TYPES];
-

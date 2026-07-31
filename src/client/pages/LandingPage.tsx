@@ -30,7 +30,7 @@ const demoProducts = [
   { id: '1', name: 'Whole Milk 1L', category: 'Dairy', price: 2.49 },
   { id: '2', name: 'Sourdough Bread', category: 'Bakery', price: 3.99 },
   { id: '3', name: 'Espresso Coffee 500g', category: 'Beverages', price: 12.99 },
-  { id: '4', name: 'Organic Honey 250g', category: 'Pantry', price: 7.50 },
+  { id: '4', name: 'Organic Honey 250g', category: 'Pantry', price: 7.5 },
 ];
 
 export const LandingPage: React.FC = () => {
@@ -40,7 +40,7 @@ export const LandingPage: React.FC = () => {
     { id: '3', name: 'Espresso Coffee 500g', price: 12.99, qty: 1 },
   ]);
 
-  const addToCart = (product: typeof demoProducts[0]) => {
+  const addToCart = (product: (typeof demoProducts)[0]) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
       if (existing) {
@@ -78,7 +78,10 @@ export const LandingPage: React.FC = () => {
       >
         <Container maxWidth="lg">
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }} onClick={() => navigate('/landing')}>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }}
+              onClick={() => navigate('/landing')}
+            >
               <Box
                 sx={{
                   width: 40,
@@ -93,20 +96,61 @@ export const LandingPage: React.FC = () => {
               >
                 <PointOfSaleIcon sx={{ color: '#ffffff', fontSize: 24 }} />
               </Box>
-              <Typography variant="h5" sx={{ fontWeight: 900, letterSpacing: '-0.02em', background: 'linear-gradient(90deg, #ffffff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                Stockora<Typography component="span" variant="h5" sx={{ color: '#10b981', fontWeight: 800 }}> Enterprise</Typography>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 900,
+                  letterSpacing: '-0.02em',
+                  background: 'linear-gradient(90deg, #ffffff 0%, #a78bfa 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                Stockora
+                <Typography
+                  component="span"
+                  variant="h5"
+                  sx={{ color: '#10b981', fontWeight: 800 }}
+                >
+                  {' '}
+                  Enterprise
+                </Typography>
               </Typography>
             </Box>
 
             <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 4 }}>
-              <Button href="#features" sx={{ color: '#9ca3af', fontWeight: 600, '&:hover': { color: '#ffffff' } }}>Features</Button>
-              <Button href="#demo" sx={{ color: '#9ca3af', fontWeight: 600, '&:hover': { color: '#ffffff' } }}>Interactive POS</Button>
-              <Button href="#roi" sx={{ color: '#9ca3af', fontWeight: 600, '&:hover': { color: '#ffffff' } }}>ROI & Stats</Button>
-              <Button href="#pricing" sx={{ color: '#9ca3af', fontWeight: 600, '&:hover': { color: '#ffffff' } }}>Pricing</Button>
+              <Button
+                href="#features"
+                sx={{ color: '#9ca3af', fontWeight: 600, '&:hover': { color: '#ffffff' } }}
+              >
+                Features
+              </Button>
+              <Button
+                href="#demo"
+                sx={{ color: '#9ca3af', fontWeight: 600, '&:hover': { color: '#ffffff' } }}
+              >
+                Interactive POS
+              </Button>
+              <Button
+                href="#roi"
+                sx={{ color: '#9ca3af', fontWeight: 600, '&:hover': { color: '#ffffff' } }}
+              >
+                ROI & Stats
+              </Button>
+              <Button
+                href="#pricing"
+                sx={{ color: '#9ca3af', fontWeight: 600, '&:hover': { color: '#ffffff' } }}
+              >
+                Pricing
+              </Button>
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Button variant="text" onClick={() => navigate('/login')} sx={{ color: '#a78bfa', fontWeight: 700 }}>
+              <Button
+                variant="text"
+                onClick={() => navigate('/login')}
+                sx={{ color: '#a78bfa', fontWeight: 700 }}
+              >
                 Sign In
               </Button>
               <Button
@@ -166,11 +210,23 @@ export const LandingPage: React.FC = () => {
             Intelligent Stock Management & Lightning Fast POS
           </Typography>
 
-          <Typography variant="h6" sx={{ color: '#9ca3af', fontWeight: 400, lineHeight: 1.6, mb: 4 }}>
-            Unify your multi-warehouse stock catalog, real-time checkout terminals, AI demand forecasting, and offline sync in one sleek, enterprise-grade cloud platform.
+          <Typography
+            variant="h6"
+            sx={{ color: '#9ca3af', fontWeight: 400, lineHeight: 1.6, mb: 4 }}
+          >
+            Unify your multi-warehouse stock catalog, real-time checkout terminals, AI demand
+            forecasting, and offline sync in one sleek, enterprise-grade cloud platform.
           </Typography>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 2,
+              flexWrap: 'wrap',
+            }}
+          >
             <Button
               variant="contained"
               size="large"
@@ -216,15 +272,36 @@ export const LandingPage: React.FC = () => {
 
         {/* Hero Interactive Mini POS Preview */}
         <Box id="demo" sx={{ mt: 4 }}>
-          <Card className="glass-panel" sx={{ p: { xs: 2, md: 4 }, borderRadius: '24px', border: '1px solid rgba(139, 92, 246, 0.25)' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+          <Card
+            className="glass-panel"
+            sx={{
+              p: { xs: 2, md: 4 },
+              borderRadius: '24px',
+              border: '1px solid rgba(139, 92, 246, 0.25)',
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                mb: 3,
+                flexWrap: 'wrap',
+                gap: 2,
+              }}
+            >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <ReceiptLongIcon sx={{ color: '#10b981', fontSize: 28 }} />
                 <Typography variant="h5" sx={{ fontWeight: 800, color: '#f8fafc' }}>
                   Live POS Terminal Preview
                 </Typography>
               </Box>
-              <Chip label="Interactive Demo Mode" color="secondary" size="small" sx={{ fontWeight: 700 }} />
+              <Chip
+                label="Interactive Demo Mode"
+                color="secondary"
+                size="small"
+                sx={{ fontWeight: 700 }}
+              />
             </Box>
 
             <Grid container spacing={3}>
@@ -252,13 +329,27 @@ export const LandingPage: React.FC = () => {
                       >
                         <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                            <Chip label={p.category} size="small" sx={{ fontSize: '0.65rem', height: '18px', backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                            <Chip
+                              label={p.category}
+                              size="small"
+                              sx={{
+                                fontSize: '0.65rem',
+                                height: '18px',
+                                backgroundColor: 'rgba(255,255,255,0.06)',
+                              }}
+                            />
                             <AddShoppingCartIcon sx={{ fontSize: 18, color: '#10b981' }} />
                           </Box>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#f8fafc' }}>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ fontWeight: 700, color: '#f8fafc' }}
+                          >
                             {p.name}
                           </Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 800, color: '#34d399', mt: 0.5 }}>
+                          <Typography
+                            variant="h6"
+                            sx={{ fontWeight: 800, color: '#34d399', mt: 0.5 }}
+                          >
                             ${p.price.toFixed(2)}
                           </Typography>
                         </CardContent>
@@ -284,7 +375,16 @@ export const LandingPage: React.FC = () => {
 
                   <Box sx={{ minHeight: '140px', mb: 2 }}>
                     {cart.map((item) => (
-                      <Box key={item.id} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 1, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <Box
+                        key={item.id}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          py: 1,
+                          borderBottom: '1px solid rgba(255,255,255,0.05)',
+                        }}
+                      >
                         <Box>
                           <Typography variant="body2" sx={{ fontWeight: 600, color: '#f8fafc' }}>
                             {item.name}
@@ -297,7 +397,11 @@ export const LandingPage: React.FC = () => {
                           <Typography variant="body2" sx={{ fontWeight: 700, color: '#34d399' }}>
                             ${(item.price * item.qty).toFixed(2)}
                           </Typography>
-                          <IconButton size="small" onClick={() => removeFromCart(item.id)} sx={{ color: '#ef4444' }}>
+                          <IconButton
+                            size="small"
+                            onClick={() => removeFromCart(item.id)}
+                            sx={{ color: '#ef4444' }}
+                          >
                             <RemoveCircleOutlineIcon fontSize="small" />
                           </IconButton>
                         </Box>
@@ -307,16 +411,28 @@ export const LandingPage: React.FC = () => {
 
                   <Divider sx={{ my: 1.5, borderColor: 'rgba(255,255,255,0.08)' }} />
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                    <Typography variant="body2" sx={{ color: '#9ca3af' }}>Subtotal</Typography>
-                    <Typography variant="body2" sx={{ color: '#f8fafc', fontWeight: 600 }}>${subtotal.toFixed(2)}</Typography>
+                    <Typography variant="body2" sx={{ color: '#9ca3af' }}>
+                      Subtotal
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#f8fafc', fontWeight: 600 }}>
+                      ${subtotal.toFixed(2)}
+                    </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
-                    <Typography variant="body2" sx={{ color: '#9ca3af' }}>VAT (7.5%)</Typography>
-                    <Typography variant="body2" sx={{ color: '#f8fafc', fontWeight: 600 }}>${tax.toFixed(2)}</Typography>
+                    <Typography variant="body2" sx={{ color: '#9ca3af' }}>
+                      VAT (7.5%)
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#f8fafc', fontWeight: 600 }}>
+                      ${tax.toFixed(2)}
+                    </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#ffffff' }}>Total Amount</Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 900, color: '#10b981' }}>${total.toFixed(2)}</Typography>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#ffffff' }}>
+                      Total Amount
+                    </Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: '#10b981' }}>
+                      ${total.toFixed(2)}
+                    </Typography>
                   </Box>
 
                   <Button
@@ -340,10 +456,21 @@ export const LandingPage: React.FC = () => {
       </Container>
 
       {/* Feature Showcase Grid */}
-      <Box id="features" sx={{ py: 10, backgroundColor: 'rgba(15, 23, 42, 0.4)', borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <Box
+        id="features"
+        sx={{
+          py: 10,
+          backgroundColor: 'rgba(15, 23, 42, 0.4)',
+          borderTop: '1px solid rgba(255,255,255,0.05)',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+        }}
+      >
         <Container maxWidth="lg">
           <Box sx={{ textAlign: 'center', mb: 8 }}>
-            <Typography variant="overline" sx={{ color: '#8b5cf6', fontWeight: 800, letterSpacing: '0.1em' }}>
+            <Typography
+              variant="overline"
+              sx={{ color: '#8b5cf6', fontWeight: 800, letterSpacing: '0.1em' }}
+            >
               BUILT FOR SCALABLE ENTERPRISE RETAIL
             </Typography>
             <Typography variant="h2" sx={{ fontWeight: 800, color: '#f8fafc', mt: 1 }}>
@@ -405,14 +532,19 @@ export const LandingPage: React.FC = () => {
         <Container maxWidth="lg">
           <Grid container spacing={4} alignItems="center">
             <Grid item xs={12} md={6}>
-              <Typography variant="overline" sx={{ color: '#10b981', fontWeight: 800, letterSpacing: '0.1em' }}>
+              <Typography
+                variant="overline"
+                sx={{ color: '#10b981', fontWeight: 800, letterSpacing: '0.1em' }}
+              >
                 MEASURABLE ROI & PERFORMANCE
               </Typography>
               <Typography variant="h2" sx={{ fontWeight: 900, color: '#f8fafc', mt: 1, mb: 3 }}>
                 Powering Modern Retail & Wholesale Leaders
               </Typography>
               <Typography variant="body1" sx={{ color: '#9ca3af', mb: 4, lineHeight: 1.7 }}>
-                Stockora Enterprise replaces fragmented legacy systems with a single unified source of truth. Eliminate stockouts, accelerate checkout throughput by 4x, and gain instant visibility into profit margins across all your branches.
+                Stockora Enterprise replaces fragmented legacy systems with a single unified source
+                of truth. Eliminate stockouts, accelerate checkout throughput by 4x, and gain
+                instant visibility into profit margins across all your branches.
               </Typography>
 
               <Box sx={{ display: 'flex', flexColumn: 'column', gap: 2 }}>
@@ -423,7 +555,9 @@ export const LandingPage: React.FC = () => {
                 ].map((text, idx) => (
                   <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
                     <CheckCircleIcon sx={{ color: '#10b981', fontSize: 20 }} />
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#e2e8f0' }}>{text}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#e2e8f0' }}>
+                      {text}
+                    </Typography>
                   </Box>
                 ))}
               </Box>
@@ -463,10 +597,20 @@ export const LandingPage: React.FC = () => {
       </Box>
 
       {/* Pricing Section */}
-      <Box id="pricing" sx={{ py: 10, backgroundColor: 'rgba(15, 23, 42, 0.4)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <Box
+        id="pricing"
+        sx={{
+          py: 10,
+          backgroundColor: 'rgba(15, 23, 42, 0.4)',
+          borderTop: '1px solid rgba(255,255,255,0.05)',
+        }}
+      >
         <Container maxWidth="lg">
           <Box sx={{ textAlign: 'center', mb: 8 }}>
-            <Typography variant="overline" sx={{ color: '#8b5cf6', fontWeight: 800, letterSpacing: '0.1em' }}>
+            <Typography
+              variant="overline"
+              sx={{ color: '#8b5cf6', fontWeight: 800, letterSpacing: '0.1em' }}
+            >
               TRANSPARENT PRICING
             </Typography>
             <Typography variant="h2" sx={{ fontWeight: 800, color: '#f8fafc', mt: 1 }}>
@@ -480,7 +624,12 @@ export const LandingPage: React.FC = () => {
                 title: 'Starter',
                 price: '$49',
                 desc: 'Perfect for single-location retail stores and pop-up shops.',
-                features: ['1 POS Terminal', 'Up to 1,000 SKUs', 'Offline Sync Mode', 'Basic Inventory Reports'],
+                features: [
+                  '1 POS Terminal',
+                  'Up to 1,000 SKUs',
+                  'Offline Sync Mode',
+                  'Basic Inventory Reports',
+                ],
                 buttonText: 'Start Free Trial',
                 highlight: false,
               },
@@ -488,7 +637,13 @@ export const LandingPage: React.FC = () => {
                 title: 'Growth Enterprise',
                 price: '$149',
                 desc: 'Designed for expanding multi-branch businesses.',
-                features: ['5 POS Terminals', 'Unlimited SKUs', 'AI Demand Forecasting', 'Multi-Warehouse Transfers', 'Paystack & Stripe Integration'],
+                features: [
+                  '5 POS Terminals',
+                  'Unlimited SKUs',
+                  'AI Demand Forecasting',
+                  'Multi-Warehouse Transfers',
+                  'Paystack & Stripe Integration',
+                ],
                 buttonText: 'Get Started Now',
                 highlight: true,
               },
@@ -496,7 +651,12 @@ export const LandingPage: React.FC = () => {
                 title: 'Custom Enterprise',
                 price: 'Custom',
                 desc: 'Tailored solutions for large franchises and logistics hubs.',
-                features: ['Unlimited POS Terminals', 'Dedicated Account Manager', 'Custom ERP Connectors (SAP/Xero)', 'Custom SLA & 24/7 Phone Support'],
+                features: [
+                  'Unlimited POS Terminals',
+                  'Dedicated Account Manager',
+                  'Custom ERP Connectors (SAP/Xero)',
+                  'Custom SLA & 24/7 Phone Support',
+                ],
                 buttonText: 'Contact Enterprise Sales',
                 highlight: false,
               },
@@ -512,7 +672,9 @@ export const LandingPage: React.FC = () => {
                     justifyContent: 'space-between',
                     borderRadius: '20px',
                     borderColor: plan.highlight ? '#8b5cf6 !important' : 'rgba(255,255,255,0.08)',
-                    boxShadow: plan.highlight ? '0 12px 40px rgba(139, 92, 246, 0.3) !important' : 'none',
+                    boxShadow: plan.highlight
+                      ? '0 12px 40px rgba(139, 92, 246, 0.3) !important'
+                      : 'none',
                     position: 'relative',
                   }}
                 >
@@ -521,7 +683,13 @@ export const LandingPage: React.FC = () => {
                       label="MOST POPULAR"
                       color="primary"
                       size="small"
-                      sx={{ position: 'absolute', top: 16, right: 16, fontWeight: 800, fontSize: '0.7rem' }}
+                      sx={{
+                        position: 'absolute',
+                        top: 16,
+                        right: 16,
+                        fontWeight: 800,
+                        fontSize: '0.7rem',
+                      }}
                     />
                   )}
 
@@ -529,9 +697,16 @@ export const LandingPage: React.FC = () => {
                     <Typography variant="h5" sx={{ fontWeight: 800, color: '#f8fafc', mb: 1 }}>
                       {plan.title}
                     </Typography>
-                    <Typography variant="h3" sx={{ fontWeight: 900, color: plan.highlight ? '#34d399' : '#ffffff', mb: 1 }}>
+                    <Typography
+                      variant="h3"
+                      sx={{ fontWeight: 900, color: plan.highlight ? '#34d399' : '#ffffff', mb: 1 }}
+                    >
                       {plan.price}
-                      {plan.price !== 'Custom' && <Typography component="span" variant="body2" sx={{ color: '#9ca3af' }}>/month</Typography>}
+                      {plan.price !== 'Custom' && (
+                        <Typography component="span" variant="body2" sx={{ color: '#9ca3af' }}>
+                          /month
+                        </Typography>
+                      )}
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#9ca3af', mb: 3 }}>
                       {plan.desc}
@@ -540,8 +715,13 @@ export const LandingPage: React.FC = () => {
 
                     <Box sx={{ mb: 4 }}>
                       {plan.features.map((feat, fIdx) => (
-                        <Box key={fIdx} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
-                          <CheckCircleIcon sx={{ color: plan.highlight ? '#34d399' : '#8b5cf6', fontSize: 18 }} />
+                        <Box
+                          key={fIdx}
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}
+                        >
+                          <CheckCircleIcon
+                            sx={{ color: plan.highlight ? '#34d399' : '#8b5cf6', fontSize: 18 }}
+                          />
                           <Typography variant="body2" sx={{ color: '#e2e8f0', fontWeight: 500 }}>
                             {feat}
                           </Typography>
@@ -558,7 +738,9 @@ export const LandingPage: React.FC = () => {
                       py: 1.4,
                       fontWeight: 800,
                       borderRadius: '12px',
-                      background: plan.highlight ? 'linear-gradient(135deg, #8b5cf6 0%, #10b981 100%)' : 'transparent',
+                      background: plan.highlight
+                        ? 'linear-gradient(135deg, #8b5cf6 0%, #10b981 100%)'
+                        : 'transparent',
                     }}
                   >
                     {plan.buttonText}
@@ -571,16 +753,41 @@ export const LandingPage: React.FC = () => {
       </Box>
 
       {/* Footer */}
-      <Box sx={{ py: 6, backgroundColor: '#030712', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+      <Box
+        sx={{ py: 6, backgroundColor: '#030712', borderTop: '1px solid rgba(255,255,255,0.08)' }}
+      >
         <Container maxWidth="lg">
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2,
+            }}
+          >
             <Typography variant="body2" sx={{ color: '#6b7280' }}>
               © {new Date().getFullYear()} Stockora Enterprise Inc. All rights reserved.
             </Typography>
             <Box sx={{ display: 'flex', gap: 3 }}>
-              <Button onClick={() => navigate('/login')} sx={{ color: '#9ca3af', fontSize: '0.85rem' }}>Login</Button>
-              <Button onClick={() => navigate('/signup')} sx={{ color: '#9ca3af', fontSize: '0.85rem' }}>Create Account</Button>
-              <Button onClick={() => navigate('/pos')} sx={{ color: '#10b981', fontSize: '0.85rem', fontWeight: 700 }}>POS Demo</Button>
+              <Button
+                onClick={() => navigate('/login')}
+                sx={{ color: '#9ca3af', fontSize: '0.85rem' }}
+              >
+                Login
+              </Button>
+              <Button
+                onClick={() => navigate('/signup')}
+                sx={{ color: '#9ca3af', fontSize: '0.85rem' }}
+              >
+                Create Account
+              </Button>
+              <Button
+                onClick={() => navigate('/pos')}
+                sx={{ color: '#10b981', fontSize: '0.85rem', fontWeight: 700 }}
+              >
+                POS Demo
+              </Button>
             </Box>
           </Box>
         </Container>

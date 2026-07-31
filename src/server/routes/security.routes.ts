@@ -16,8 +16,15 @@ router.get('/password-policy', SecurityController.getPasswordPolicy);
 router.get('/gdpr/:userId', SecurityController.exportGDPRData);
 
 // Admin-only operations
-router.post('/users/:id/force-logout', rbacMiddleware([SYSTEM_PERMISSIONS.SECURITY_WRITE]), SecurityController.forceLogoutUser);
-router.get('/health', rbacMiddleware([SYSTEM_PERMISSIONS.SECURITY_READ]), SecurityController.getHealthReport);
+router.post(
+  '/users/:id/force-logout',
+  rbacMiddleware([SYSTEM_PERMISSIONS.SECURITY_WRITE]),
+  SecurityController.forceLogoutUser
+);
+router.get(
+  '/health',
+  rbacMiddleware([SYSTEM_PERMISSIONS.SECURITY_READ]),
+  SecurityController.getHealthReport
+);
 
 export { router as securityRouter };
-

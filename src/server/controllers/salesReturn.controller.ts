@@ -12,7 +12,11 @@ import { SocketManager } from '../sockets/manager.js';
 const io = SocketManager.getInstance();
 
 export class SalesReturnController {
-  public static async listReturns(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async listReturns(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const returns = await SalesReturn.find()
         .populate('customerId', 'name code email')
@@ -26,7 +30,11 @@ export class SalesReturnController {
     }
   }
 
-  public static async createReturn(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async createReturn(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { customerId, orderId, items, reason } = req.body;
 
     if (!customerId || !items || !Array.isArray(items) || items.length === 0 || !reason) {
@@ -48,7 +56,10 @@ export class SalesReturnController {
           product.quantity += qty;
           await product.save();
 
-          io.emitGlobal('product:stock-updated', { productId: product._id, quantity: product.quantity });
+          io.emitGlobal('product:stock-updated', {
+            productId: product._id,
+            quantity: product.quantity,
+          });
 
           // Log stock entry back to ledger
           await StockMovement.create({

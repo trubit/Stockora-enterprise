@@ -47,9 +47,26 @@ interface AIUsageSummary {
 interface ForecastingReport {
   totalSalesRevenue: number;
   totalInventoryValue: number;
-  fastMovingItems: Array<{ productId: string; name: string; quantitySold: number; revenue: number }>;
-  slowMovingItems: Array<{ productId: string; name: string; currentQuantity: number; ageInDays: number }>;
-  reorderProposals: Array<{ productId: string; name: string; currentStock: number; limit: number; proposedQty: number; reason: string }>;
+  fastMovingItems: Array<{
+    productId: string;
+    name: string;
+    quantitySold: number;
+    revenue: number;
+  }>;
+  slowMovingItems: Array<{
+    productId: string;
+    name: string;
+    currentQuantity: number;
+    ageInDays: number;
+  }>;
+  reorderProposals: Array<{
+    productId: string;
+    name: string;
+    currentStock: number;
+    limit: number;
+    proposedQty: number;
+    reason: string;
+  }>;
   seasonalTrends: Array<{ period: string; salesCount: number; totalAmount: number }>;
   profitabilityInsights: {
     grossProfit: number;
@@ -73,30 +90,34 @@ export default function AIAssistant() {
   const queryClient = useQueryClient();
 
   // Fetch telemetry usage
-  const { data: usage = {
-    providerName: 'MOCK',
-    totalRequests: 0,
-    totalPromptTokens: 0,
-    totalCompletionTokens: 0,
-    totalEstimatedCost: 0,
-  } } = useQuery<AIUsageSummary>({
+  const {
+    data: usage = {
+      providerName: 'MOCK',
+      totalRequests: 0,
+      totalPromptTokens: 0,
+      totalCompletionTokens: 0,
+      totalEstimatedCost: 0,
+    },
+  } = useQuery<AIUsageSummary>({
     queryKey: ['ai-metrics'],
     queryFn: async () => (await apiClient.get('/ai/metrics')).data,
   });
 
   // Fetch forecasting
-  const { data: forecast = {
-    report: {
-      totalSalesRevenue: 0,
-      totalInventoryValue: 0,
-      fastMovingItems: [],
-      slowMovingItems: [],
-      reorderProposals: [],
-      seasonalTrends: [],
-      profitabilityInsights: { grossProfit: 0, marginPercentage: 0 },
+  const {
+    data: forecast = {
+      report: {
+        totalSalesRevenue: 0,
+        totalInventoryValue: 0,
+        fastMovingItems: [],
+        slowMovingItems: [],
+        reorderProposals: [],
+        seasonalTrends: [],
+        profitabilityInsights: { grossProfit: 0, marginPercentage: 0 },
+      },
+      aiForecast: '',
     },
-    aiForecast: '',
-  } } = useQuery<{ report: ForecastingReport; aiForecast: string }>({
+  } = useQuery<{ report: ForecastingReport; aiForecast: string }>({
     queryKey: ['ai-forecasting'],
     queryFn: async () => (await apiClient.get('/ai/forecasting')).data,
   });
@@ -177,45 +198,71 @@ export default function AIAssistant() {
       {/* Observability metrics */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={3}>
-          <Paper className="glass-panel" sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Paper
+            className="glass-panel"
+            sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2 }}
+          >
             <Avatar sx={{ bgcolor: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6' }}>
               <SpeedIcon />
             </Avatar>
             <Box>
-              <Typography variant="caption" color="text.secondary">Total AI Queries</Typography>
-              <Typography variant="h5" sx={{ fontWeight: 800 }}>{usage.totalRequests}</Typography>
+              <Typography variant="caption" color="text.secondary">
+                Total AI Queries
+              </Typography>
+              <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                {usage.totalRequests}
+              </Typography>
             </Box>
           </Paper>
         </Grid>
         <Grid item xs={12} sm={3}>
-          <Paper className="glass-panel" sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Paper
+            className="glass-panel"
+            sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2 }}
+          >
             <Avatar sx={{ bgcolor: 'rgba(236, 72, 153, 0.1)', color: '#ec4899' }}>
               <AnalyticsIcon />
             </Avatar>
             <Box>
-              <Typography variant="caption" color="text.secondary">Prompt Tokens</Typography>
-              <Typography variant="h5" sx={{ fontWeight: 800 }}>{usage.totalPromptTokens.toLocaleString()}</Typography>
+              <Typography variant="caption" color="text.secondary">
+                Prompt Tokens
+              </Typography>
+              <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                {usage.totalPromptTokens.toLocaleString()}
+              </Typography>
             </Box>
           </Paper>
         </Grid>
         <Grid item xs={12} sm={3}>
-          <Paper className="glass-panel" sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Paper
+            className="glass-panel"
+            sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2 }}
+          >
             <Avatar sx={{ bgcolor: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
               <AnalyticsIcon />
             </Avatar>
             <Box>
-              <Typography variant="caption" color="text.secondary">Completion Tokens</Typography>
-              <Typography variant="h5" sx={{ fontWeight: 800 }}>{usage.totalCompletionTokens.toLocaleString()}</Typography>
+              <Typography variant="caption" color="text.secondary">
+                Completion Tokens
+              </Typography>
+              <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                {usage.totalCompletionTokens.toLocaleString()}
+              </Typography>
             </Box>
           </Paper>
         </Grid>
         <Grid item xs={12} sm={3}>
-          <Paper className="glass-panel" sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Paper
+            className="glass-panel"
+            sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2 }}
+          >
             <Avatar sx={{ bgcolor: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}>
               <CostIcon />
             </Avatar>
             <Box>
-              <Typography variant="caption" color="text.secondary">Accumulated API Cost</Typography>
+              <Typography variant="caption" color="text.secondary">
+                Accumulated API Cost
+              </Typography>
               <Typography variant="h5" sx={{ fontWeight: 800, color: 'secondary.light' }}>
                 ${usage.totalEstimatedCost.toFixed(5)}
               </Typography>
@@ -234,8 +281,21 @@ export default function AIAssistant() {
       {activeTab === 0 && (
         <Grid container spacing={3}>
           <Grid item xs={12} md={8}>
-            <Paper className="glass-panel" sx={{ p: 3, height: '500px', display: 'flex', flexDirection: 'column' }}>
-              <Box sx={{ flexGrow: 1, overflowY: 'auto', mb: 2, display: 'flex', flexDirection: 'column', gap: 2, pr: 1 }}>
+            <Paper
+              className="glass-panel"
+              sx={{ p: 3, height: '500px', display: 'flex', flexDirection: 'column' }}
+            >
+              <Box
+                sx={{
+                  flexGrow: 1,
+                  overflowY: 'auto',
+                  mb: 2,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2,
+                  pr: 1,
+                }}
+              >
                 {chatHistory.map((msg, idx) => (
                   <Box
                     key={idx}
@@ -250,8 +310,14 @@ export default function AIAssistant() {
                         p: 2,
                         borderRadius: 2,
                         maxWidth: '85%',
-                        bgcolor: msg.sender === 'USER' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.03)',
-                        border: msg.sender === 'USER' ? '1px solid rgba(139, 92, 246, 0.3)' : '1px solid rgba(255,255,255,0.05)',
+                        bgcolor:
+                          msg.sender === 'USER'
+                            ? 'rgba(139, 92, 246, 0.15)'
+                            : 'rgba(255,255,255,0.03)',
+                        border:
+                          msg.sender === 'USER'
+                            ? '1px solid rgba(139, 92, 246, 0.3)'
+                            : '1px solid rgba(255,255,255,0.05)',
                       }}
                     >
                       <Typography variant="body2" sx={{ whiteSpace: 'pre-line', lineHeight: 1.5 }}>
@@ -311,7 +377,9 @@ export default function AIAssistant() {
                 <Button
                   variant="outlined"
                   size="small"
-                  onClick={() => handleSuggestedPrompt('Analyze inventory turnover and fast moving items.')}
+                  onClick={() =>
+                    handleSuggestedPrompt('Analyze inventory turnover and fast moving items.')
+                  }
                   sx={{ justifyContent: 'flex-start', textAlign: 'left' }}
                 >
                   📈 Turnover analysis
@@ -319,7 +387,9 @@ export default function AIAssistant() {
                 <Button
                   variant="outlined"
                   size="small"
-                  onClick={() => handleSuggestedPrompt('Summarize margin optimizations and profit limits.')}
+                  onClick={() =>
+                    handleSuggestedPrompt('Summarize margin optimizations and profit limits.')
+                  }
                   sx={{ justifyContent: 'flex-start', textAlign: 'left' }}
                 >
                   💰 Margin optimizations
@@ -338,7 +408,10 @@ export default function AIAssistant() {
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
                 Executive Intelligence Report
               </Typography>
-              <Typography variant="body2" sx={{ whiteSpace: 'pre-line', lineHeight: 1.6, color: 'text.secondary' }}>
+              <Typography
+                variant="body2"
+                sx={{ whiteSpace: 'pre-line', lineHeight: 1.6, color: 'text.secondary' }}
+              >
                 {forecast.aiForecast || 'Executive forecasts compiling from analytical logs...'}
               </Typography>
             </Paper>

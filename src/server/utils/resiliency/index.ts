@@ -65,13 +65,13 @@ export function calculateDelay(
       delay = Math.random() * delay;
       break;
     case 'EQUAL':
-      delay = (delay / 2) + (Math.random() * (delay / 2));
+      delay = delay / 2 + Math.random() * (delay / 2);
       break;
     case 'DECORRELATED': {
       const minVal = baseDelay;
       const maxVal = lastDelay * 3;
       const range = Math.abs(maxVal - minVal);
-      delay = Math.min(maxDelay, minVal + (Math.random() * range));
+      delay = Math.min(maxDelay, minVal + Math.random() * range);
       break;
     }
     case 'NONE':
@@ -121,7 +121,9 @@ export class CircuitBreaker {
       logger.error(`[Resiliency] Circuit breaker [${this.name}] OPENED. Blocking requests.`);
     } else if (this.state === 'HALF_OPEN') {
       this.state = 'OPEN';
-      logger.error(`[Resiliency] Circuit breaker [${this.name}] failed HALF-OPEN test. Re-opening.`);
+      logger.error(
+        `[Resiliency] Circuit breaker [${this.name}] failed HALF-OPEN test. Re-opening.`
+      );
     }
   }
 
@@ -138,7 +140,9 @@ export class CircuitBreaker {
       this.state = 'HALF_OPEN';
       this.successes = 0;
       this.lastStateChange = Date.now();
-      logger.warn(`[Resiliency] Circuit breaker [${this.name}] transition to HALF-OPEN (Testing recovery).`);
+      logger.warn(
+        `[Resiliency] Circuit breaker [${this.name}] transition to HALF-OPEN (Testing recovery).`
+      );
     }
   }
 
@@ -159,11 +163,16 @@ export class Bulkhead {
   private activeCount = 0;
   private queue: (() => void)[] = [];
 
-  constructor(public readonly name: string, private maxConcurrency: number) {}
+  constructor(
+    public readonly name: string,
+    private maxConcurrency: number
+  ) {}
 
   public async execute<T>(fn: () => Promise<T>): Promise<T> {
     if (this.activeCount >= this.maxConcurrency) {
-      logger.warn(`[Resiliency] Bulkhead [${this.name}] capacity reached (${this.activeCount}/${this.maxConcurrency}). Queueing execution.`);
+      logger.warn(
+        `[Resiliency] Bulkhead [${this.name}] capacity reached (${this.activeCount}/${this.maxConcurrency}). Queueing execution.`
+      );
       await new Promise<void>((resolve) => {
         this.queue.push(resolve);
       });
@@ -320,14 +329,8 @@ export class ResilientExecutor {
    * Resilient execute wrapper. Wraps task functions in bulkheads, circuit breakers,
    * retry policies with jittered backoffs, and Token Bucket budgets.
    */
-  public static async execute<T>(
-    options: ResiliencyOptions,
-    taskFn: () => Promise<T>
-  ): Promise<T> {
-    const {
-      name,
-      bulkheadMaxConcurrency = 0,
-    } = options;
+  public static async execute<T>(options: ResiliencyOptions, taskFn: () => Promise<T>): Promise<T> {
+    const { name, bulkheadMaxConcurrency = 0 } = options;
 
     const registry = ResiliencyRegistry.getInstance();
     const metrics = registry.getOrCreateMetric(name);
@@ -365,7 +368,11 @@ export class ResilientExecutor {
     // 2. Circuit Breaker State Check
     let breaker: CircuitBreaker | null = null;
     if (useCircuitBreaker) {
-      breaker = registry.getOrCreateCircuitBreaker(name, circuitFailureThreshold, circuitResetTimeoutMs);
+      breaker = registry.getOrCreateCircuitBreaker(
+        name,
+        circuitFailureThreshold,
+        circuitResetTimeoutMs
+      );
       if (breaker.getState() === 'OPEN') {
         metrics.failures++;
         throw new Error(`[Resiliency] Blocked by Circuit Breaker [${name}] (State: OPEN)`);
@@ -403,7 +410,6 @@ export class ResilientExecutor {
         budget.release();
         if (breaker) breaker.recordSuccess();
         return result;
-
       } catch (err) {
         metrics.failures++;
         metrics.failuresSinceLastSuccess++;
@@ -416,24 +422,41 @@ export class ResilientExecutor {
         if (!retryAllowed) {
           // Dead Letter / Poison message audit log trigger
           if (isLastAttempt) {
-            logger.error(`[Resiliency] Resiliency retries exhausted on [${name}]. Logging to Poison Logs/DLQ. Details:`, err);
+            logger.error(
+              `[Resiliency] Resiliency retries exhausted on [${name}]. Logging to Poison Logs/DLQ. Details:`,
+              err
+            );
           } else {
-            logger.error(`[Resiliency] Non-idempotent operation failed on [${name}]. Skipping retries to prevent duplicate side effects.`, err);
+            logger.error(
+              `[Resiliency] Non-idempotent operation failed on [${name}]. Skipping retries to prevent duplicate side effects.`,
+              err
+            );
           }
           throw err;
         }
 
         // Calculate and wait delay before retry
-        const delay = calculateDelay(attempt - 1, backoffType, jitterType, baseDelayMs, maxDelayMs, lastDelay);
+        const delay = calculateDelay(
+          attempt - 1,
+          backoffType,
+          jitterType,
+          baseDelayMs,
+          maxDelayMs,
+          lastDelay
+        );
         lastDelay = delay;
 
         const errMsg = err instanceof Error ? err.message : String(err);
-        logger.warn(`[Resiliency] Retry attempt #${attempt} for [${name}] in ${delay}ms due to error: ${errMsg}`);
+        logger.warn(
+          `[Resiliency] Retry attempt #${attempt} for [${name}] in ${delay}ms due to error: ${errMsg}`
+        );
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
-    throw new Error(`[Resiliency] Maximum retry attempts (${retryCount}) exhausted on service [${name}]`);
+    throw new Error(
+      `[Resiliency] Maximum retry attempts (${retryCount}) exhausted on service [${name}]`
+    );
   }
 
   private static async executeWithTimeout<T>(

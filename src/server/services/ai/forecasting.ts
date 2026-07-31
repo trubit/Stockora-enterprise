@@ -6,9 +6,26 @@ import { logger } from '../../logger.js';
 export interface ForecastingReport {
   totalSalesRevenue: number;
   totalInventoryValue: number;
-  fastMovingItems: Array<{ productId: string; name: string; quantitySold: number; revenue: number }>;
-  slowMovingItems: Array<{ productId: string; name: string; currentQuantity: number; ageInDays: number }>;
-  reorderProposals: Array<{ productId: string; name: string; currentStock: number; limit: number; proposedQty: number; reason: string }>;
+  fastMovingItems: Array<{
+    productId: string;
+    name: string;
+    quantitySold: number;
+    revenue: number;
+  }>;
+  slowMovingItems: Array<{
+    productId: string;
+    name: string;
+    currentQuantity: number;
+    ageInDays: number;
+  }>;
+  reorderProposals: Array<{
+    productId: string;
+    name: string;
+    currentStock: number;
+    limit: number;
+    proposedQty: number;
+    reason: string;
+  }>;
   seasonalTrends: Array<{ period: string; salesCount: number; totalAmount: number }>;
   profitabilityInsights: {
     grossProfit: number;
@@ -26,8 +43,14 @@ export class ForecastingEngine {
       const transactions = await Transaction.find({});
 
       // 1. Calculations
-      const totalInventoryValue = products.reduce((sum, p) => sum + (p.sellingPrice || p.price || 0) * (p.quantity || 0), 0);
-      const totalCostBase = products.reduce((sum, p) => sum + (p.costPrice || p.cost || 0) * (p.quantity || 0), 0);
+      const totalInventoryValue = products.reduce(
+        (sum, p) => sum + (p.sellingPrice || p.price || 0) * (p.quantity || 0),
+        0
+      );
+      const totalCostBase = products.reduce(
+        (sum, p) => sum + (p.costPrice || p.cost || 0) * (p.quantity || 0),
+        0
+      );
       const totalSalesRevenue = transactions.reduce((sum, t) => sum + (t.total || 0), 0);
 
       // 2. Compute sales velocity per product
@@ -50,7 +73,7 @@ export class ForecastingEngine {
             productSalesMap[pId] = { quantitySold: 0, revenue: 0 };
           }
           productSalesMap[pId].quantitySold += item.quantity;
-          productSalesMap[pId].revenue += item.total || (item.quantity * (item.price || 0));
+          productSalesMap[pId].revenue += item.total || item.quantity * (item.price || 0);
         }
       }
 
@@ -76,7 +99,9 @@ export class ForecastingEngine {
           const sales = productSalesMap[pId] || { quantitySold: 0, revenue: 0 };
           // Calculate mock inventory age in days based on createdAt or update timestamp
           const updatedDate = p.updatedAt ? new Date(p.updatedAt) : new Date();
-          const ageInDays = Math.round((Date.now() - updatedDate.getTime()) / (1000 * 60 * 60 * 24));
+          const ageInDays = Math.round(
+            (Date.now() - updatedDate.getTime()) / (1000 * 60 * 60 * 24)
+          );
           return {
             productId: pId,
             name: p.name,
@@ -101,7 +126,8 @@ export class ForecastingEngine {
             currentStock: p.quantity,
             limit: p.lowStockAlert,
             proposedQty,
-            reason: p.quantity === 0 ? 'Out of stock' : 'Stock level below configuration threshold limit',
+            reason:
+              p.quantity === 0 ? 'Out of stock' : 'Stock level below configuration threshold limit',
           };
         });
 

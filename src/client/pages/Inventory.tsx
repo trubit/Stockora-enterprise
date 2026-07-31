@@ -66,7 +66,10 @@ export default function Inventory() {
     queryFn: fetchProducts,
   });
 
-  const { data: valuation = { weightedAverage: 0, fifo: 0, lifo: 0, totalItemsCount: 0 }, refetch: refetchValuation } = useQuery({
+  const {
+    data: valuation = { weightedAverage: 0, fifo: 0, lifo: 0, totalItemsCount: 0 },
+    refetch: refetchValuation,
+  } = useQuery({
     queryKey: ['valuation'],
     queryFn: async () => {
       const { data } = await apiClient.get('/inventory/valuation');
@@ -87,7 +90,11 @@ export default function Inventory() {
     socket.on('product:stock-updated', (data: { productId: string; quantity: number }) => {
       queryClient.setQueryData<Product[]>(['products'], (old) => {
         if (!old) return old;
-        return old.map((p) => (p.id === data.productId || p._id === data.productId ? { ...p, quantity: data.quantity } : p));
+        return old.map((p) =>
+          p.id === data.productId || p._id === data.productId
+            ? { ...p, quantity: data.quantity }
+            : p
+        );
       });
       refetchValuation();
       refetchMovements();
@@ -295,7 +302,11 @@ export default function Inventory() {
         </Grid>
       </Grid>
 
-      <Tabs value={activeTab} onChange={(_e, v) => setActiveTab(v)} sx={{ mb: 3, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+      <Tabs
+        value={activeTab}
+        onChange={(_e, v) => setActiveTab(v)}
+        sx={{ mb: 3, borderBottom: '1px solid rgba(255,255,255,0.08)' }}
+      >
         <Tab label="Stock Catalog Table" sx={{ textTransform: 'none', fontWeight: 700 }} />
         <Tab label="Stock Movements Ledger" sx={{ textTransform: 'none', fontWeight: 700 }} />
       </Tabs>
@@ -331,7 +342,8 @@ export default function Inventory() {
           className="glass-panel"
           sx={{
             border: '1px solid rgba(255, 255, 255, 0.05)',
-            background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
+            background:
+              'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
             boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
             borderRadius: 3,
             maxHeight: 'calc(100vh - 360px)',
@@ -340,61 +352,177 @@ export default function Inventory() {
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#111827', color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Product</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#111827', color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>SKU</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#111827', color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Type</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#111827', color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Qty Changed</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#111827', color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Unit Cost</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#111827', color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Audit Notes</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#111827', color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Operator</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#111827', color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Timestamp</TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: 800,
+                    bgcolor: '#111827',
+                    color: 'text.primary',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  }}
+                >
+                  Product
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: 800,
+                    bgcolor: '#111827',
+                    color: 'text.primary',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  }}
+                >
+                  SKU
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: 800,
+                    bgcolor: '#111827',
+                    color: 'text.primary',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  }}
+                >
+                  Type
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: 800,
+                    bgcolor: '#111827',
+                    color: 'text.primary',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  }}
+                >
+                  Qty Changed
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: 800,
+                    bgcolor: '#111827',
+                    color: 'text.primary',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  }}
+                >
+                  Unit Cost
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: 800,
+                    bgcolor: '#111827',
+                    color: 'text.primary',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  }}
+                >
+                  Audit Notes
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: 800,
+                    bgcolor: '#111827',
+                    color: 'text.primary',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  }}
+                >
+                  Operator
+                </TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: 800,
+                    bgcolor: '#111827',
+                    color: 'text.primary',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  }}
+                >
+                  Timestamp
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {movements.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 6, color: 'text.secondary', border: 'none' }}>
+                  <TableCell
+                    colSpan={8}
+                    align="center"
+                    sx={{ py: 6, color: 'text.secondary', border: 'none' }}
+                  >
                     No stock movements recorded.
                   </TableCell>
                 </TableRow>
               ) : (
-                movements.map((mov: {
-                  _id: string;
-                  productId?: { name: string; sku: string };
-                  type: string;
-                  quantity: number;
-                  costPrice: number;
-                  notes?: string;
-                  userId?: { username: string };
-                  createdAt: string;
-                }) => (
-                  <TableRow key={mov._id} sx={{ '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.01)' } }}>
-                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', py: 1.5, fontWeight: 700 }}>
-                      {mov.productId?.name || 'Deleted Product'}
-                    </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                      <Chip label={mov.productId?.sku || 'N/A'} size="small" variant="outlined" sx={{ fontWeight: 700, color: 'primary.light' }} />
-                    </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                      <Chip label={mov.type} size="small" color={mov.type === 'SALE' ? 'primary' : mov.type === 'ADJUSTMENT' ? 'warning' : 'success'} sx={{ fontWeight: 700 }} />
-                    </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontWeight: 800, color: mov.quantity < 0 ? 'error.light' : 'success.light' }}>
-                      {mov.quantity > 0 ? `+${mov.quantity}` : mov.quantity}
-                    </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontWeight: 600 }}>
-                      ${Number(mov.costPrice || 0).toFixed(2)}
-                    </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', color: 'text.secondary' }}>
-                      {mov.notes || '-'}
-                    </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                      {mov.userId?.username || 'System'}
-                    </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                      {new Date(mov.createdAt).toLocaleString()}
-                    </TableCell>
-                  </TableRow>
-                ))
+                movements.map(
+                  (mov: {
+                    _id: string;
+                    productId?: { name: string; sku: string };
+                    type: string;
+                    quantity: number;
+                    costPrice: number;
+                    notes?: string;
+                    userId?: { username: string };
+                    createdAt: string;
+                  }) => (
+                    <TableRow
+                      key={mov._id}
+                      sx={{ '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.01)' } }}
+                    >
+                      <TableCell
+                        sx={{
+                          borderBottom: '1px solid rgba(255,255,255,0.03)',
+                          py: 1.5,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {mov.productId?.name || 'Deleted Product'}
+                      </TableCell>
+                      <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                        <Chip
+                          label={mov.productId?.sku || 'N/A'}
+                          size="small"
+                          variant="outlined"
+                          sx={{ fontWeight: 700, color: 'primary.light' }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                        <Chip
+                          label={mov.type}
+                          size="small"
+                          color={
+                            mov.type === 'SALE'
+                              ? 'primary'
+                              : mov.type === 'ADJUSTMENT'
+                                ? 'warning'
+                                : 'success'
+                          }
+                          sx={{ fontWeight: 700 }}
+                        />
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          borderBottom: '1px solid rgba(255,255,255,0.03)',
+                          fontWeight: 800,
+                          color: mov.quantity < 0 ? 'error.light' : 'success.light',
+                        }}
+                      >
+                        {mov.quantity > 0 ? `+${mov.quantity}` : mov.quantity}
+                      </TableCell>
+                      <TableCell
+                        sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontWeight: 600 }}
+                      >
+                        ${Number(mov.costPrice || 0).toFixed(2)}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          borderBottom: '1px solid rgba(255,255,255,0.03)',
+                          color: 'text.secondary',
+                        }}
+                      >
+                        {mov.notes || '-'}
+                      </TableCell>
+                      <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                        {mov.userId?.username || 'System'}
+                      </TableCell>
+                      <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                        {new Date(mov.createdAt).toLocaleString()}
+                      </TableCell>
+                    </TableRow>
+                  )
+                )
               )}
             </TableBody>
           </Table>

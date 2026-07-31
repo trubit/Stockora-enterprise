@@ -73,7 +73,12 @@ export default function OfflineSyncMonitor() {
   const [syncLog, setSyncLog] = useState<SyncLogEntry[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [expandedJob, setExpandedJob] = useState<string | null>(null);
-  const [syncProgress, setSyncProgress] = useState<{ synced: number; conflicts: number; failures: number; total: number } | null>(null);
+  const [syncProgress, setSyncProgress] = useState<{
+    synced: number;
+    conflicts: number;
+    failures: number;
+    total: number;
+  } | null>(null);
 
   const queryClient = useQueryClient();
   const { accessToken: token } = useAuthStore();
@@ -106,7 +111,12 @@ export default function OfflineSyncMonitor() {
       setSyncProgress({ synced: 0, conflicts: 0, failures: 0, total: total ?? 0 });
     });
     const offProgress = onSyncEvent('sync:progress', ({ synced, conflicts, failures, total }) => {
-      setSyncProgress({ synced: synced ?? 0, conflicts: conflicts ?? 0, failures: failures ?? 0, total: total ?? 0 });
+      setSyncProgress({
+        synced: synced ?? 0,
+        conflicts: conflicts ?? 0,
+        failures: failures ?? 0,
+        total: total ?? 0,
+      });
     });
     const offComplete = onSyncEvent('sync:complete', ({ pendingCount: pc }) => {
       setIsSyncing(false);
@@ -134,7 +144,9 @@ export default function OfflineSyncMonitor() {
       return runSync(token);
     },
     onSuccess: (result) => {
-      toast.success(`Sync complete: ${result.synced} synced, ${result.conflicts} conflicts, ${result.failures} failed.`);
+      toast.success(
+        `Sync complete: ${result.synced} synced, ${result.conflicts} conflicts, ${result.failures} failed.`
+      );
       queryClient.invalidateQueries({ queryKey: ['sync-status'] });
       refreshLocalState();
     },
@@ -151,25 +163,48 @@ export default function OfflineSyncMonitor() {
 
   // ---- Helpers ---------------------------------------------------------------
 
-  const syncPercent = syncProgress && syncProgress.total > 0
-    ? Math.round(((syncProgress.synced + syncProgress.conflicts + syncProgress.failures) / syncProgress.total) * 100)
-    : 0;
+  const syncPercent =
+    syncProgress && syncProgress.total > 0
+      ? Math.round(
+          ((syncProgress.synced + syncProgress.conflicts + syncProgress.failures) /
+            syncProgress.total) *
+            100
+        )
+      : 0;
 
   // ---- Render ---------------------------------------------------------------
 
   return (
     <Box sx={{ width: '100%' }}>
       {/* Header */}
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <Box
+        sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
+      >
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800 }}>Offline POS Sync Monitor</Typography>
+          <Typography variant="h4" sx={{ fontWeight: 800 }}>
+            Offline POS Sync Monitor
+          </Typography>
           <Typography variant="body1" color="text.secondary">
             Monitor IndexedDB queue, sync job history, and manually trigger synchronisation.
           </Typography>
         </Box>
         <Button
           variant="contained"
-          startIcon={isSyncing ? <SyncIcon sx={{ animation: 'spin 1s linear infinite', '@keyframes spin': { from: { transform: 'rotate(0deg)' }, to: { transform: 'rotate(360deg)' } } }} /> : <SyncIcon />}
+          startIcon={
+            isSyncing ? (
+              <SyncIcon
+                sx={{
+                  animation: 'spin 1s linear infinite',
+                  '@keyframes spin': {
+                    from: { transform: 'rotate(0deg)' },
+                    to: { transform: 'rotate(360deg)' },
+                  },
+                }}
+              />
+            ) : (
+              <SyncIcon />
+            )
+          }
           onClick={() => manualSyncMutation.mutate()}
           disabled={isSyncing || !isOnline || pendingCount === 0}
           sx={{ background: 'linear-gradient(90deg, #8b5cf6 0%, #7c3aed 100%)' }}
@@ -181,19 +216,32 @@ export default function OfflineSyncMonitor() {
       {/* Network Status Banner */}
       <Collapse in={!isOnline}>
         <Alert severity="error" sx={{ mb: 3 }} icon={<CloudOffIcon />}>
-          <strong>Offline Mode Active</strong> — POS transactions are being queued locally. They will sync automatically when connectivity is restored.
+          <strong>Offline Mode Active</strong> — POS transactions are being queued locally. They
+          will sync automatically when connectivity is restored.
         </Alert>
       </Collapse>
 
       {/* Sync Progress */}
       {isSyncing && syncProgress && (
         <Paper className="glass-panel" sx={{ p: 2, mb: 3 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>Syncing {syncProgress.total} transactions… ({syncPercent}%)</Typography>
-          <LinearProgress variant="determinate" value={syncPercent} sx={{ height: 8, borderRadius: 4 }} />
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            Syncing {syncProgress.total} transactions… ({syncPercent}%)
+          </Typography>
+          <LinearProgress
+            variant="determinate"
+            value={syncPercent}
+            sx={{ height: 8, borderRadius: 4 }}
+          />
           <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
-            <Typography variant="caption" color="success.light">✓ {syncProgress.synced} synced</Typography>
-            <Typography variant="caption" color="warning.light">⚡ {syncProgress.conflicts} conflicts</Typography>
-            <Typography variant="caption" color="error.light">✗ {syncProgress.failures} failed</Typography>
+            <Typography variant="caption" color="success.light">
+              ✓ {syncProgress.synced} synced
+            </Typography>
+            <Typography variant="caption" color="warning.light">
+              ⚡ {syncProgress.conflicts} conflicts
+            </Typography>
+            <Typography variant="caption" color="error.light">
+              ✗ {syncProgress.failures} failed
+            </Typography>
           </Box>
         </Paper>
       )}
@@ -204,14 +252,26 @@ export default function OfflineSyncMonitor() {
           {
             label: 'Network Status',
             value: isOnline ? 'Online' : 'Offline',
-            icon: isOnline ? <CloudDoneIcon sx={{ color: 'success.light', fontSize: 36 }} /> : <CloudOffIcon sx={{ color: 'error.light', fontSize: 36 }} />,
+            icon: isOnline ? (
+              <CloudDoneIcon sx={{ color: 'success.light', fontSize: 36 }} />
+            ) : (
+              <CloudOffIcon sx={{ color: 'error.light', fontSize: 36 }} />
+            ),
             color: isOnline ? 'success.light' : 'error.light',
           },
           {
             label: 'Pending in Queue',
             value: pendingCount,
             color: pendingCount > 0 ? 'warning.light' : 'success.light',
-            icon: <Badge badgeContent={pendingCount} color={pendingCount > 0 ? 'warning' : 'success'} max={999}><SyncIcon sx={{ fontSize: 36 }} /></Badge>,
+            icon: (
+              <Badge
+                badgeContent={pendingCount}
+                color={pendingCount > 0 ? 'warning' : 'success'}
+                max={999}
+              >
+                <SyncIcon sx={{ fontSize: 36 }} />
+              </Badge>
+            ),
           },
           {
             label: 'DB Transactions',
@@ -227,11 +287,18 @@ export default function OfflineSyncMonitor() {
           },
         ].map((kpi) => (
           <Grid item xs={12} sm={6} md={3} key={kpi.label}>
-            <Paper className="glass-panel" sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Paper
+              className="glass-panel"
+              sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 2 }}
+            >
               {kpi.icon}
               <Box>
-                <Typography variant="caption" color="text.secondary">{kpi.label}</Typography>
-                <Typography variant="h5" sx={{ fontWeight: 800, color: kpi.color }}>{kpi.value}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {kpi.label}
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 800, color: kpi.color }}>
+                  {kpi.value}
+                </Typography>
               </Box>
             </Paper>
           </Grid>
@@ -240,7 +307,13 @@ export default function OfflineSyncMonitor() {
 
       <Tabs value={activeTab} onChange={(_, idx) => setActiveTab(idx)} sx={{ mb: 3 }}>
         <Tab label="Server Job History" />
-        <Tab label={<Badge badgeContent={syncLog.length} color="primary" max={99}>Local Sync Log</Badge>} />
+        <Tab
+          label={
+            <Badge badgeContent={syncLog.length} color="primary" max={99}>
+              Local Sync Log
+            </Badge>
+          }
+        />
       </Tabs>
 
       {/* ---- Tab 0: Server Job History ---- */}
@@ -261,38 +334,83 @@ export default function OfflineSyncMonitor() {
             </TableHead>
             <TableBody>
               {serverLoading ? (
-                <TableRow><TableCell colSpan={8}><LinearProgress /></TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={8}>
+                    <LinearProgress />
+                  </TableCell>
+                </TableRow>
               ) : (serverStatus?.recentJobs ?? []).length === 0 ? (
-                <TableRow><TableCell colSpan={8} align="center">No sync jobs recorded yet.</TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={8} align="center">
+                    No sync jobs recorded yet.
+                  </TableCell>
+                </TableRow>
               ) : (
                 (serverStatus?.recentJobs ?? []).map((job) => (
                   <>
                     <TableRow key={job.jobId}>
-                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'secondary.light' }}>{job.jobId}</TableCell>
-                      <TableCell sx={{ fontSize: '0.78rem' }}>{new Date(job.startedAt).toLocaleString()}</TableCell>
-                      <TableCell sx={{ fontSize: '0.78rem' }}>{job.completedAt ? new Date(job.completedAt).toLocaleString() : '—'}</TableCell>
+                      <TableCell
+                        sx={{
+                          fontFamily: 'monospace',
+                          fontSize: '0.75rem',
+                          color: 'secondary.light',
+                        }}
+                      >
+                        {job.jobId}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '0.78rem' }}>
+                        {new Date(job.startedAt).toLocaleString()}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '0.78rem' }}>
+                        {job.completedAt ? new Date(job.completedAt).toLocaleString() : '—'}
+                      </TableCell>
                       <TableCell>
                         <Chip
                           label={job.status}
-                          color={job.status === 'COMPLETED' ? 'success' : job.status === 'RUNNING' ? 'info' : 'error'}
+                          color={
+                            job.status === 'COMPLETED'
+                              ? 'success'
+                              : job.status === 'RUNNING'
+                                ? 'info'
+                                : 'error'
+                          }
                           size="small"
                         />
                       </TableCell>
-                      <TableCell sx={{ color: 'success.light', fontWeight: 700 }}>{job.synced}</TableCell>
-                      <TableCell sx={{ color: 'warning.light', fontWeight: 700 }}>{job.conflicts}</TableCell>
-                      <TableCell sx={{ color: 'error.light', fontWeight: 700 }}>{job.failures}</TableCell>
+                      <TableCell sx={{ color: 'success.light', fontWeight: 700 }}>
+                        {job.synced}
+                      </TableCell>
+                      <TableCell sx={{ color: 'warning.light', fontWeight: 700 }}>
+                        {job.conflicts}
+                      </TableCell>
+                      <TableCell sx={{ color: 'error.light', fontWeight: 700 }}>
+                        {job.failures}
+                      </TableCell>
                       <TableCell sx={{ display: 'flex', gap: 0.5 }}>
                         {job.status === 'FAILED' && (
                           <Tooltip title="Retry job">
-                            <IconButton size="small" color="warning" onClick={() => retryMutation.mutate(job.jobId)}>
+                            <IconButton
+                              size="small"
+                              color="warning"
+                              onClick={() => retryMutation.mutate(job.jobId)}
+                            >
                               <ReplayIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                         )}
                         {job.logs.length > 0 && (
                           <Tooltip title="View logs">
-                            <IconButton size="small" onClick={() => setExpandedJob(expandedJob === job.jobId ? null : job.jobId)}>
-                              {expandedJob === job.jobId ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                            <IconButton
+                              size="small"
+                              onClick={() =>
+                                setExpandedJob(expandedJob === job.jobId ? null : job.jobId)
+                              }
+                            >
+                              {expandedJob === job.jobId ? (
+                                <ExpandLessIcon fontSize="small" />
+                              ) : (
+                                <ExpandMoreIcon fontSize="small" />
+                              )}
                             </IconButton>
                           </Tooltip>
                         )}
@@ -310,7 +428,11 @@ export default function OfflineSyncMonitor() {
                                     primaryTypographyProps={{
                                       variant: 'caption',
                                       fontFamily: 'monospace',
-                                      color: log.startsWith('Conflict') ? 'warning.light' : log.startsWith('Failure') ? 'error.light' : 'success.light',
+                                      color: log.startsWith('Conflict')
+                                        ? 'warning.light'
+                                        : log.startsWith('Failure')
+                                          ? 'error.light'
+                                          : 'success.light',
                                     }}
                                   />
                                 </ListItem>
@@ -342,7 +464,11 @@ export default function OfflineSyncMonitor() {
             </TableHead>
             <TableBody>
               {syncLog.length === 0 ? (
-                <TableRow><TableCell colSpan={4} align="center">No local sync log entries.</TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={4} align="center">
+                    No local sync log entries.
+                  </TableCell>
+                </TableRow>
               ) : (
                 syncLog.map((entry) => (
                   <TableRow key={entry.id}>
@@ -350,12 +476,22 @@ export default function OfflineSyncMonitor() {
                     <TableCell>
                       <Chip
                         label={entry.status}
-                        color={entry.status === 'SUCCESS' ? 'success' : entry.status === 'CONFLICT' ? 'warning' : 'error'}
+                        color={
+                          entry.status === 'SUCCESS'
+                            ? 'success'
+                            : entry.status === 'CONFLICT'
+                              ? 'warning'
+                              : 'error'
+                        }
                         size="small"
                       />
                     </TableCell>
-                    <TableCell sx={{ fontSize: '0.78rem', color: 'text.secondary' }}>{entry.message}</TableCell>
-                    <TableCell sx={{ fontSize: '0.78rem' }}>{new Date(entry.syncedAt).toLocaleString()}</TableCell>
+                    <TableCell sx={{ fontSize: '0.78rem', color: 'text.secondary' }}>
+                      {entry.message}
+                    </TableCell>
+                    <TableCell sx={{ fontSize: '0.78rem' }}>
+                      {new Date(entry.syncedAt).toLocaleString()}
+                    </TableCell>
                   </TableRow>
                 ))
               )}

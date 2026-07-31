@@ -29,7 +29,12 @@ export interface IWarranty extends Document {
 const WarrantyClaimSchema = new Schema<IWarrantyClaim>({
   claimNumber: { type: String, required: true },
   claimDate: { type: Date, required: true, default: Date.now },
-  status: { type: String, required: true, enum: ['PENDING', 'APPROVED', 'REJECTED', 'COMPLETED'], default: 'PENDING' },
+  status: {
+    type: String,
+    required: true,
+    enum: ['PENDING', 'APPROVED', 'REJECTED', 'COMPLETED'],
+    default: 'PENDING',
+  },
   issueDescription: { type: String, required: true },
   resolutionNotes: { type: String },
   actionTaken: { type: String, enum: ['REPAIR', 'REPLACEMENT', 'REFUND', 'REJECTED'] },

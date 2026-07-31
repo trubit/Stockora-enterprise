@@ -17,8 +17,11 @@ export interface AuthenticatedRequest extends Request {
   userAgent?: string;
 }
 
-
-export async function authMiddleware(req: AuthenticatedRequest, _res: Response, next: NextFunction): Promise<void> {
+export async function authMiddleware(
+  req: AuthenticatedRequest,
+  _res: Response,
+  next: NextFunction
+): Promise<void> {
   const ipAddress = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '';
   const userAgent = req.headers['user-agent'] || '';
 

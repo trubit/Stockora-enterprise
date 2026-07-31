@@ -25,7 +25,12 @@ export interface IGiftCard extends Document {
 
 const GiftCardTransactionSchema = new Schema<IGiftCardTransaction>({
   transactionNumber: { type: String, required: true },
-  type: { type: String, required: true, enum: ['ISSUE', 'TOPUP', 'REDEEM', 'REFUND'], default: 'ISSUE' },
+  type: {
+    type: String,
+    required: true,
+    enum: ['ISSUE', 'TOPUP', 'REDEEM', 'REFUND'],
+    default: 'ISSUE',
+  },
   amount: { type: Number, required: true },
   balanceAfter: { type: Number, required: true },
   note: { type: String },
@@ -50,4 +55,3 @@ const GiftCardSchema = new Schema<IGiftCard>(
 GiftCardSchema.index({ expiresAt: 1, isActive: 1 });
 
 export const GiftCard = mongoose.model<IGiftCard>('GiftCard', GiftCardSchema);
-

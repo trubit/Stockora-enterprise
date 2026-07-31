@@ -23,13 +23,16 @@ export interface ISystemConfig extends Document {
   updatedAt: Date;
 }
 
-const PasswordPolicySchema = new Schema<IPasswordPolicy>({
-  minLength: { type: Number, default: 8 },
-  requireUppercase: { type: Boolean, default: true },
-  requireLowercase: { type: Boolean, default: true },
-  requireNumbers: { type: Boolean, default: true },
-  requireSpecialChars: { type: Boolean, default: true },
-}, { _id: false });
+const PasswordPolicySchema = new Schema<IPasswordPolicy>(
+  {
+    minLength: { type: Number, default: 8 },
+    requireUppercase: { type: Boolean, default: true },
+    requireLowercase: { type: Boolean, default: true },
+    requireNumbers: { type: Boolean, default: true },
+    requireSpecialChars: { type: Boolean, default: true },
+  },
+  { _id: false }
+);
 
 const SystemConfigSchema = new Schema<ISystemConfig>(
   {

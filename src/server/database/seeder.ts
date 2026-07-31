@@ -79,7 +79,9 @@ export async function seedRolesIfEmpty(): Promise<void> {
         { upsert: true, new: true }
       );
     }
-    logger.info(`[Database Seeding] Successfully seeded and synced ${rolesToCreate.length} default workspace system roles.`);
+    logger.info(
+      `[Database Seeding] Successfully seeded and synced ${rolesToCreate.length} default workspace system roles.`
+    );
   } catch (err: unknown) {
     logger.error('Failed to seed system roles:', err);
   }

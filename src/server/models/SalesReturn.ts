@@ -97,4 +97,3 @@ SalesReturnSchema.index({ status: 1, createdAt: -1 });
 SalesReturnSchema.index({ createdBy: 1, createdAt: -1 });
 
 export const SalesReturn = mongoose.model<ISalesReturn>('SalesReturn', SalesReturnSchema);
-

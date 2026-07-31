@@ -14,7 +14,11 @@ const textFieldStyle = {};
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
-  const { register, handleSubmit, formState: { errors } } = useForm<{ email: string }>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<{ email: string }>({
     resolver: zodResolver(schema),
   });
 
@@ -42,10 +46,11 @@ export default function ForgotPassword() {
           width: 400,
           height: 400,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0) 70%)',
+          background:
+            'radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0) 70%)',
           filter: 'blur(40px)',
           zIndex: 0,
-        }
+        },
       }}
     >
       <motion.div
@@ -54,12 +59,13 @@ export default function ForgotPassword() {
         transition={{ duration: 0.6, ease: 'easeOut' }}
         style={{ zIndex: 1 }}
       >
-        <Card 
-          sx={{ 
-            width: 420, 
-            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4), 0 0 40px rgba(139, 92, 246, 0.08)', 
+        <Card
+          sx={{
+            width: 420,
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4), 0 0 40px rgba(139, 92, 246, 0.08)',
             border: '1px solid rgba(139, 92, 246, 0.15)',
-            background: 'linear-gradient(135deg, rgba(23, 27, 44, 0.75) 0%, rgba(11, 13, 26, 0.85) 100%)',
+            background:
+              'linear-gradient(135deg, rgba(23, 27, 44, 0.75) 0%, rgba(11, 13, 26, 0.85) 100%)',
             backdropFilter: 'blur(20px)',
             borderRadius: 4,
             overflow: 'hidden',
@@ -72,16 +78,18 @@ export default function ForgotPassword() {
               right: 0,
               height: '4px',
               background: 'linear-gradient(90deg, #8b5cf6, #3b82f6)',
-            }
+            },
           }}
         >
-          <CardContent sx={{ p: { xs: 4, md: 5 }, display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+          <CardContent
+            sx={{ p: { xs: 4, md: 5 }, display: 'flex', flexDirection: 'column', gap: 3.5 }}
+          >
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-              <Typography 
-                variant="h4" 
-                sx={{ 
-                  fontWeight: 900, 
-                  textAlign: 'center', 
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: 900,
+                  textAlign: 'center',
                   letterSpacing: '0.05em',
                   background: 'linear-gradient(90deg, #a78bfa 0%, #3b82f6 100%)',
                   WebkitBackgroundClip: 'text',
@@ -90,28 +98,34 @@ export default function ForgotPassword() {
               >
                 Recover Password
               </Typography>
-              <Typography variant="body2" sx={{ textAlign: 'center', color: 'text.secondary', fontWeight: 500 }}>
+              <Typography
+                variant="body2"
+                sx={{ textAlign: 'center', color: 'text.secondary', fontWeight: 500 }}
+              >
                 Enter your email to request a reset link
               </Typography>
             </Box>
 
-            <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-              <TextField 
-                label="Email Address" 
-                fullWidth 
-                {...register('email')} 
-                error={!!errors.email} 
-                helperText={errors.email?.message} 
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
+            >
+              <TextField
+                label="Email Address"
+                fullWidth
+                {...register('email')}
+                error={!!errors.email}
+                helperText={errors.email?.message}
                 sx={textFieldStyle}
                 InputLabelProps={{ shrink: true }}
               />
-              
+
               <Button
                 variant="contained"
                 type="submit"
                 fullWidth
-                sx={{ 
-                  py: 1.6, 
+                sx={{
+                  py: 1.6,
                   fontWeight: 800,
                   borderRadius: 2.5,
                   textTransform: 'none',
@@ -123,24 +137,31 @@ export default function ForgotPassword() {
                     background: 'linear-gradient(90deg, #7c3aed 0%, #2563eb 100%)',
                     boxShadow: '0 6px 24px rgba(139, 92, 246, 0.45)',
                     transform: 'translateY(-1px)',
-                  }
+                  },
                 }}
               >
                 Send Reset Link
               </Button>
             </form>
 
-            <Box sx={{ display: 'flex', justifyContent: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', pt: 2.5 }}>
-              <Link 
-                onClick={() => navigate('/login')} 
-                sx={{ 
-                  cursor: 'pointer', 
-                  fontSize: '0.875rem', 
-                  color: 'primary.light', 
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                borderTop: '1px solid rgba(255,255,255,0.05)',
+                pt: 2.5,
+              }}
+            >
+              <Link
+                onClick={() => navigate('/login')}
+                sx={{
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  color: 'primary.light',
                   fontWeight: 600,
                   textDecoration: 'none',
                   transition: 'color 0.2s',
-                  '&:hover': { color: 'primary.main' } 
+                  '&:hover': { color: 'primary.main' },
                 }}
               >
                 Back to Sign In

@@ -9,7 +9,19 @@ export const inventoryRouter = Router();
 
 inventoryRouter.use(authMiddleware);
 
-inventoryRouter.get('/movements', rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_READ]), InventoryController.getMovements);
-inventoryRouter.post('/adjust', rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]), InventoryController.adjustStock);
-inventoryRouter.get('/valuation', rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_READ]), InventoryController.getValuation);
+inventoryRouter.get(
+  '/movements',
+  rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_READ]),
+  InventoryController.getMovements
+);
+inventoryRouter.post(
+  '/adjust',
+  rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]),
+  InventoryController.adjustStock
+);
+inventoryRouter.get(
+  '/valuation',
+  rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_READ]),
+  InventoryController.getValuation
+);
 inventoryRouter.get('/warehouses', OrgController.listWarehouses);

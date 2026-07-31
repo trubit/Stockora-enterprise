@@ -30,7 +30,7 @@ export interface QueueMetric {
 export interface CronJobSpec {
   queueName: string;
   jobName: string;
-  cron: string;        // Standard 5-field cron expression
+  cron: string; // Standard 5-field cron expression
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   data?: Record<string, any>;
 }
@@ -69,7 +69,7 @@ export class QueueManager {
         if (major < 5) {
           logger.warn(
             `[BullMQ] Redis version ${match[1]}.x detected — Redis Streams require ≥ 5.0. ` +
-            'BullMQ disabled; falling back to Node.js setInterval scheduler.'
+              'BullMQ disabled; falling back to Node.js setInterval scheduler.'
           );
           QueueManager.isRedisCompatible = false;
           return false;
@@ -106,7 +106,9 @@ export class QueueManager {
     const worker = new Worker(
       name,
       async (job) => {
-        logger.info(`Processing BullMQ job [${job.id}] in queue [${name}]: task=${job.data?.task ?? job.name}`);
+        logger.info(
+          `Processing BullMQ job [${job.id}] in queue [${name}]: task=${job.data?.task ?? job.name}`
+        );
         await handler(job);
       },
       { connection: REDIS_CONN, concurrency: 5, skipVersionCheck: true }
@@ -141,7 +143,9 @@ export class QueueManager {
       }
     );
     this.cronSpecs.push(spec);
-    logger.info(`BullMQ CronJob registered: [${spec.jobName}] @ "${spec.cron}" on queue [${spec.queueName}]`);
+    logger.info(
+      `BullMQ CronJob registered: [${spec.jobName}] @ "${spec.cron}" on queue [${spec.queueName}]`
+    );
   }
 
   public listCronJobs(): CronJobSpec[] {
@@ -172,17 +176,19 @@ export class QueueManager {
 
   public async getQueueMetrics(): Promise<QueueMetric[]> {
     if (!QueueManager.isRedisCompatible) {
-      return [{
-        name: 'system-automation',
-        status: 'HEALTHY',
-        waiting: 0,
-        active: 0,
-        completed: 0,
-        failed: 0,
-        delayed: 0,
-        concurrency: 5,
-        isPaused: false,
-      }];
+      return [
+        {
+          name: 'system-automation',
+          status: 'HEALTHY',
+          waiting: 0,
+          active: 0,
+          completed: 0,
+          failed: 0,
+          delayed: 0,
+          concurrency: 5,
+          isPaused: false,
+        },
+      ];
     }
     const results: QueueMetric[] = [];
     for (const [name, queue] of this.queues.entries()) {
@@ -207,7 +213,17 @@ export class QueueManager {
           isPaused,
         });
       } catch {
-        results.push({ name, status: 'ERROR', waiting: 0, active: 0, completed: 0, failed: 0, delayed: 0, concurrency: 5, isPaused: false });
+        results.push({
+          name,
+          status: 'ERROR',
+          waiting: 0,
+          active: 0,
+          completed: 0,
+          failed: 0,
+          delayed: 0,
+          concurrency: 5,
+          isPaused: false,
+        });
       }
     }
     return results;

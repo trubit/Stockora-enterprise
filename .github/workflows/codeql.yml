@@ -33,14 +33,10 @@ jobs:
           languages: ${{ matrix.language }}
           queries: security-extended,security-and-quality
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node.js & Install Dependencies
+        uses: ./.github/actions/setup-node-env
         with:
           node-version: 22
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: npm ci
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3

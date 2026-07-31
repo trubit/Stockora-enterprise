@@ -6,7 +6,11 @@ import mongoose from 'mongoose';
 
 export class AdminController {
   // --- System Configuration & Maintenance Mode ---
-  public static async getSettings(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getSettings(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       let config = await SystemConfig.findOne();
       if (!config) {
@@ -29,8 +33,20 @@ export class AdminController {
     }
   }
 
-  public static async updateSettings(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
-    const { maintenanceMode, featureFlags, allowedIPs, deniedIPs, maxConcurrentSessions, sessionTimeoutMinutes, passwordPolicy } = req.body;
+  public static async updateSettings(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    const {
+      maintenanceMode,
+      featureFlags,
+      allowedIPs,
+      deniedIPs,
+      maxConcurrentSessions,
+      sessionTimeoutMinutes,
+      passwordPolicy,
+    } = req.body;
 
     try {
       let config = await SystemConfig.findOne();
@@ -47,8 +63,10 @@ export class AdminController {
       }
       if (allowedIPs !== undefined) config.allowedIPs = allowedIPs;
       if (deniedIPs !== undefined) config.deniedIPs = deniedIPs;
-      if (maxConcurrentSessions !== undefined) config.maxConcurrentSessions = Number(maxConcurrentSessions);
-      if (sessionTimeoutMinutes !== undefined) config.sessionTimeoutMinutes = Number(sessionTimeoutMinutes);
+      if (maxConcurrentSessions !== undefined)
+        config.maxConcurrentSessions = Number(maxConcurrentSessions);
+      if (sessionTimeoutMinutes !== undefined)
+        config.sessionTimeoutMinutes = Number(sessionTimeoutMinutes);
       if (passwordPolicy !== undefined) {
         config.passwordPolicy = {
           minLength: Number(passwordPolicy.minLength || 8),
@@ -58,7 +76,7 @@ export class AdminController {
           requireSpecialChars: !!passwordPolicy.requireSpecialChars,
         };
       }
-      
+
       config.updatedBy = new mongoose.Types.ObjectId(req.user?.id);
 
       await config.save();
@@ -82,7 +100,11 @@ export class AdminController {
   }
 
   // --- Filtered and Paginated Audit Logs ---
-  public static async listAuditLogs(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async listAuditLogs(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const { page = 1, limit = 50, action, targetModel, userId, startDate, endDate } = req.query;
 

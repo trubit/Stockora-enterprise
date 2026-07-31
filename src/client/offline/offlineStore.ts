@@ -13,7 +13,7 @@ const STORE_PENDING = 'pending_transactions';
 const STORE_SYNC_LOG = 'sync_log';
 
 export interface PendingTransaction {
-  id: string;              // Locally generated unique ID (e.g. 'off-<timestamp>-<rand>')
+  id: string; // Locally generated unique ID (e.g. 'off-<timestamp>-<rand>')
   transactionNumber: string;
   items: Array<{
     productId: string;
@@ -32,7 +32,7 @@ export interface PendingTransaction {
   cashierName: string;
   branchId?: string;
   branchName: string;
-  capturedAt: string;      // ISO timestamp of when the sale was captured offline
+  capturedAt: string; // ISO timestamp of when the sale was captured offline
   retryCount: number;
   lastError?: string;
 }

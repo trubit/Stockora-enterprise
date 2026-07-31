@@ -41,4 +41,7 @@ const PurchaseRequisitionSchema = new Schema<IPurchaseRequisition>(
   { timestamps: true }
 );
 
-export const PurchaseRequisition = mongoose.model<IPurchaseRequisition>('PurchaseRequisition', PurchaseRequisitionSchema);
+export const PurchaseRequisition = mongoose.model<IPurchaseRequisition>(
+  'PurchaseRequisition',
+  PurchaseRequisitionSchema
+);

@@ -5,7 +5,11 @@ import { ValidationError, NotFoundError } from '../errors/AppError.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 
 export class CustomerController {
-  public static async getCustomers(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getCustomers(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const customers = await Customer.find().lean();
       res.json(customers);
@@ -14,7 +18,11 @@ export class CustomerController {
     }
   }
 
-  public static async getCustomer(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getCustomer(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const customer = await Customer.findById(id).lean();
@@ -27,7 +35,11 @@ export class CustomerController {
     }
   }
 
-  public static async createCustomer(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async createCustomer(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { name, code, email, phone, ...rest } = req.body;
 
     if (!name || !code || !email) {
@@ -67,7 +79,11 @@ export class CustomerController {
     }
   }
 
-  public static async updateCustomer(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async updateCustomer(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const customer = await Customer.findById(id);
@@ -121,7 +137,11 @@ export class CustomerController {
     }
   }
 
-  public static async deleteCustomer(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async deleteCustomer(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const customer = await Customer.findById(id);

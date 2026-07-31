@@ -14,7 +14,8 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   accessToken: typeof window !== 'undefined' ? localStorage.getItem('stockora_token') : null,
-  refreshToken: typeof window !== 'undefined' ? localStorage.getItem('stockora_refresh_token') : null,
+  refreshToken:
+    typeof window !== 'undefined' ? localStorage.getItem('stockora_refresh_token') : null,
   setSession: (user, accessToken, refreshToken) => {
     localStorage.setItem('stockora_token', accessToken);
     localStorage.setItem('stockora_refresh_token', refreshToken);

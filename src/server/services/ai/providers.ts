@@ -2,7 +2,10 @@ import { logger } from '../../logger.js';
 
 export interface AIProvider {
   name: string;
-  generateText(prompt: string, systemInstruction?: string): Promise<{
+  generateText(
+    prompt: string,
+    systemInstruction?: string
+  ): Promise<{
     text: string;
     promptTokens: number;
     completionTokens: number;
@@ -21,7 +24,10 @@ export class OpenAIProvider implements AIProvider {
     this.model = model;
   }
 
-  public async generateText(prompt: string, systemInstruction = ''): Promise<{
+  public async generateText(
+    prompt: string,
+    systemInstruction = ''
+  ): Promise<{
     text: string;
     promptTokens: number;
     completionTokens: number;
@@ -31,7 +37,7 @@ export class OpenAIProvider implements AIProvider {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify({
           model: this.model,
@@ -74,7 +80,10 @@ export class ClaudeProvider implements AIProvider {
     this.model = model;
   }
 
-  public async generateText(prompt: string, systemInstruction = ''): Promise<{
+  public async generateText(
+    prompt: string,
+    systemInstruction = ''
+  ): Promise<{
     text: string;
     promptTokens: number;
     completionTokens: number;
@@ -127,7 +136,10 @@ export class GeminiProvider implements AIProvider {
     this.model = model;
   }
 
-  public async generateText(prompt: string, systemInstruction = ''): Promise<{
+  public async generateText(
+    prompt: string,
+    systemInstruction = ''
+  ): Promise<{
     text: string;
     promptTokens: number;
     completionTokens: number;
@@ -142,9 +154,7 @@ export class GeminiProvider implements AIProvider {
         body: JSON.stringify({
           contents: [
             {
-              parts: [
-                { text: prompt },
-              ],
+              parts: [{ text: prompt }],
             },
           ],
           systemInstruction: systemInstruction
@@ -189,7 +199,10 @@ export class OllamaProvider implements AIProvider {
     this.model = model;
   }
 
-  public async generateText(prompt: string, systemInstruction = ''): Promise<{
+  public async generateText(
+    prompt: string,
+    systemInstruction = ''
+  ): Promise<{
     text: string;
     promptTokens: number;
     completionTokens: number;
@@ -237,43 +250,85 @@ export class OllamaProvider implements AIProvider {
 export class MockAIProvider implements AIProvider {
   public readonly name = 'Mock AI Fallback';
 
-  public async generateText(prompt: string, _systemInstruction = ''): Promise<{
+  public async generateText(
+    prompt: string,
+    _systemInstruction = ''
+  ): Promise<{
     text: string;
     promptTokens: number;
     completionTokens: number;
   }> {
-    logger.info(`[AI] Mock AI Provider invoked with prompt length: ${prompt.length}. SysInst: ${_systemInstruction.length}`);
+    logger.info(
+      `[AI] Mock AI Provider invoked with prompt length: ${prompt.length}. SysInst: ${_systemInstruction.length}`
+    );
     const normalized = prompt.toLowerCase();
 
     let reply: string;
 
     if (normalized.includes('reorder') || normalized.includes('restock')) {
-      reply = JSON.stringify({
-        recommendations: [
-          { productId: 'mock-p1', name: 'Smart Barcode Scanner', sku: 'SCAN-WL-01', proposedQty: 15, reason: 'Rapid depletion (fast-moving), current stock = 2 units.' },
-          { productId: 'mock-p2', name: 'Thermal Receipt Rolls', sku: 'THERM-57-50', proposedQty: 100, reason: 'High velocity consumable item, current stock = 5 rolls.' },
-        ],
-        reorderValue: 1250.00,
-        summary: 'Identified 2 critical replenishment items due to sales velocity exceeding seasonal thresholds.',
-      }, null, 2);
+      reply = JSON.stringify(
+        {
+          recommendations: [
+            {
+              productId: 'mock-p1',
+              name: 'Smart Barcode Scanner',
+              sku: 'SCAN-WL-01',
+              proposedQty: 15,
+              reason: 'Rapid depletion (fast-moving), current stock = 2 units.',
+            },
+            {
+              productId: 'mock-p2',
+              name: 'Thermal Receipt Rolls',
+              sku: 'THERM-57-50',
+              proposedQty: 100,
+              reason: 'High velocity consumable item, current stock = 5 rolls.',
+            },
+          ],
+          reorderValue: 1250.0,
+          summary:
+            'Identified 2 critical replenishment items due to sales velocity exceeding seasonal thresholds.',
+        },
+        null,
+        2
+      );
     } else if (normalized.includes('forecast') || normalized.includes('seasonal')) {
-      reply = JSON.stringify({
-        salesForecast: [
-          { period: 'August 2026', estimatedRevenue: 45000.00, confidence: 0.92, factor: 'Back-to-school warehouse demands' },
-          { period: 'September 2026', estimatedRevenue: 48000.00, confidence: 0.88, factor: 'Quarter-end distribution velocity' },
-        ],
-        insights: 'Historical sales logs suggest an upward surge of 8.4% starting late August in distribution products.',
-      }, null, 2);
+      reply = JSON.stringify(
+        {
+          salesForecast: [
+            {
+              period: 'August 2026',
+              estimatedRevenue: 45000.0,
+              confidence: 0.92,
+              factor: 'Back-to-school warehouse demands',
+            },
+            {
+              period: 'September 2026',
+              estimatedRevenue: 48000.0,
+              confidence: 0.88,
+              factor: 'Quarter-end distribution velocity',
+            },
+          ],
+          insights:
+            'Historical sales logs suggest an upward surge of 8.4% starting late August in distribution products.',
+        },
+        null,
+        2
+      );
     } else if (normalized.includes('slow-moving') || normalized.includes('fast-moving')) {
-      reply = JSON.stringify({
-        fastMoving: [
-          { name: 'Smart Barcode Scanner', quantitySold: 42, profitContribution: 1890.00 },
-        ],
-        slowMoving: [
-          { name: 'Vintage Brass Handheld Bell', inventoryAgeDays: 145, quantityOnHand: 8 },
-        ],
-        summary: 'Recommend marketing clearance coupons for bell stock, while increasing safety buffer bounds for scanners.',
-      }, null, 2);
+      reply = JSON.stringify(
+        {
+          fastMoving: [
+            { name: 'Smart Barcode Scanner', quantitySold: 42, profitContribution: 1890.0 },
+          ],
+          slowMoving: [
+            { name: 'Vintage Brass Handheld Bell', inventoryAgeDays: 145, quantityOnHand: 8 },
+          ],
+          summary:
+            'Recommend marketing clearance coupons for bell stock, while increasing safety buffer bounds for scanners.',
+        },
+        null,
+        2
+      );
     } else {
       reply = `[STOCKORA ENTERPRISE INTELLIGENCE SYSTEM]
 This is an automated intelligence summary report responding to your query:

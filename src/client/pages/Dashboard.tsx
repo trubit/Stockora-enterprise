@@ -93,7 +93,10 @@ export default function Dashboard() {
   // Compute stats
   const totalRevenue = transactions.reduce((sum, t) => sum + t.total, 0);
   const totalCost = products.reduce((sum, p) => sum + (p.costPrice ?? p.cost ?? 0) * p.quantity, 0);
-  const totalValue = products.reduce((sum, p) => sum + (p.sellingPrice ?? p.price ?? 0) * p.quantity, 0);
+  const totalValue = products.reduce(
+    (sum, p) => sum + (p.sellingPrice ?? p.price ?? 0) * p.quantity,
+    0
+  );
   const lowStockItems = products.filter((p) => p.quantity <= p.lowStockAlert);
 
   // Group transactions for Recharts
@@ -208,7 +211,9 @@ export default function Dashboard() {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={8}>
           <Card className="glass-panel" sx={{ p: 3, borderRadius: '16px' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}
+            >
               <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.01em' }}>
                 Sales Activity & Revenue Stream
               </Typography>
@@ -223,7 +228,11 @@ export default function Dashboard() {
                       <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="rgba(255,255,255,0.03)"
+                    vertical={false}
+                  />
                   <XAxis dataKey="name" stroke="#6b7280" fontSize={11} tickLine={false} />
                   <YAxis stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip
@@ -257,7 +266,11 @@ export default function Dashboard() {
             <Box sx={{ width: '100%', height: 320 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={barChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="rgba(255,255,255,0.03)"
+                    vertical={false}
+                  />
                   <XAxis dataKey="name" stroke="#6b7280" fontSize={11} tickLine={false} />
                   <YAxis stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip
@@ -280,14 +293,23 @@ export default function Dashboard() {
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <Card className="glass-panel" sx={{ p: 3, borderRadius: '16px' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.01em', color: '#ef4444' }}>
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+            >
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 800, letterSpacing: '-0.01em', color: '#ef4444' }}
+              >
                 Low Stock Warning Queue
               </Typography>
               <StatusChip status={lowStockItems.length > 0 ? 'LOW_STOCK' : 'IN_STOCK'} />
             </Box>
             {lowStockItems.length === 0 ? (
-              <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ py: 4, textAlign: 'center' }}
+              >
                 ✓ All items currently satisfy safe stock inventory thresholds.
               </Typography>
             ) : (
@@ -298,7 +320,11 @@ export default function Dashboard() {
                     <ListItem sx={{ px: 0, py: 1.5 }}>
                       <ListItemText
                         primary={p.name}
-                        primaryTypographyProps={{ fontWeight: 700, color: '#f87171', fontSize: '0.875rem' }}
+                        primaryTypographyProps={{
+                          fontWeight: 700,
+                          color: '#f87171',
+                          fontSize: '0.875rem',
+                        }}
                         secondary={`SKU: ${p.sku} • Category: ${p.category}`}
                         secondaryTypographyProps={{ fontSize: '0.75rem', color: 'text.secondary' }}
                       />
@@ -306,7 +332,11 @@ export default function Dashboard() {
                         <Typography variant="body2" sx={{ fontWeight: 800, color: '#ef4444' }}>
                           {p.quantity} units left
                         </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ fontSize: '0.7rem' }}
+                        >
                           Threshold: {p.lowStockAlert}
                         </Typography>
                       </Box>
@@ -320,14 +350,20 @@ export default function Dashboard() {
 
         <Grid item xs={12} md={6}>
           <Card className="glass-panel" sx={{ p: 3, borderRadius: '16px' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+            >
               <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.01em' }}>
                 Recent POS Transactions
               </Typography>
               <StatusChip status="COMPLETED" label="Synced" />
             </Box>
             {transactions.length === 0 ? (
-              <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ py: 4, textAlign: 'center' }}
+              >
                 No POS transactions recorded during this shift yet.
               </Typography>
             ) : (
@@ -346,7 +382,11 @@ export default function Dashboard() {
                         <Typography variant="body2" sx={{ fontWeight: 800, color: '#34d399' }}>
                           +${t.total.toFixed(2)}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ fontSize: '0.7rem' }}
+                        >
                           {new Date(t.createdAt).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit',
@@ -378,7 +418,10 @@ export default function Dashboard() {
         </Typography>
         <Grid container spacing={3}>
           <Grid item xs={12} sm={4}>
-            <Card className="glass-panel" sx={{ p: 2.5, display: 'flex', gap: 2.5, alignItems: 'center', borderRadius: '14px' }}>
+            <Card
+              className="glass-panel"
+              sx={{ p: 2.5, display: 'flex', gap: 2.5, alignItems: 'center', borderRadius: '14px' }}
+            >
               <div className="pulsing-dot" />
               <Box>
                 <Typography variant="body2" sx={{ fontWeight: 800, fontSize: '0.825rem' }}>
@@ -391,7 +434,10 @@ export default function Dashboard() {
             </Card>
           </Grid>
           <Grid item xs={12} sm={4}>
-            <Card className="glass-panel" sx={{ p: 2.5, display: 'flex', gap: 2.5, alignItems: 'center', borderRadius: '14px' }}>
+            <Card
+              className="glass-panel"
+              sx={{ p: 2.5, display: 'flex', gap: 2.5, alignItems: 'center', borderRadius: '14px' }}
+            >
               <div className="pulsing-dot" />
               <Box>
                 <Typography variant="body2" sx={{ fontWeight: 800, fontSize: '0.825rem' }}>
@@ -404,7 +450,10 @@ export default function Dashboard() {
             </Card>
           </Grid>
           <Grid item xs={12} sm={4}>
-            <Card className="glass-panel" sx={{ p: 2.5, display: 'flex', gap: 2.5, alignItems: 'center', borderRadius: '14px' }}>
+            <Card
+              className="glass-panel"
+              sx={{ p: 2.5, display: 'flex', gap: 2.5, alignItems: 'center', borderRadius: '14px' }}
+            >
               <div className="pulsing-dot" />
               <Box>
                 <Typography variant="body2" sx={{ fontWeight: 800, fontSize: '0.825rem' }}>

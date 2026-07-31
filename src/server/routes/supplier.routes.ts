@@ -8,8 +8,28 @@ export const supplierRouter = Router();
 
 supplierRouter.use(authMiddleware);
 
-supplierRouter.get('/', rbacMiddleware([SYSTEM_PERMISSIONS.SUPPLIERS_READ]), SupplierController.getSuppliers);
-supplierRouter.get('/:id', rbacMiddleware([SYSTEM_PERMISSIONS.SUPPLIERS_READ]), SupplierController.getSupplier);
-supplierRouter.post('/', rbacMiddleware([SYSTEM_PERMISSIONS.SUPPLIERS_WRITE]), SupplierController.createSupplier);
-supplierRouter.put('/:id', rbacMiddleware([SYSTEM_PERMISSIONS.SUPPLIERS_WRITE]), SupplierController.updateSupplier);
-supplierRouter.delete('/:id', rbacMiddleware([SYSTEM_PERMISSIONS.SUPPLIERS_WRITE]), SupplierController.deleteSupplier);
+supplierRouter.get(
+  '/',
+  rbacMiddleware([SYSTEM_PERMISSIONS.SUPPLIERS_READ]),
+  SupplierController.getSuppliers
+);
+supplierRouter.get(
+  '/:id',
+  rbacMiddleware([SYSTEM_PERMISSIONS.SUPPLIERS_READ]),
+  SupplierController.getSupplier
+);
+supplierRouter.post(
+  '/',
+  rbacMiddleware([SYSTEM_PERMISSIONS.SUPPLIERS_WRITE]),
+  SupplierController.createSupplier
+);
+supplierRouter.put(
+  '/:id',
+  rbacMiddleware([SYSTEM_PERMISSIONS.SUPPLIERS_WRITE]),
+  SupplierController.updateSupplier
+);
+supplierRouter.delete(
+  '/:id',
+  rbacMiddleware([SYSTEM_PERMISSIONS.SUPPLIERS_WRITE]),
+  SupplierController.deleteSupplier
+);

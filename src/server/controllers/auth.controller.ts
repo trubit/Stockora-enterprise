@@ -102,7 +102,7 @@ export class AuthController {
         userAgent,
         deviceFingerprint
       );
-      
+
       res.json({
         accessToken,
         refreshToken,

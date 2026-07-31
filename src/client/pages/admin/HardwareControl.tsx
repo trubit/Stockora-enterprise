@@ -29,24 +29,26 @@ export default function HardwareControl() {
   const [printerInstance] = useState(() => new WebUSBPrinter());
   const [testReceiptText, setTestReceiptText] = useState(
     '================================\n' +
-    '        STOCKORA MOCK POS       \n' +
-    '       123 Main Street Rd       \n' +
-    '================================\n' +
-    'Item A               x1  $15.00\n' +
-    'Item B               x2  $30.00\n' +
-    '--------------------------------\n' +
-    'Subtotal:                $45.00\n' +
-    'Tax (8% GST):             $3.60\n' +
-    'TOTAL:                   $48.60\n' +
-    '================================\n' +
-    '       Thank you for shopping!  \n' +
-    '================================\n'
+      '        STOCKORA MOCK POS       \n' +
+      '       123 Main Street Rd       \n' +
+      '================================\n' +
+      'Item A               x1  $15.00\n' +
+      'Item B               x2  $30.00\n' +
+      '--------------------------------\n' +
+      'Subtotal:                $45.00\n' +
+      'Tax (8% GST):             $3.60\n' +
+      'TOTAL:                   $48.60\n' +
+      '================================\n' +
+      '       Thank you for shopping!  \n' +
+      '================================\n'
   );
 
   // Bind barcode scanner event listener
   useEffect(() => {
     const removeListener = initBarcodeScanner((sku) => {
-      setScannedLogs((prev) => [`[${new Date().toLocaleTimeString()}] SKU Scanned: ${sku}`, ...prev].slice(0, 10));
+      setScannedLogs((prev) =>
+        [`[${new Date().toLocaleTimeString()}] SKU Scanned: ${sku}`, ...prev].slice(0, 10)
+      );
       toast.success(`Barcode Scanned: "${sku}"`, {
         icon: '🏷️',
       });
@@ -100,18 +102,24 @@ export default function HardwareControl() {
           Hardware Integration Hub
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Configure physical POS peripherals, monitor scan inputs buffer, and test printing commands.
+          Configure physical POS peripherals, monitor scan inputs buffer, and test printing
+          commands.
         </Typography>
       </Box>
 
       <Grid container spacing={3.5}>
         <Grid item xs={12} md={6}>
-          <Paper className="glass-panel" sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          <Paper
+            className="glass-panel"
+            sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', gap: 2.5 }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <BarcodeIcon color="primary" />
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>Barcode Scanner Telemetry</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                Barcode Scanner Telemetry
+              </Typography>
             </Box>
-            
+
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Chip
                 label="Ready to Scan"
@@ -126,23 +134,46 @@ export default function HardwareControl() {
                 }}
               />
               <Typography variant="caption" color="text.secondary">
-                Connect physical scanner. The background window listener will automatically translate inputs.
+                Connect physical scanner. The background window listener will automatically
+                translate inputs.
               </Typography>
             </Box>
 
             <Divider sx={{ opacity: 0.05 }} />
 
-            <Typography variant="subtitle2" sx={{ fontWeight: 750 }}>Scan History Logs (Limit 10)</Typography>
-            <Box sx={{ flexGrow: 1, bgcolor: 'rgba(0,0,0,0.15)', borderRadius: 2, p: 2, minHeight: '200px', maxHeight: '300px', overflowY: 'auto' }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 750 }}>
+              Scan History Logs (Limit 10)
+            </Typography>
+            <Box
+              sx={{
+                flexGrow: 1,
+                bgcolor: 'rgba(0,0,0,0.15)',
+                borderRadius: 2,
+                p: 2,
+                minHeight: '200px',
+                maxHeight: '300px',
+                overflowY: 'auto',
+              }}
+            >
               {scannedLogs.length === 0 ? (
-                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', textAlign: 'center', mt: 8 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ fontStyle: 'italic', textAlign: 'center', mt: 8 }}
+                >
                   Awaiting scanning events inputs...
                 </Typography>
               ) : (
                 <List>
                   {scannedLogs.map((log, idx) => (
                     <ListItem key={idx} sx={{ p: 0.5 }}>
-                      <ListItemText primary={<Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{log}</Typography>} />
+                      <ListItemText
+                        primary={
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                            {log}
+                          </Typography>
+                        }
+                      />
                     </ListItem>
                   ))}
                 </List>
@@ -156,7 +187,9 @@ export default function HardwareControl() {
             <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <UsbIcon color="primary" />
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>Thermal Printer Integration</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                  Thermal Printer Integration
+                </Typography>
               </Box>
 
               <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
@@ -186,7 +219,14 @@ export default function HardwareControl() {
                 inputProps={{ style: { fontFamily: 'monospace', fontSize: '0.85rem' } }}
               />
 
-              <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.05)', pt: 2, display: 'flex', gap: 2 }}>
+              <Box
+                sx={{
+                  borderTop: '1px solid rgba(255,255,255,0.05)',
+                  pt: 2,
+                  display: 'flex',
+                  gap: 2,
+                }}
+              >
                 <Button
                   variant="contained"
                   startIcon={<PrintIcon />}
@@ -195,11 +235,7 @@ export default function HardwareControl() {
                 >
                   Print Test Receipt
                 </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<PlayArrowIcon />}
-                  onClick={handleKickDrawer}
-                >
+                <Button variant="outlined" startIcon={<PlayArrowIcon />} onClick={handleKickDrawer}>
                   Kick Cash Drawer
                 </Button>
               </Box>

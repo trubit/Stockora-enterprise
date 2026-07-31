@@ -13,9 +13,29 @@ orgRouter.get('/branches', OrgController.listBranches);
 orgRouter.get('/warehouses', OrgController.listWarehouses);
 orgRouter.get('/master-data', OrgController.listMasterData);
 
-orgRouter.post('/company', rbacMiddleware([SYSTEM_PERMISSIONS.COMPANIES_WRITE]), OrgController.createCompany);
-orgRouter.put('/company', rbacMiddleware([SYSTEM_PERMISSIONS.COMPANIES_WRITE]), OrgController.updateCompany);
+orgRouter.post(
+  '/company',
+  rbacMiddleware([SYSTEM_PERMISSIONS.COMPANIES_WRITE]),
+  OrgController.createCompany
+);
+orgRouter.put(
+  '/company',
+  rbacMiddleware([SYSTEM_PERMISSIONS.COMPANIES_WRITE]),
+  OrgController.updateCompany
+);
 
-orgRouter.post('/branches', rbacMiddleware([SYSTEM_PERMISSIONS.BRANCHES_WRITE]), OrgController.createBranch);
-orgRouter.post('/warehouses', rbacMiddleware([SYSTEM_PERMISSIONS.WAREHOUSES_WRITE]), OrgController.createWarehouse);
-orgRouter.post('/master-data', rbacMiddleware([SYSTEM_PERMISSIONS.MASTER_DATA_WRITE]), OrgController.createMasterData);
+orgRouter.post(
+  '/branches',
+  rbacMiddleware([SYSTEM_PERMISSIONS.BRANCHES_WRITE]),
+  OrgController.createBranch
+);
+orgRouter.post(
+  '/warehouses',
+  rbacMiddleware([SYSTEM_PERMISSIONS.WAREHOUSES_WRITE]),
+  OrgController.createWarehouse
+);
+orgRouter.post(
+  '/master-data',
+  rbacMiddleware([SYSTEM_PERMISSIONS.MASTER_DATA_WRITE]),
+  OrgController.createMasterData
+);

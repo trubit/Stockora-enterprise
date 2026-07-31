@@ -30,7 +30,12 @@ export interface ISmsProvider {
 }
 
 export interface IPushProvider {
-  send(deviceToken: string, title: string, body: string, data?: Record<string, unknown>): Promise<void>;
+  send(
+    deviceToken: string,
+    title: string,
+    body: string,
+    data?: Record<string, unknown>
+  ): Promise<void>;
 }
 
 // Mock providers (replace with Twilio / FCM etc. in production)
@@ -133,9 +138,17 @@ export class NotificationService {
       };
 
       if (targetRole) {
-        SocketManager.getInstance().emitToRoom(`role:${targetRole}`, 'notification:received', socketPayload);
+        SocketManager.getInstance().emitToRoom(
+          `role:${targetRole}`,
+          'notification:received',
+          socketPayload
+        );
       } else if (dbUserId) {
-        SocketManager.getInstance().emitToRoom(`user:${dbUserId}`, 'notification:received', socketPayload);
+        SocketManager.getInstance().emitToRoom(
+          `user:${dbUserId}`,
+          'notification:received',
+          socketPayload
+        );
       } else {
         SocketManager.getInstance().emitGlobal('notification:received', socketPayload);
       }
@@ -148,16 +161,16 @@ export class NotificationService {
 
     // SMS — provider abstraction
     if (channels.includes('SMS')) {
-      await smsProvider.send('placeholder_number', body).catch((err) =>
-        logger.error('[SMS dispatch failed]', err)
-      );
+      await smsProvider
+        .send('placeholder_number', body)
+        .catch((err) => logger.error('[SMS dispatch failed]', err));
     }
 
     // PUSH — provider abstraction
     if (channels.includes('PUSH')) {
-      await pushProvider.send('placeholder_token', title, body).catch((err) =>
-        logger.error('[PUSH dispatch failed]', err)
-      );
+      await pushProvider
+        .send('placeholder_token', title, body)
+        .catch((err) => logger.error('[PUSH dispatch failed]', err));
     }
 
     return notification;
@@ -173,8 +186,9 @@ export class NotificationService {
   ): Promise<void> {
     const users = await User.find({ roleName, isActive: true }).select('_id');
     const results = users.map((u) =>
-      NotificationService.send({ ...params, userId: u._id.toString(), targetRole: roleName })
-        .catch((err) => logger.error(`[sendToRole] Failed for user ${u._id}:`, err))
+      NotificationService.send({ ...params, userId: u._id.toString(), targetRole: roleName }).catch(
+        (err) => logger.error(`[sendToRole] Failed for user ${u._id}:`, err)
+      )
     );
     await Promise.allSettled(results);
     logger.info(`[Notification] Role broadcast to ${users.length} users with role "${roleName}"`);
@@ -189,7 +203,10 @@ export class NotificationService {
     vars: Record<string, string>,
     opts: Partial<SendNotificationParams>
   ): Promise<void> {
-    const template = await NotificationTemplate.findOne({ key: templateKey.toUpperCase(), isActive: true });
+    const template = await NotificationTemplate.findOne({
+      key: templateKey.toUpperCase(),
+      isActive: true,
+    });
     if (!template) {
       logger.warn(`[Notification] Template "${templateKey}" not found or inactive.`);
       return;

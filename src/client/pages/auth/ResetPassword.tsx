@@ -6,13 +6,15 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 
-const schema = z.object({
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string().min(6, 'Confirm password must match'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Passwords must match',
-  path: ['confirmPassword'],
-});
+const schema = z
+  .object({
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+    confirmPassword: z.string().min(6, 'Confirm password must match'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords must match',
+    path: ['confirmPassword'],
+  });
 
 type ResetInputs = z.infer<typeof schema>;
 
@@ -20,7 +22,11 @@ const textFieldStyle = {};
 
 export default function ResetPassword() {
   const navigate = useNavigate();
-  const { register, handleSubmit, formState: { errors } } = useForm<ResetInputs>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ResetInputs>({
     resolver: zodResolver(schema),
   });
 
@@ -48,10 +54,11 @@ export default function ResetPassword() {
           width: 400,
           height: 400,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0) 70%)',
+          background:
+            'radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0) 70%)',
           filter: 'blur(40px)',
           zIndex: 0,
-        }
+        },
       }}
     >
       <motion.div
@@ -60,12 +67,13 @@ export default function ResetPassword() {
         transition={{ duration: 0.6, ease: 'easeOut' }}
         style={{ zIndex: 1 }}
       >
-        <Card 
-          sx={{ 
-            width: 420, 
-            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4), 0 0 40px rgba(139, 92, 246, 0.08)', 
+        <Card
+          sx={{
+            width: 420,
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4), 0 0 40px rgba(139, 92, 246, 0.08)',
             border: '1px solid rgba(139, 92, 246, 0.15)',
-            background: 'linear-gradient(135deg, rgba(23, 27, 44, 0.75) 0%, rgba(11, 13, 26, 0.85) 100%)',
+            background:
+              'linear-gradient(135deg, rgba(23, 27, 44, 0.75) 0%, rgba(11, 13, 26, 0.85) 100%)',
             backdropFilter: 'blur(20px)',
             borderRadius: 4,
             overflow: 'hidden',
@@ -78,16 +86,18 @@ export default function ResetPassword() {
               right: 0,
               height: '4px',
               background: 'linear-gradient(90deg, #8b5cf6, #3b82f6)',
-            }
+            },
           }}
         >
-          <CardContent sx={{ p: { xs: 4, md: 5 }, display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+          <CardContent
+            sx={{ p: { xs: 4, md: 5 }, display: 'flex', flexDirection: 'column', gap: 3.5 }}
+          >
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-              <Typography 
-                variant="h4" 
-                sx={{ 
-                  fontWeight: 900, 
-                  textAlign: 'center', 
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: 900,
+                  textAlign: 'center',
                   letterSpacing: '0.05em',
                   background: 'linear-gradient(90deg, #a78bfa 0%, #3b82f6 100%)',
                   WebkitBackgroundClip: 'text',
@@ -96,39 +106,45 @@ export default function ResetPassword() {
               >
                 Reset Password
               </Typography>
-              <Typography variant="body2" sx={{ textAlign: 'center', color: 'text.secondary', fontWeight: 500 }}>
+              <Typography
+                variant="body2"
+                sx={{ textAlign: 'center', color: 'text.secondary', fontWeight: 500 }}
+              >
                 Set a secure password for your workspace access
               </Typography>
             </Box>
 
-            <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-              <TextField 
-                label="New Password" 
-                type="password" 
-                fullWidth 
-                {...register('password')} 
-                error={!!errors.password} 
-                helperText={errors.password?.message} 
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
+            >
+              <TextField
+                label="New Password"
+                type="password"
+                fullWidth
+                {...register('password')}
+                error={!!errors.password}
+                helperText={errors.password?.message}
                 sx={textFieldStyle}
                 InputLabelProps={{ shrink: true }}
               />
-              <TextField 
-                label="Confirm New Password" 
-                type="password" 
-                fullWidth 
-                {...register('confirmPassword')} 
-                error={!!errors.confirmPassword} 
-                helperText={errors.confirmPassword?.message} 
+              <TextField
+                label="Confirm New Password"
+                type="password"
+                fullWidth
+                {...register('confirmPassword')}
+                error={!!errors.confirmPassword}
+                helperText={errors.confirmPassword?.message}
                 sx={textFieldStyle}
                 InputLabelProps={{ shrink: true }}
               />
-              
+
               <Button
                 variant="contained"
                 type="submit"
                 fullWidth
-                sx={{ 
-                  py: 1.6, 
+                sx={{
+                  py: 1.6,
                   fontWeight: 800,
                   borderRadius: 2.5,
                   textTransform: 'none',
@@ -140,7 +156,7 @@ export default function ResetPassword() {
                     background: 'linear-gradient(90deg, #7c3aed 0%, #2563eb 100%)',
                     boxShadow: '0 6px 24px rgba(139, 92, 246, 0.45)',
                     transform: 'translateY(-1px)',
-                  }
+                  },
                 }}
               >
                 Reset Password

@@ -125,7 +125,7 @@ export default function AdminConsole() {
   const [deniedIPsStr, setDeniedIPsStr] = useState('');
   const [maxSessions, setMaxSessions] = useState(3);
   const [sessionTimeout, setSessionTimeout] = useState(60);
-  
+
   // Password policy state
   const [passMinLength, setPassMinLength] = useState(8);
   const [passRequireUpper, setPassRequireUpper] = useState(true);
@@ -319,18 +319,27 @@ export default function AdminConsole() {
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <Box
+        sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
+      >
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 800 }}>
             System Administration Console
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Configure security policies, maintenance settings, manage user active device sessions, and inspect SOC 2 audit logs.
+            Configure security policies, maintenance settings, manage user active device sessions,
+            and inspect SOC 2 audit logs.
           </Typography>
         </Box>
       </Box>
 
-      <Tabs value={activeTab} onChange={(_, idx) => setActiveTab(idx)} sx={{ mb: 3 }} variant="scrollable" scrollButtons="auto">
+      <Tabs
+        value={activeTab}
+        onChange={(_, idx) => setActiveTab(idx)}
+        sx={{ mb: 3 }}
+        variant="scrollable"
+        scrollButtons="auto"
+      >
         <Tab label="System Configuration" />
         <Tab label="Compliance & Audit Logs" />
         <Tab label="Device Session Management" />
@@ -421,10 +430,7 @@ export default function AdminConsole() {
                       <Grid item xs={12} sm={6} key={flag}>
                         <FormControlLabel
                           control={
-                            <Switch
-                              checked={flags[flag]}
-                              onChange={() => handleFlagToggle(flag)}
-                            />
+                            <Switch checked={flags[flag]} onChange={() => handleFlagToggle(flag)} />
                           }
                           label={`Enable: ${flag.replace(/([A-Z])/g, ' $1').toUpperCase()}`}
                         />
@@ -451,7 +457,10 @@ export default function AdminConsole() {
           <Grid item xs={12} md={4}>
             <Card className="glass-panel" sx={{ p: 1 }}>
               <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}
+                >
                   <SecurityIcon color="primary" /> Password Policy Rules
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -527,10 +536,21 @@ export default function AdminConsole() {
       {activeTab === 1 && (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {/* SOC 2 Informational Badge */}
-          <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5, bgcolor: 'rgba(239, 68, 68, 0.04)', borderRadius: 2, border: '1px solid rgba(239, 68, 68, 0.1)' }}>
+          <Box
+            sx={{
+              p: 2,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              bgcolor: 'rgba(239, 68, 68, 0.04)',
+              borderRadius: 2,
+              border: '1px solid rgba(239, 68, 68, 0.1)',
+            }}
+          >
             <SecurityIcon color="error" />
             <Typography variant="body2" color="error.light">
-              Compliance audits are non-repudiable and track all login, session revocation, returns, and inventory modifications.
+              Compliance audits are non-repudiable and track all login, session revocation, returns,
+              and inventory modifications.
             </Typography>
           </Box>
 
@@ -542,7 +562,10 @@ export default function AdminConsole() {
                   label="Filter by Action"
                   fullWidth
                   value={filterAction}
-                  onChange={(e) => { setFilterAction(e.target.value); setAuditPage(1); }}
+                  onChange={(e) => {
+                    setFilterAction(e.target.value);
+                    setAuditPage(1);
+                  }}
                   placeholder="e.g. LOGIN_SUCCESS"
                 />
               </Grid>
@@ -551,7 +574,10 @@ export default function AdminConsole() {
                   label="Filter by Entity"
                   fullWidth
                   value={filterModel}
-                  onChange={(e) => { setFilterModel(e.target.value); setAuditPage(1); }}
+                  onChange={(e) => {
+                    setFilterModel(e.target.value);
+                    setAuditPage(1);
+                  }}
                   placeholder="e.g. Session, Product"
                 />
               </Grid>
@@ -562,7 +588,10 @@ export default function AdminConsole() {
                   fullWidth
                   InputLabelProps={{ shrink: true }}
                   value={filterStartDate}
-                  onChange={(e) => { setFilterStartDate(e.target.value); setAuditPage(1); }}
+                  onChange={(e) => {
+                    setFilterStartDate(e.target.value);
+                    setAuditPage(1);
+                  }}
                 />
               </Grid>
               <Grid item xs={12} sm={3}>
@@ -572,7 +601,10 @@ export default function AdminConsole() {
                   fullWidth
                   InputLabelProps={{ shrink: true }}
                   value={filterEndDate}
-                  onChange={(e) => { setFilterEndDate(e.target.value); setAuditPage(1); }}
+                  onChange={(e) => {
+                    setFilterEndDate(e.target.value);
+                    setAuditPage(1);
+                  }}
                 />
               </Grid>
             </Grid>
@@ -592,7 +624,11 @@ export default function AdminConsole() {
               </TableHead>
               <TableBody>
                 {auditLoading ? (
-                  <TableRow><TableCell colSpan={6} align="center"><CircularProgress /></TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={6} align="center">
+                      <CircularProgress />
+                    </TableCell>
+                  </TableRow>
                 ) : !auditData || auditData.logs.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} align="center">
@@ -602,39 +638,97 @@ export default function AdminConsole() {
                 ) : (
                   auditData.logs.map((log) => (
                     <TableRow key={log._id}>
-                      <TableCell sx={{ fontSize: '0.78rem' }}>{new Date(log.createdAt).toLocaleString()}</TableCell>
+                      <TableCell sx={{ fontSize: '0.78rem' }}>
+                        {new Date(log.createdAt).toLocaleString()}
+                      </TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>
-                        {typeof log.userId === 'object' ? log.userId.username : log.userId || 'SYSTEM PROCESS'}
+                        {typeof log.userId === 'object'
+                          ? log.userId.username
+                          : log.userId || 'SYSTEM PROCESS'}
                       </TableCell>
                       <TableCell>
-                        <Chip label={log.action} size="small" variant="outlined" color={log.action.includes('FAILED') ? 'error' : 'default'} />
+                        <Chip
+                          label={log.action}
+                          size="small"
+                          variant="outlined"
+                          color={log.action.includes('FAILED') ? 'error' : 'default'}
+                        />
                       </TableCell>
-                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{log.ipAddress || '—'}</TableCell>
-                      <TableCell sx={{ fontSize: '0.725rem', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                        {log.ipAddress || '—'}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontSize: '0.725rem',
+                          maxWidth: 150,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
                         <Tooltip title={log.userAgent || ''}>
                           <span>{log.userAgent || '—'}</span>
                         </Tooltip>
                       </TableCell>
                       <TableCell sx={{ minWidth: 260 }}>
-                        <Accordion sx={{ bgcolor: 'rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.02)' }}>
+                        <Accordion
+                          sx={{
+                            bgcolor: 'rgba(0,0,0,0.15)',
+                            border: '1px solid rgba(255,255,255,0.02)',
+                          }}
+                        >
                           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Typography variant="caption" sx={{ fontWeight: 700 }}>Diff Schema Details</Typography>
+                            <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                              Diff Schema Details
+                            </Typography>
                           </AccordionSummary>
                           <AccordionDetails>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                              <Typography variant="caption" color="text.secondary">Target: {log.targetModel} ({log.targetId})</Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                Target: {log.targetModel} ({log.targetId})
+                              </Typography>
                               {log.previousValues && (
                                 <Box>
-                                  <Typography variant="caption" color="text.secondary" display="block">PREVIOUS VALUES:</Typography>
-                                  <pre style={{ fontSize: '0.725rem', overflowX: 'auto', margin: 0, padding: 4, background: 'rgba(0,0,0,0.2)', borderRadius: 4 }}>
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    display="block"
+                                  >
+                                    PREVIOUS VALUES:
+                                  </Typography>
+                                  <pre
+                                    style={{
+                                      fontSize: '0.725rem',
+                                      overflowX: 'auto',
+                                      margin: 0,
+                                      padding: 4,
+                                      background: 'rgba(0,0,0,0.2)',
+                                      borderRadius: 4,
+                                    }}
+                                  >
                                     {JSON.stringify(log.previousValues, null, 2)}
                                   </pre>
                                 </Box>
                               )}
                               {log.newValues && (
                                 <Box sx={{ mt: 1 }}>
-                                  <Typography variant="caption" color="secondary.light" display="block">NEW MUTATED VALUES:</Typography>
-                                  <pre style={{ fontSize: '0.725rem', overflowX: 'auto', margin: 0, padding: 4, background: 'rgba(0,0,0,0.2)', borderRadius: 4 }}>
+                                  <Typography
+                                    variant="caption"
+                                    color="secondary.light"
+                                    display="block"
+                                  >
+                                    NEW MUTATED VALUES:
+                                  </Typography>
+                                  <pre
+                                    style={{
+                                      fontSize: '0.725rem',
+                                      overflowX: 'auto',
+                                      margin: 0,
+                                      padding: 4,
+                                      background: 'rgba(0,0,0,0.2)',
+                                      borderRadius: 4,
+                                    }}
+                                  >
                                     {JSON.stringify(log.newValues, null, 2)}
                                   </pre>
                                 </Box>
@@ -652,7 +746,15 @@ export default function AdminConsole() {
 
           {/* Pagination Controls */}
           {auditData && auditData.totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 2, mt: 1 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                gap: 2,
+                mt: 1,
+              }}
+            >
               <Typography variant="caption" color="text.secondary">
                 Page {auditData.page} of {auditData.totalPages} ({auditData.total} logs)
               </Typography>
@@ -687,7 +789,8 @@ export default function AdminConsole() {
                     Force Global User Logout
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Force revoke all sessions, device connections, and refresh tokens for a specific user ID.
+                    Force revoke all sessions, device connections, and refresh tokens for a specific
+                    user ID.
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
                     <TextField
@@ -763,16 +866,34 @@ export default function AdminConsole() {
                 ) : (
                   activeSessions.map((session) => (
                     <TableRow key={session._id}>
-                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{session._id.slice(-6)}</TableCell>
-                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{session.userId}</TableCell>
-                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>{session.ipAddress}</TableCell>
-                      <TableCell sx={{ fontSize: '0.725rem', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                        {session._id.slice(-6)}
+                      </TableCell>
+                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                        {session.userId}
+                      </TableCell>
+                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>
+                        {session.ipAddress}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontSize: '0.725rem',
+                          maxWidth: 200,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
                         <Tooltip title={session.userAgent}>
                           <span>{session.userAgent}</span>
                         </Tooltip>
                       </TableCell>
-                      <TableCell sx={{ fontSize: '0.78rem' }}>{new Date(session.lastSeenAt).toLocaleString()}</TableCell>
-                      <TableCell sx={{ fontSize: '0.78rem' }}>{new Date(session.expiresAt).toLocaleString()}</TableCell>
+                      <TableCell sx={{ fontSize: '0.78rem' }}>
+                        {new Date(session.lastSeenAt).toLocaleString()}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '0.78rem' }}>
+                        {new Date(session.expiresAt).toLocaleString()}
+                      </TableCell>
                       <TableCell>
                         <Button
                           size="small"
@@ -797,11 +918,15 @@ export default function AdminConsole() {
       {activeTab === 3 && (
         <Card className="glass-panel" sx={{ p: 2 }}>
           <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}
+            >
               <GppGoodIcon color="primary" /> GDPR Right to Access & Portability
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Input a user's database identifier to generate and download a complete cryptographic export bundle of all recorded profile information, login sessions, and audit entries.
+              Input a user's database identifier to generate and download a complete cryptographic
+              export bundle of all recorded profile information, login sessions, and audit entries.
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, maxWidth: 600, mt: 1 }}>
               <TextField
@@ -816,7 +941,10 @@ export default function AdminConsole() {
                 startIcon={<DownloadIcon />}
                 onClick={handleGDPRDataExport}
                 disabled={isExportingGdpr}
-                sx={{ minWidth: 200, background: 'linear-gradient(90deg, #8b5cf6 0%, #7c3aed 100%)' }}
+                sx={{
+                  minWidth: 200,
+                  background: 'linear-gradient(90deg, #8b5cf6 0%, #7c3aed 100%)',
+                }}
               >
                 {isExportingGdpr ? 'Generating Bundle…' : 'Export GDPR Bundle'}
               </Button>
@@ -832,11 +960,7 @@ export default function AdminConsole() {
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
               Cluster Diagnostics Report
             </Typography>
-            <Button
-              variant="outlined"
-              startIcon={<RefreshIcon />}
-              onClick={() => refetchHealth()}
-            >
+            <Button variant="outlined" startIcon={<RefreshIcon />} onClick={() => refetchHealth()}>
               Refresh Diagnostics
             </Button>
           </Box>
@@ -844,38 +968,57 @@ export default function AdminConsole() {
           <Grid container spacing={3}>
             {/* Database Mongoose status */}
             <Grid item xs={12} sm={6} md={3}>
-              <Paper className="glass-panel" sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Typography variant="caption" color="text.secondary">Mongoose DB State</Typography>
+              <Paper
+                className="glass-panel"
+                sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 1 }}
+              >
+                <Typography variant="caption" color="text.secondary">
+                  Mongoose DB State
+                </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {healthReport.mongoose.connectionState === 'CONNECTED' ? (
                     <CheckCircleIcon color="success" />
                   ) : (
                     <BlockIcon color="error" />
                   )}
-                  <Typography variant="h6" sx={{ fontWeight: 800 }}>{healthReport.mongoose.connectionState}</Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                    {healthReport.mongoose.connectionState}
+                  </Typography>
                 </Box>
               </Paper>
             </Grid>
 
             {/* Redis database state */}
             <Grid item xs={12} sm={6} md={3}>
-              <Paper className="glass-panel" sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Typography variant="caption" color="text.secondary">Redis Pub/Sub State</Typography>
+              <Paper
+                className="glass-panel"
+                sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 1 }}
+              >
+                <Typography variant="caption" color="text.secondary">
+                  Redis Pub/Sub State
+                </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {healthReport.redis.status === 'HEALTHY' ? (
                     <CheckCircleIcon color="success" />
                   ) : (
                     <BlockIcon color="error" />
                   )}
-                  <Typography variant="h6" sx={{ fontWeight: 800 }}>{healthReport.redis.status}</Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                    {healthReport.redis.status}
+                  </Typography>
                 </Box>
               </Paper>
             </Grid>
 
             {/* CPU uptime */}
             <Grid item xs={12} sm={6} md={3}>
-              <Paper className="glass-panel" sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Typography variant="caption" color="text.secondary">Process Uptime</Typography>
+              <Paper
+                className="glass-panel"
+                sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 1 }}
+              >
+                <Typography variant="caption" color="text.secondary">
+                  Process Uptime
+                </Typography>
                 <Typography variant="h6" sx={{ fontWeight: 800, color: 'primary.light' }}>
                   {Math.round(healthReport.uptime)} seconds
                 </Typography>
@@ -884,8 +1027,13 @@ export default function AdminConsole() {
 
             {/* Node Version */}
             <Grid item xs={12} sm={6} md={3}>
-              <Paper className="glass-panel" sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Typography variant="caption" color="text.secondary">Node.js Engine</Typography>
+              <Paper
+                className="glass-panel"
+                sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 1 }}
+              >
+                <Typography variant="caption" color="text.secondary">
+                  Node.js Engine
+                </Typography>
                 <Typography variant="h6" sx={{ fontWeight: 800, color: 'secondary.light' }}>
                   {healthReport.nodeVersion}
                 </Typography>
@@ -901,16 +1049,28 @@ export default function AdminConsole() {
               </Typography>
               <Grid container spacing={3}>
                 <Grid item xs={4}>
-                  <Typography variant="caption" color="text.secondary" display="block">RSS Allocation (Resident Set Size)</Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 800 }}>{healthReport.memory.rss}</Typography>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    RSS Allocation (Resident Set Size)
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                    {healthReport.memory.rss}
+                  </Typography>
                 </Grid>
                 <Grid item xs={4}>
-                  <Typography variant="caption" color="text.secondary" display="block">Heap Total Pool Size</Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 800 }}>{healthReport.memory.heapTotal}</Typography>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Heap Total Pool Size
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                    {healthReport.memory.heapTotal}
+                  </Typography>
                 </Grid>
                 <Grid item xs={4}>
-                  <Typography variant="caption" color="text.secondary" display="block">Heap Active Memory Usage</Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 800, color: 'warning.light' }}>{healthReport.memory.heapUsed}</Typography>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Heap Active Memory Usage
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 800, color: 'warning.light' }}>
+                    {healthReport.memory.heapUsed}
+                  </Typography>
                 </Grid>
               </Grid>
             </CardContent>

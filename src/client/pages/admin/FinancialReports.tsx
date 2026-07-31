@@ -1,5 +1,19 @@
 import { useQuery } from '@tanstack/react-query';
-import { Box, Typography, Grid, Card, CardContent, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+} from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import LocalActivityIcon from '@mui/icons-material/LocalActivity';
@@ -58,13 +72,26 @@ export default function FinancialReports() {
 
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
-      <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" sx={{ fontWeight: 800, background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 800,
+              background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
             Financial Intelligence & Reports
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Access corporate Profit and Loss statements, Balance Sheets, Cash Flows, and product sale performance metrics.
+            Access corporate Profit and Loss statements, Balance Sheets, Cash Flows, and product
+            sale performance metrics.
           </Typography>
         </Box>
 
@@ -76,24 +103,45 @@ export default function FinancialReports() {
               <CardContent sx={{ p: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
                   <TrendingUpIcon sx={{ color: 'secondary.light' }} />
-                  <Typography variant="h6" sx={{ fontWeight: 800 }}>Profit & Loss (P&L)</Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                    Profit & Loss (P&L)
+                  </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">Gross Revenue</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>${reports.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Gross Revenue
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                      ${reports.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">Tax Collected (8%)</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>-${reports.salesTaxCollected.toLocaleString(undefined, { minimumFractionDigits: 2 })}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Tax Collected (8%)
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      -$
+                      {reports.salesTaxCollected.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                      })}
+                    </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">Cost of Goods Sold (COGS)</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>-${reports.cogs.toLocaleString(undefined, { minimumFractionDigits: 2 })}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Cost of Goods Sold (COGS)
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      -${reports.cogs.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </Typography>
                   </Box>
                   <Box sx={{ borderBottom: '1px solid rgba(255,255,255,0.08)', my: 0.5 }} />
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Net Gross Profit</Typography>
+                  <Box
+                    sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  >
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                      Net Gross Profit
+                    </Typography>
                     <Typography variant="h5" color="success.light" sx={{ fontWeight: 800 }}>
                       ${reports.grossProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </Typography>
@@ -109,26 +157,56 @@ export default function FinancialReports() {
               <CardContent sx={{ p: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
                   <AccountBalanceIcon sx={{ color: 'primary.light' }} />
-                  <Typography variant="h6" sx={{ fontWeight: 800 }}>Balance Sheet</Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                    Balance Sheet
+                  </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">Inventory Asset Value</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>${reports.balanceSheet.inventoryValuation.toLocaleString(undefined, { minimumFractionDigits: 2 })}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Inventory Asset Value
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      $
+                      {reports.balanceSheet.inventoryValuation.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                      })}
+                    </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">Cash On Hand</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>${reports.balanceSheet.cashOnHand.toLocaleString(undefined, { minimumFractionDigits: 2 })}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Cash On Hand
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      $
+                      {reports.balanceSheet.cashOnHand.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                      })}
+                    </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">Liabilities (Accounts Payable)</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.light' }}>-${reports.balanceSheet.accountsPayable.toLocaleString(undefined, { minimumFractionDigits: 2 })}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Liabilities (Accounts Payable)
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.light' }}>
+                      -$
+                      {reports.balanceSheet.accountsPayable.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                      })}
+                    </Typography>
                   </Box>
                   <Box sx={{ borderBottom: '1px solid rgba(255,255,255,0.08)', my: 0.5 }} />
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Total Shareholder Equity</Typography>
+                  <Box
+                    sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  >
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                      Total Shareholder Equity
+                    </Typography>
                     <Typography variant="h5" color="primary.light" sx={{ fontWeight: 800 }}>
-                      ${reports.balanceSheet.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      $
+                      {reports.balanceSheet.equity.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                      })}
                     </Typography>
                   </Box>
                 </Box>
@@ -142,22 +220,50 @@ export default function FinancialReports() {
               <CardContent sx={{ p: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
                   <LocalActivityIcon sx={{ color: 'info.main' }} />
-                  <Typography variant="h6" sx={{ fontWeight: 800 }}>Cash Flow Statement</Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                    Cash Flow Statement
+                  </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">Cash Inflows (Sales)</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.light' }}>+${reports.cashFlow.inflow.toLocaleString(undefined, { minimumFractionDigits: 2 })}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Cash Inflows (Sales)
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.light' }}>
+                      +$
+                      {reports.cashFlow.inflow.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                      })}
+                    </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">Cash Outflows (Supplier Paid)</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.light' }}>-${reports.cashFlow.outflow.toLocaleString(undefined, { minimumFractionDigits: 2 })}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Cash Outflows (Supplier Paid)
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.light' }}>
+                      -$
+                      {reports.cashFlow.outflow.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                      })}
+                    </Typography>
                   </Box>
                   <Box sx={{ borderBottom: '1px solid rgba(255,255,255,0.08)', my: 0.5 }} />
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 3.5 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Net Cash Flow Change</Typography>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      mt: 3.5,
+                    }}
+                  >
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                      Net Cash Flow Change
+                    </Typography>
                     <Typography variant="h5" color="info.main" sx={{ fontWeight: 800 }}>
-                      ${reports.cashFlow.netCashFlow.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      $
+                      {reports.cashFlow.netCashFlow.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                      })}
                     </Typography>
                   </Box>
                 </Box>
@@ -170,9 +276,21 @@ export default function FinancialReports() {
         <Grid container spacing={3}>
           {/* Best Selling Products */}
           <Grid item xs={12} lg={7}>
-            <TableContainer component={Paper} className="glass-panel" sx={{ border: '1px solid rgba(255,255,255,0.05)', background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)', borderRadius: 3, height: '100%' }}>
+            <TableContainer
+              component={Paper}
+              className="glass-panel"
+              sx={{
+                border: '1px solid rgba(255,255,255,0.05)',
+                background:
+                  'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
+                borderRadius: 3,
+                height: '100%',
+              }}
+            >
               <Box sx={{ p: 3, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                <Typography variant="h6" sx={{ fontWeight: 800 }}>Best Selling Products</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                  Best Selling Products
+                </Typography>
               </Box>
               <Table>
                 <TableHead sx={{ bgcolor: 'rgba(17, 24, 39, 0.5)' }}>
@@ -186,13 +304,26 @@ export default function FinancialReports() {
                 <TableBody>
                   {reports.bestSellers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} align="center" sx={{ py: 6, color: 'text.secondary', border: 'none' }}>No sales logged yet.</TableCell>
+                      <TableCell
+                        colSpan={4}
+                        align="center"
+                        sx={{ py: 6, color: 'text.secondary', border: 'none' }}
+                      >
+                        No sales logged yet.
+                      </TableCell>
                     </TableRow>
                   ) : (
                     reports.bestSellers.map((item, idx) => (
                       <TableRow key={idx} sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.01)' } }}>
                         <TableCell sx={{ fontWeight: 700 }}>{item.name}</TableCell>
-                        <TableCell><Chip label={item.sku} size="small" variant="outlined" sx={{ fontWeight: 700, color: 'primary.light' }} /></TableCell>
+                        <TableCell>
+                          <Chip
+                            label={item.sku}
+                            size="small"
+                            variant="outlined"
+                            sx={{ fontWeight: 700, color: 'primary.light' }}
+                          />
+                        </TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>{item.qty}</TableCell>
                         <TableCell sx={{ fontWeight: 800 }}>${item.revenue.toFixed(2)}</TableCell>
                       </TableRow>
@@ -207,9 +338,13 @@ export default function FinancialReports() {
           <Grid item xs={12} lg={5}>
             <Card className="glass-panel" sx={{ height: '100%' }}>
               <CardContent sx={{ p: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 800, mb: 3 }}>Revenue by Payment Type</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 800, mb: 3 }}>
+                  Revenue by Payment Type
+                </Typography>
                 {paymentChartData.length === 0 ? (
-                  <Box sx={{ py: 8, textAlign: 'center', color: 'text.secondary' }}>No payments processed.</Box>
+                  <Box sx={{ py: 8, textAlign: 'center', color: 'text.secondary' }}>
+                    No payments processed.
+                  </Box>
                 ) : (
                   <Box sx={{ width: '100%', height: 260 }}>
                     <ResponsiveContainer>
@@ -217,7 +352,12 @@ export default function FinancialReports() {
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                         <XAxis dataKey="name" stroke="rgba(255,255,255,0.4)" />
                         <YAxis stroke="rgba(255,255,255,0.4)" />
-                        <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: 'rgba(255,255,255,0.08)' }} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#111827',
+                            borderColor: 'rgba(255,255,255,0.08)',
+                          }}
+                        />
                         <Bar dataKey="Amount" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>

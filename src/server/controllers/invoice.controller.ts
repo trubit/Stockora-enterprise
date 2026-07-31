@@ -7,7 +7,11 @@ import { ValidationError, NotFoundError } from '../errors/AppError.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 
 export class InvoiceController {
-  public static async listInvoices(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async listInvoices(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const invoices = await SupplierInvoice.find()
         .populate('supplierId', 'name code email')
@@ -20,11 +24,17 @@ export class InvoiceController {
     }
   }
 
-  public static async createInvoice(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async createInvoice(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { invoiceNumber, poId, supplierId, amount, dueDate, paymentTerms, notes } = req.body;
 
     if (!invoiceNumber || !poId || !supplierId || amount === undefined || !dueDate) {
-      return next(new ValidationError('invoiceNumber, poId, supplierId, amount, and dueDate are required.'));
+      return next(
+        new ValidationError('invoiceNumber, poId, supplierId, amount, and dueDate are required.')
+      );
     }
 
     try {
@@ -67,7 +77,11 @@ export class InvoiceController {
     }
   }
 
-  public static async payInvoice(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async payInvoice(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { id } = req.params;
     try {
       const invoice = await SupplierInvoice.findById(id);

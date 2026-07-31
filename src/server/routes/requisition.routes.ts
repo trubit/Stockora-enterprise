@@ -8,7 +8,23 @@ export const requisitionRouter = Router();
 
 requisitionRouter.use(authMiddleware);
 
-requisitionRouter.get('/', rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_READ]), RequisitionController.listRequisitions);
-requisitionRouter.post('/', rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]), RequisitionController.createRequisition);
-requisitionRouter.put('/:id/approve', rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]), RequisitionController.approveRequisition);
-requisitionRouter.put('/:id/reject', rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]), RequisitionController.rejectRequisition);
+requisitionRouter.get(
+  '/',
+  rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_READ]),
+  RequisitionController.listRequisitions
+);
+requisitionRouter.post(
+  '/',
+  rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]),
+  RequisitionController.createRequisition
+);
+requisitionRouter.put(
+  '/:id/approve',
+  rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]),
+  RequisitionController.approveRequisition
+);
+requisitionRouter.put(
+  '/:id/reject',
+  rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]),
+  RequisitionController.rejectRequisition
+);

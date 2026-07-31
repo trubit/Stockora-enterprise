@@ -1,5 +1,28 @@
 import { useState } from 'react';
-import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, Grid, IconButton, Tooltip, Tab, Tabs } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  MenuItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  Grid,
+  IconButton,
+  Tooltip,
+  Tab,
+  Tabs,
+} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -38,7 +61,15 @@ interface PurchaseOrder {
     receivedQuantity: number;
   }[];
   totalAmount: number;
-  status: 'DRAFT' | 'PENDING_APPROVAL' | 'APPROVED' | 'SENT' | 'PARTIALLY_RECEIVED' | 'RECEIVED' | 'BILLED' | 'CANCELLED';
+  status:
+    | 'DRAFT'
+    | 'PENDING_APPROVAL'
+    | 'APPROVED'
+    | 'SENT'
+    | 'PARTIALLY_RECEIVED'
+    | 'RECEIVED'
+    | 'BILLED'
+    | 'CANCELLED';
   approvedBy?: { username: string };
   notes?: string;
   createdAt: string;
@@ -89,26 +120,44 @@ export default function PurchaseOrders() {
   });
 
   // PR Form
-  const { register: prReg, control: prControl, handleSubmit: prSubmit, reset: prReset } = useForm({
+  const {
+    register: prReg,
+    control: prControl,
+    handleSubmit: prSubmit,
+    reset: prReset,
+  } = useForm({
     defaultValues: {
       items: [{ productId: '', quantity: 1, estimatedCost: 0 }],
       notes: '',
     },
   });
-  const { fields: prFields, append: prAppend, remove: prRemove } = useFieldArray({
+  const {
+    fields: prFields,
+    append: prAppend,
+    remove: prRemove,
+  } = useFieldArray({
     control: prControl,
     name: 'items',
   });
 
   // PO Form
-  const { register: poReg, control: poControl, handleSubmit: poSubmit, reset: poReset } = useForm({
+  const {
+    register: poReg,
+    control: poControl,
+    handleSubmit: poSubmit,
+    reset: poReset,
+  } = useForm({
     defaultValues: {
       supplierId: '',
       items: [{ productId: '', quantity: 1, costPrice: 0 }],
       notes: '',
     },
   });
-  const { fields: poFields, append: poAppend, remove: poRemove } = useFieldArray({
+  const {
+    fields: poFields,
+    append: poAppend,
+    remove: poRemove,
+  } = useFieldArray({
     control: poControl,
     name: 'items',
   });
@@ -209,9 +258,21 @@ export default function PurchaseOrders() {
 
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
-      <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-          <Typography variant="h4" sx={{ fontWeight: 800, background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 800,
+              background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
             Purchasing & Procurement
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
@@ -249,7 +310,11 @@ export default function PurchaseOrders() {
           Control procurement replenishments, request approvals, and record purchase orders.
         </Typography>
 
-        <Tabs value={activeTab} onChange={(_e, v) => setActiveTab(v)} sx={{ mb: 3, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <Tabs
+          value={activeTab}
+          onChange={(_e, v) => setActiveTab(v)}
+          sx={{ mb: 3, borderBottom: '1px solid rgba(255,255,255,0.08)' }}
+        >
           <Tab label="Purchase Requisitions" sx={{ textTransform: 'none', fontWeight: 700 }} />
           <Tab label="Purchase Orders (PO)" sx={{ textTransform: 'none', fontWeight: 700 }} />
         </Tabs>
@@ -260,7 +325,8 @@ export default function PurchaseOrders() {
             className="glass-panel"
             sx={{
               border: '1px solid rgba(255, 255, 255, 0.05)',
-              background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
+              background:
+                'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
               borderRadius: 3,
             }}
           >
@@ -278,13 +344,20 @@ export default function PurchaseOrders() {
               <TableBody>
                 {requisitions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 6, color: 'text.secondary', border: 'none' }}>
+                    <TableCell
+                      colSpan={6}
+                      align="center"
+                      sx={{ py: 6, color: 'text.secondary', border: 'none' }}
+                    >
                       No requisitions logged.
                     </TableCell>
                   </TableRow>
                 ) : (
                   requisitions.map((pr) => (
-                    <TableRow key={pr._id} sx={{ '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.01)' } }}>
+                    <TableRow
+                      key={pr._id}
+                      sx={{ '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.01)' } }}
+                    >
                       <TableCell sx={{ fontWeight: 700 }}>{pr.requisitionNumber}</TableCell>
                       <TableCell>{pr.requestedBy?.username || 'Employee'}</TableCell>
                       <TableCell>
@@ -293,31 +366,49 @@ export default function PurchaseOrders() {
                             {pr.items.length} items
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            Estimated: ${pr.items.reduce((acc, i) => acc + i.estimatedCost * i.quantity, 0).toLocaleString()}
+                            Estimated: $
+                            {pr.items
+                              .reduce((acc, i) => acc + i.estimatedCost * i.quantity, 0)
+                              .toLocaleString()}
                           </Typography>
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <Chip label={pr.status} size="small" color={getStatusColor(pr.status)} sx={{ fontWeight: 700 }} />
+                        <Chip
+                          label={pr.status}
+                          size="small"
+                          color={getStatusColor(pr.status)}
+                          sx={{ fontWeight: 700 }}
+                        />
                       </TableCell>
                       <TableCell>{new Date(pr.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell sx={{ textAlign: 'right' }}>
                         {pr.status === 'PENDING_APPROVAL' && isAdmin && (
                           <>
                             <Tooltip title="Approve">
-                              <IconButton onClick={() => approvePRMutation.mutate(pr._id)} sx={{ color: 'success.light' }} size="small">
+                              <IconButton
+                                onClick={() => approvePRMutation.mutate(pr._id)}
+                                sx={{ color: 'success.light' }}
+                                size="small"
+                              >
                                 <CheckCircleIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
                             <Tooltip title="Reject">
-                              <IconButton onClick={() => rejectPRMutation.mutate(pr._id)} sx={{ color: 'error.light', ml: 1 }} size="small">
+                              <IconButton
+                                onClick={() => rejectPRMutation.mutate(pr._id)}
+                                sx={{ color: 'error.light', ml: 1 }}
+                                size="small"
+                              >
                                 <CancelIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
                           </>
                         )}
                         {pr.status !== 'PENDING_APPROVAL' && (
-                          <Typography variant="caption" color="text.secondary">Processed</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Processed
+                          </Typography>
                         )}
                       </TableCell>
                     </TableRow>
@@ -334,7 +425,8 @@ export default function PurchaseOrders() {
             className="glass-panel"
             sx={{
               border: '1px solid rgba(255, 255, 255, 0.05)',
-              background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
+              background:
+                'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
               borderRadius: 3,
             }}
           >
@@ -353,21 +445,36 @@ export default function PurchaseOrders() {
               <TableBody>
                 {pos.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 6, color: 'text.secondary', border: 'none' }}>
+                    <TableCell
+                      colSpan={7}
+                      align="center"
+                      sx={{ py: 6, color: 'text.secondary', border: 'none' }}
+                    >
                       No purchase orders recorded.
                     </TableCell>
                   </TableRow>
                 ) : (
                   pos.map((po) => (
-                    <TableRow key={po._id} sx={{ '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.01)' } }}>
+                    <TableRow
+                      key={po._id}
+                      sx={{ '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.01)' } }}
+                    >
                       <TableCell sx={{ fontWeight: 700 }}>{po.poNumber}</TableCell>
                       <TableCell>{po.supplierId?.name || 'Supplier'}</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>${po.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</TableCell>
-                      <TableCell>
-                        {po.items.reduce((acc, i) => acc + i.receivedQuantity, 0)} / {po.items.reduce((acc, i) => acc + i.quantity, 0)} received
+                      <TableCell sx={{ fontWeight: 700 }}>
+                        ${po.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </TableCell>
                       <TableCell>
-                        <Chip label={po.status} size="small" color={getStatusColor(po.status)} sx={{ fontWeight: 700 }} />
+                        {po.items.reduce((acc, i) => acc + i.receivedQuantity, 0)} /{' '}
+                        {po.items.reduce((acc, i) => acc + i.quantity, 0)} received
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={po.status}
+                          size="small"
+                          color={getStatusColor(po.status)}
+                          sx={{ fontWeight: 700 }}
+                        />
                       </TableCell>
                       <TableCell>{new Date(po.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell sx={{ textAlign: 'right' }}>
@@ -376,13 +483,19 @@ export default function PurchaseOrders() {
                             variant="contained"
                             size="small"
                             onClick={() => approvePOMutation.mutate(po._id)}
-                            sx={{ textTransform: 'none', bgcolor: 'success.main', '&:hover': { bgcolor: 'success.dark' } }}
+                            sx={{
+                              textTransform: 'none',
+                              bgcolor: 'success.main',
+                              '&:hover': { bgcolor: 'success.dark' },
+                            }}
                           >
                             Approve PO
                           </Button>
                         )}
                         {po.status !== 'PENDING_APPROVAL' && (
-                          <Typography variant="caption" color="text.secondary">Order Active</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Order Active
+                          </Typography>
                         )}
                       </TableCell>
                     </TableRow>
@@ -394,15 +507,42 @@ export default function PurchaseOrders() {
         )}
 
         {/* PR Create Modal */}
-        <Dialog open={prOpen} onClose={() => setPrOpen(false)} maxWidth="md" fullWidth PaperProps={{ sx: { background: 'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%)', backdropFilter: 'blur(20px)', border: '1px solid rgba(139, 92, 246, 0.2)', borderRadius: 4 } }}>
+        <Dialog
+          open={prOpen}
+          onClose={() => setPrOpen(false)}
+          maxWidth="md"
+          fullWidth
+          PaperProps={{
+            sx: {
+              background:
+                'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(139, 92, 246, 0.2)',
+              borderRadius: 4,
+            },
+          }}
+        >
           <form onSubmit={prSubmit(onPrSubmit)}>
-            <DialogTitle sx={{ fontWeight: 800, background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <DialogTitle
+              sx={{
+                fontWeight: 800,
+                background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
               Create Purchase Requisition Request
             </DialogTitle>
             <DialogContent sx={{ pt: 2 }}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 700 }}>Replenishment Line Items</Typography>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ mb: 1, fontWeight: 700 }}
+                  >
+                    Replenishment Line Items
+                  </Typography>
                   {prFields.map((field, index) => (
                     <Grid container spacing={2} key={field.id} sx={{ mb: 2, alignItems: 'center' }}>
                       <Grid item xs={5}>
@@ -416,39 +556,108 @@ export default function PurchaseOrders() {
                           InputLabelProps={{ shrink: true }}
                         >
                           {products.map((p) => (
-                            <MenuItem key={p._id || p.id} value={p._id || p.id}>{p.name}</MenuItem>
+                            <MenuItem key={p._id || p.id} value={p._id || p.id}>
+                              {p.name}
+                            </MenuItem>
                           ))}
                         </TextField>
                       </Grid>
                       <Grid item xs={3}>
-                        <TextField label="Qty" type="number" fullWidth {...prReg(`items.${index}.quantity` as const, { required: true })} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                        <TextField
+                          label="Qty"
+                          type="number"
+                          fullWidth
+                          {...prReg(`items.${index}.quantity` as const, { required: true })}
+                          sx={textFieldStyle}
+                          InputLabelProps={{ shrink: true }}
+                        />
                       </Grid>
                       <Grid item xs={3}>
-                        <TextField label="Est. Cost Price ($)" type="number" fullWidth {...prReg(`items.${index}.estimatedCost` as const, { required: true })} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                        <TextField
+                          label="Est. Cost Price ($)"
+                          type="number"
+                          fullWidth
+                          {...prReg(`items.${index}.estimatedCost` as const, { required: true })}
+                          sx={textFieldStyle}
+                          InputLabelProps={{ shrink: true }}
+                        />
                       </Grid>
                       <Grid item xs={1}>
-                        <Button color="error" onClick={() => prRemove(index)}>X</Button>
+                        <Button color="error" onClick={() => prRemove(index)}>
+                          X
+                        </Button>
                       </Grid>
                     </Grid>
                   ))}
-                  <Button variant="outlined" onClick={() => prAppend({ productId: '', quantity: 1, estimatedCost: 0 })} sx={{ textTransform: 'none', borderColor: 'rgba(255,255,255,0.08)' }}>Add Line Item</Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => prAppend({ productId: '', quantity: 1, estimatedCost: 0 })}
+                    sx={{ textTransform: 'none', borderColor: 'rgba(255,255,255,0.08)' }}
+                  >
+                    Add Line Item
+                  </Button>
                 </Grid>
                 <Grid item xs={12}>
-                  <TextField label="Internal Notes / Justification details" multiline rows={3} fullWidth {...prReg('notes')} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                  <TextField
+                    label="Internal Notes / Justification details"
+                    multiline
+                    rows={3}
+                    fullWidth
+                    {...prReg('notes')}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  />
                 </Grid>
               </Grid>
             </DialogContent>
             <DialogActions sx={{ p: 3, gap: 1.5 }}>
-              <Button onClick={() => setPrOpen(false)} sx={{ color: 'text.secondary', textTransform: 'none' }}>Cancel</Button>
-              <Button variant="contained" type="submit" sx={{ px: 4, py: 1.2, fontWeight: 700, background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)' }}>Submit Requisition</Button>
+              <Button
+                onClick={() => setPrOpen(false)}
+                sx={{ color: 'text.secondary', textTransform: 'none' }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                type="submit"
+                sx={{
+                  px: 4,
+                  py: 1.2,
+                  fontWeight: 700,
+                  background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                }}
+              >
+                Submit Requisition
+              </Button>
             </DialogActions>
           </form>
         </Dialog>
 
         {/* PO Create Modal */}
-        <Dialog open={poOpen} onClose={() => setPoOpen(false)} maxWidth="md" fullWidth PaperProps={{ sx: { background: 'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%)', backdropFilter: 'blur(20px)', border: '1px solid rgba(139, 92, 246, 0.2)', borderRadius: 4 } }}>
+        <Dialog
+          open={poOpen}
+          onClose={() => setPoOpen(false)}
+          maxWidth="md"
+          fullWidth
+          PaperProps={{
+            sx: {
+              background:
+                'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(139, 92, 246, 0.2)',
+              borderRadius: 4,
+            },
+          }}
+        >
           <form onSubmit={poSubmit(onPoSubmit)}>
-            <DialogTitle sx={{ fontWeight: 800, background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <DialogTitle
+              sx={{
+                fontWeight: 800,
+                background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
               Issue Purchase Order (PO) to Vendor
             </DialogTitle>
             <DialogContent sx={{ pt: 2 }}>
@@ -464,13 +673,21 @@ export default function PurchaseOrders() {
                     InputLabelProps={{ shrink: true }}
                   >
                     {suppliers.map((s) => (
-                      <MenuItem key={s._id} value={s._id}>{s.name} ({s.code})</MenuItem>
+                      <MenuItem key={s._id} value={s._id}>
+                        {s.name} ({s.code})
+                      </MenuItem>
                     ))}
                   </TextField>
                 </Grid>
 
                 <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontWeight: 700 }}>Contract Order Items</Typography>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ mb: 1, fontWeight: 700 }}
+                  >
+                    Contract Order Items
+                  </Typography>
                   {poFields.map((field, index) => (
                     <Grid container spacing={2} key={field.id} sx={{ mb: 2, alignItems: 'center' }}>
                       <Grid item xs={5}>
@@ -484,31 +701,79 @@ export default function PurchaseOrders() {
                           InputLabelProps={{ shrink: true }}
                         >
                           {products.map((p) => (
-                            <MenuItem key={p._id || p.id} value={p._id || p.id}>{p.name}</MenuItem>
+                            <MenuItem key={p._id || p.id} value={p._id || p.id}>
+                              {p.name}
+                            </MenuItem>
                           ))}
                         </TextField>
                       </Grid>
                       <Grid item xs={3}>
-                        <TextField label="Qty" type="number" fullWidth {...poReg(`items.${index}.quantity` as const, { required: true })} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                        <TextField
+                          label="Qty"
+                          type="number"
+                          fullWidth
+                          {...poReg(`items.${index}.quantity` as const, { required: true })}
+                          sx={textFieldStyle}
+                          InputLabelProps={{ shrink: true }}
+                        />
                       </Grid>
                       <Grid item xs={3}>
-                        <TextField label="Negotiated Cost Price ($)" type="number" fullWidth {...poReg(`items.${index}.costPrice` as const, { required: true })} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                        <TextField
+                          label="Negotiated Cost Price ($)"
+                          type="number"
+                          fullWidth
+                          {...poReg(`items.${index}.costPrice` as const, { required: true })}
+                          sx={textFieldStyle}
+                          InputLabelProps={{ shrink: true }}
+                        />
                       </Grid>
                       <Grid item xs={1}>
-                        <Button color="error" onClick={() => poRemove(index)}>X</Button>
+                        <Button color="error" onClick={() => poRemove(index)}>
+                          X
+                        </Button>
                       </Grid>
                     </Grid>
                   ))}
-                  <Button variant="outlined" onClick={() => poAppend({ productId: '', quantity: 1, costPrice: 0 })} sx={{ textTransform: 'none', borderColor: 'rgba(255,255,255,0.08)' }}>Add Line Item</Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => poAppend({ productId: '', quantity: 1, costPrice: 0 })}
+                    sx={{ textTransform: 'none', borderColor: 'rgba(255,255,255,0.08)' }}
+                  >
+                    Add Line Item
+                  </Button>
                 </Grid>
                 <Grid item xs={12}>
-                  <TextField label="Supplier Delivery Notes / Terms specifications" multiline rows={3} fullWidth {...poReg('notes')} sx={textFieldStyle} InputLabelProps={{ shrink: true }} />
+                  <TextField
+                    label="Supplier Delivery Notes / Terms specifications"
+                    multiline
+                    rows={3}
+                    fullWidth
+                    {...poReg('notes')}
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
+                  />
                 </Grid>
               </Grid>
             </DialogContent>
             <DialogActions sx={{ p: 3, gap: 1.5 }}>
-              <Button onClick={() => setPoOpen(false)} sx={{ color: 'text.secondary', textTransform: 'none' }}>Cancel</Button>
-              <Button variant="contained" type="submit" sx={{ px: 4, py: 1.2, fontWeight: 700, background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)' }}>Create Purchase Order</Button>
+              <Button
+                onClick={() => setPoOpen(false)}
+                sx={{ color: 'text.secondary', textTransform: 'none' }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                type="submit"
+                sx={{
+                  px: 4,
+                  py: 1.2,
+                  fontWeight: 700,
+                  background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                }}
+              >
+                Create Purchase Order
+              </Button>
             </DialogActions>
           </form>
         </Dialog>

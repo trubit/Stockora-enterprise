@@ -8,5 +8,13 @@ export const salesReturnRouter = Router();
 
 salesReturnRouter.use(authMiddleware);
 
-salesReturnRouter.get('/', rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_READ]), SalesReturnController.listReturns);
-salesReturnRouter.post('/', rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]), SalesReturnController.createReturn);
+salesReturnRouter.get(
+  '/',
+  rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_READ]),
+  SalesReturnController.listReturns
+);
+salesReturnRouter.post(
+  '/',
+  rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_WRITE]),
+  SalesReturnController.createReturn
+);

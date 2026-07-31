@@ -121,7 +121,8 @@ export class PromoService {
     if (hasCategoryScope || hasBrandScope || hasProductScope) {
       const productIds = promo.applicableProducts.map((id) => id.toString());
       applicableItems = cartItems.filter((item) => {
-        if (hasCategoryScope && item.category && promo.applicableCategories.includes(item.category)) return true;
+        if (hasCategoryScope && item.category && promo.applicableCategories.includes(item.category))
+          return true;
         if (hasBrandScope && item.brand && promo.applicableBrands.includes(item.brand)) return true;
         if (hasProductScope && productIds.includes(item.productId)) return true;
         return false;
@@ -208,7 +209,8 @@ export class PromoService {
     const { code, balance, expiresAt, pinCode, customerId, purchasedByName, userId } = opts;
 
     const existing = await GiftCard.findOne({ code: code.toUpperCase() });
-    if (existing) throw new ValidationError(`Gift card code [${code.toUpperCase()}] already exists.`);
+    if (existing)
+      throw new ValidationError(`Gift card code [${code.toUpperCase()}] already exists.`);
 
     const card = await GiftCard.create({
       code: code.toUpperCase(),
@@ -347,7 +349,12 @@ export class PromoService {
 
     const prev = customer.toObject();
     customer.loyaltyPoints += Math.round(points);
-    customer.loyaltyHistory.push({ date: new Date(), points: Math.round(points), reason, referenceId });
+    customer.loyaltyHistory.push({
+      date: new Date(),
+      points: Math.round(points),
+      reason,
+      referenceId,
+    });
     customer.loyaltyTier = recalculateTier(customer.loyaltyPoints);
     await customer.save();
 
@@ -381,7 +388,12 @@ export class PromoService {
 
     const prev = customer.toObject();
     customer.loyaltyPoints -= Math.round(points);
-    customer.loyaltyHistory.push({ date: new Date(), points: -Math.round(points), reason, referenceId });
+    customer.loyaltyHistory.push({
+      date: new Date(),
+      points: -Math.round(points),
+      reason,
+      referenceId,
+    });
     customer.loyaltyTier = recalculateTier(customer.loyaltyPoints);
     await customer.save();
 

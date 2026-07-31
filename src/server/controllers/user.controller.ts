@@ -5,7 +5,11 @@ import { NotFoundError, ValidationError } from '../errors/AppError.js';
 import { UploadService } from '../services/upload.service.js';
 
 export class UserController {
-  public static async getProfile(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getProfile(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const user = await User.findById(req.user?.id);
       if (!user) {
@@ -17,7 +21,11 @@ export class UserController {
     }
   }
 
-  public static async updateProfile(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async updateProfile(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     const { themePreference, preferredLanguage, timeZone } = req.body;
     try {
       const user = await User.findById(req.user?.id);
@@ -36,7 +44,11 @@ export class UserController {
     }
   }
 
-  public static async uploadAvatar(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async uploadAvatar(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     if (!req.file) {
       return next(new ValidationError('Please upload an image file.'));
     }
@@ -57,7 +69,11 @@ export class UserController {
     }
   }
 
-  public static async listUsers(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async listUsers(
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const users = await User.find();
       res.json(users);

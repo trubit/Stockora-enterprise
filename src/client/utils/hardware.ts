@@ -73,7 +73,7 @@ export class WebUSBPrinter {
     const encoder = new TextEncoder();
     const escInit = new Uint8Array([0x1b, 0x40]); // ESC @ (Initialize printer)
     const escCut = new Uint8Array([0x1d, 0x56, 0x41, 0x03]); // GS V A 3 (Paper Cut)
-    
+
     const textBytes = encoder.encode(data);
 
     const payload = new Uint8Array(escInit.length + textBytes.length + escCut.length);

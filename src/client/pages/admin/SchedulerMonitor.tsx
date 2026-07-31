@@ -55,16 +55,16 @@ interface CronJobSpec {
 // ---- Job trigger definitions ------------------------------------------------
 
 const ALL_TASKS = [
-  { name: 'CHECK_LOW_STOCK',        label: 'Scan Low Stock',          color: 'warning' as const },
-  { name: 'DB_CLEANUP',             label: 'Rotate Audit Logs',       color: 'inherit' as const },
-  { name: 'EXPIRE_PROMOTIONS',      label: 'Expire Promotions',       color: 'secondary' as const },
-  { name: 'EXPIRE_GIFT_CARDS',      label: 'Expire Gift Cards',       color: 'secondary' as const },
-  { name: 'REORDER_SUGGESTIONS',    label: 'Reorder Suggestions',     color: 'info' as const },
-  { name: 'LOYALTY_TIER_RECALC',    label: 'Recalculate Tiers',       color: 'primary' as const },
-  { name: 'FLUSH_SCHEDULED_NOTIFS', label: 'Flush Notifications',     color: 'info' as const },
-  { name: 'SYNC_OFFLINE_STATS',     label: 'Sync Offline Stats',      color: 'inherit' as const },
-  { name: 'GENERATE_DAILY_REPORT',  label: 'Generate Daily Report',   color: 'success' as const },
-  { name: 'WARRANTY_EXPIRY_ALERT',  label: 'Warranty Expiry Alerts',  color: 'error' as const },
+  { name: 'CHECK_LOW_STOCK', label: 'Scan Low Stock', color: 'warning' as const },
+  { name: 'DB_CLEANUP', label: 'Rotate Audit Logs', color: 'inherit' as const },
+  { name: 'EXPIRE_PROMOTIONS', label: 'Expire Promotions', color: 'secondary' as const },
+  { name: 'EXPIRE_GIFT_CARDS', label: 'Expire Gift Cards', color: 'secondary' as const },
+  { name: 'REORDER_SUGGESTIONS', label: 'Reorder Suggestions', color: 'info' as const },
+  { name: 'LOYALTY_TIER_RECALC', label: 'Recalculate Tiers', color: 'primary' as const },
+  { name: 'FLUSH_SCHEDULED_NOTIFS', label: 'Flush Notifications', color: 'info' as const },
+  { name: 'SYNC_OFFLINE_STATS', label: 'Sync Offline Stats', color: 'inherit' as const },
+  { name: 'GENERATE_DAILY_REPORT', label: 'Generate Daily Report', color: 'success' as const },
+  { name: 'WARRANTY_EXPIRY_ALERT', label: 'Warranty Expiry Alerts', color: 'error' as const },
 ];
 
 // ---- Component --------------------------------------------------------------
@@ -86,7 +86,8 @@ export default function SchedulerMonitor() {
   });
 
   const runJobMutation = useMutation({
-    mutationFn: async (task: string) => (await apiClient.post('/automation/trigger', { task })).data,
+    mutationFn: async (task: string) =>
+      (await apiClient.post('/automation/trigger', { task })).data,
     onSuccess: (data: { message: string; jobId: string }) => {
       toast.success(`${data.message} (Job: ${data.jobId})`);
       queryClient.invalidateQueries({ queryKey: ['scheduler-metrics'] });
@@ -96,7 +97,8 @@ export default function SchedulerMonitor() {
   });
 
   const pauseMutation = useMutation({
-    mutationFn: async (name: string) => (await apiClient.post(`/automation/queue/${name}/pause`)).data,
+    mutationFn: async (name: string) =>
+      (await apiClient.post(`/automation/queue/${name}/pause`)).data,
     onSuccess: (_data, name) => {
       toast.success(`Queue [${name}] paused.`);
       queryClient.invalidateQueries({ queryKey: ['scheduler-metrics'] });
@@ -104,7 +106,8 @@ export default function SchedulerMonitor() {
   });
 
   const resumeMutation = useMutation({
-    mutationFn: async (name: string) => (await apiClient.post(`/automation/queue/${name}/resume`)).data,
+    mutationFn: async (name: string) =>
+      (await apiClient.post(`/automation/queue/${name}/resume`)).data,
     onSuccess: (_data, name) => {
       toast.success(`Queue [${name}] resumed.`);
       queryClient.invalidateQueries({ queryKey: ['scheduler-metrics'] });
@@ -116,15 +119,21 @@ export default function SchedulerMonitor() {
   return (
     <Box sx={{ width: '100%' }}>
       {/* Header */}
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <Box
+        sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
+      >
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800 }}>Scheduler & Queue Monitor</Typography>
+          <Typography variant="h4" sx={{ fontWeight: 800 }}>
+            Scheduler & Queue Monitor
+          </Typography>
           <Typography variant="body1" color="text.secondary">
             Inspect BullMQ queue health, trigger background jobs, and manage cron schedules.
           </Typography>
         </Box>
         <Tooltip title="Refresh metrics">
-          <IconButton onClick={() => queryClient.invalidateQueries({ queryKey: ['scheduler-metrics'] })}>
+          <IconButton
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['scheduler-metrics'] })}
+          >
             <RefreshIcon />
           </IconButton>
         </Tooltip>
@@ -134,7 +143,9 @@ export default function SchedulerMonitor() {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={4}>
           <Paper className="glass-panel" sx={{ p: 3 }}>
-            <Typography variant="caption" color="text.secondary">Active Workers</Typography>
+            <Typography variant="caption" color="text.secondary">
+              Active Workers
+            </Typography>
             <Typography variant="h4" sx={{ fontWeight: 800, color: 'success.light' }}>
               {metrics.activeWorkers.length}
             </Typography>
@@ -149,14 +160,20 @@ export default function SchedulerMonitor() {
           <Grid item xs={12} sm={4} key={q.name}>
             <Paper className="glass-panel" sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="caption" color="text.secondary">{q.name}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {q.name}
+                </Typography>
                 <Chip
                   label={q.status}
-                  color={q.status === 'HEALTHY' ? 'success' : q.status === 'PAUSED' ? 'warning' : 'error'}
+                  color={
+                    q.status === 'HEALTHY' ? 'success' : q.status === 'PAUSED' ? 'warning' : 'error'
+                  }
                   size="small"
                 />
               </Box>
-              {metricsLoading ? <LinearProgress sx={{ mt: 1 }} /> : (
+              {metricsLoading ? (
+                <LinearProgress sx={{ mt: 1 }} />
+              ) : (
                 <Grid container spacing={1} sx={{ mt: 1 }}>
                   {[
                     { label: 'Waiting', value: q.waiting, color: 'info.light' },
@@ -165,8 +182,12 @@ export default function SchedulerMonitor() {
                     { label: 'Done', value: q.completed, color: 'text.secondary' },
                   ].map((stat) => (
                     <Grid item xs={3} key={stat.label}>
-                      <Typography variant="caption" color="text.secondary" display="block">{stat.label}</Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 800, color: stat.color }}>{stat.value}</Typography>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {stat.label}
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 800, color: stat.color }}>
+                        {stat.value}
+                      </Typography>
                     </Grid>
                   ))}
                 </Grid>
@@ -174,13 +195,21 @@ export default function SchedulerMonitor() {
               <Box sx={{ mt: 1.5, display: 'flex', gap: 1 }}>
                 {!q.isPaused ? (
                   <Tooltip title="Pause queue">
-                    <IconButton size="small" color="warning" onClick={() => pauseMutation.mutate(q.name)}>
+                    <IconButton
+                      size="small"
+                      color="warning"
+                      onClick={() => pauseMutation.mutate(q.name)}
+                    >
                       <PauseIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                 ) : (
                   <Tooltip title="Resume queue">
-                    <IconButton size="small" color="success" onClick={() => resumeMutation.mutate(q.name)}>
+                    <IconButton
+                      size="small"
+                      color="success"
+                      onClick={() => resumeMutation.mutate(q.name)}
+                    >
                       <PlayCircleIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
@@ -193,7 +222,11 @@ export default function SchedulerMonitor() {
 
       <Tabs value={activeTab} onChange={(_, idx) => setActiveTab(idx)} sx={{ mb: 3 }}>
         <Tab label="Manual Triggers" />
-        <Tab label={`Cron Schedule (${cronJobs.length})`} icon={<ScheduleIcon />} iconPosition="end" />
+        <Tab
+          label={`Cron Schedule (${cronJobs.length})`}
+          icon={<ScheduleIcon />}
+          iconPosition="end"
+        />
       </Tabs>
 
       {/* ---- Tab 0: Manual Triggers ---- */}
@@ -201,10 +234,26 @@ export default function SchedulerMonitor() {
         <Grid container spacing={2}>
           {ALL_TASKS.map((task) => (
             <Grid item xs={12} sm={6} md={4} key={task.name}>
-              <Paper className="glass-panel" sx={{ p: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Paper
+                className="glass-panel"
+                sx={{
+                  p: 2.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
                 <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{task.label}</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>{task.name}</Typography>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    {task.label}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ fontFamily: 'monospace' }}
+                  >
+                    {task.name}
+                  </Typography>
                 </Box>
                 <Button
                   variant="contained"
@@ -239,7 +288,9 @@ export default function SchedulerMonitor() {
             <TableBody>
               {cronJobs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center">No cron jobs registered yet.</TableCell>
+                  <TableCell colSpan={5} align="center">
+                    No cron jobs registered yet.
+                  </TableCell>
                 </TableRow>
               ) : (
                 cronJobs.map((job) => {
@@ -247,24 +298,51 @@ export default function SchedulerMonitor() {
                   return (
                     <TableRow key={job.jobName}>
                       <TableCell>
-                        <Typography fontWeight={700} variant="body2">{job.jobName}</Typography>
-                        {task && <Typography variant="caption" color="text.secondary">{task.label}</Typography>}
+                        <Typography fontWeight={700} variant="body2">
+                          {job.jobName}
+                        </Typography>
+                        {task && (
+                          <Typography variant="caption" color="text.secondary">
+                            {task.label}
+                          </Typography>
+                        )}
                       </TableCell>
-                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'secondary.light' }}>{job.queueName}</TableCell>
+                      <TableCell
+                        sx={{
+                          fontFamily: 'monospace',
+                          fontSize: '0.8rem',
+                          color: 'secondary.light',
+                        }}
+                      >
+                        {job.queueName}
+                      </TableCell>
                       <TableCell>
-                        <Chip label={job.cron} size="small" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }} />
+                        <Chip
+                          label={job.cron}
+                          size="small"
+                          sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}
+                        />
                       </TableCell>
                       <TableCell sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
-                        {job.cron === '0 * * * *' ? 'Every hour'
-                          : job.cron === '*/5 * * * *' ? 'Every 5 minutes'
-                          : job.cron === '0 2 * * *' ? 'Daily at 02:00'
-                          : job.cron === '30 0 * * *' ? 'Daily at 00:30'
-                          : job.cron === '45 0 * * *' ? 'Daily at 00:45'
-                          : job.cron === '0 8 * * 1-5' ? 'Mon–Fri at 08:00'
-                          : job.cron === '0 3 * * 0' ? 'Sundays at 03:00'
-                          : job.cron === '55 23 * * *' ? 'Daily at 23:55'
-                          : job.cron === '0 9 * * *' ? 'Daily at 09:00'
-                          : job.cron}
+                        {job.cron === '0 * * * *'
+                          ? 'Every hour'
+                          : job.cron === '*/5 * * * *'
+                            ? 'Every 5 minutes'
+                            : job.cron === '0 2 * * *'
+                              ? 'Daily at 02:00'
+                              : job.cron === '30 0 * * *'
+                                ? 'Daily at 00:30'
+                                : job.cron === '45 0 * * *'
+                                  ? 'Daily at 00:45'
+                                  : job.cron === '0 8 * * 1-5'
+                                    ? 'Mon–Fri at 08:00'
+                                    : job.cron === '0 3 * * 0'
+                                      ? 'Sundays at 03:00'
+                                      : job.cron === '55 23 * * *'
+                                        ? 'Daily at 23:55'
+                                        : job.cron === '0 9 * * *'
+                                          ? 'Daily at 09:00'
+                                          : job.cron}
                       </TableCell>
                       <TableCell>
                         <Tooltip title="Trigger immediately">

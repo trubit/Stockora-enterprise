@@ -15,17 +15,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node.js & Install Dependencies
+        uses: ./.github/actions/setup-node-env
         with:
           node-version: 22
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: npm ci
 
       - name: Run ESLint Checks
         run: npm run lint
@@ -42,11 +35,26 @@ jobs:
           head: HEAD
         continue-on-error: true
 
-  build-and-archive:
-    name: Compile & Package Application
+  format-and-typecheck:
+    name: Formatting & Type Checking
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup Node.js & Install Dependencies
+        uses: ./.github/actions/setup-node-env
+        with:
+          node-version: 22
+
+      - name: Verify Code Formatting (Prettier)
+        run: npm run format:check
+
+      - name: Verify TypeScript compilation
+        run: npm run type-check
+
+  unit-and-integration-test:
+    name: Unit & Integration Testing
     runs-on: ubuntu-latest
     env:
-      # Inject dummy environment variables to satisfy Zod validation schemas
       PORT: 5000
       NODE_ENV: test
       MONGODB_URI: mongodb://127.0.0.1:27017/stockora-ci
@@ -56,17 +64,32 @@ jobs:
       CORS_ORIGIN: http://localhost:5173
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node.js & Install Dependencies
+        uses: ./.github/actions/setup-node-env
         with:
           node-version: 22
-          cache: 'npm'
 
-      - name: Install Dependencies
-        run: npm ci
+      - name: Run Vitest Suite
+        run: npm run test
+
+  build-and-archive:
+    name: Compile & Package Application
+    runs-on: ubuntu-latest
+    needs: [lint-and-audit, format-and-typecheck, unit-and-integration-test]
+    env:
+      PORT: 5000
+      NODE_ENV: test
+      MONGODB_URI: mongodb://127.0.0.1:27017/stockora-ci
+      REDIS_URL: redis://127.0.0.1:6379
+      JWT_SECRET: ci-dummy-jwt-secret-do-not-use-in-production
+      JWT_REFRESH_SECRET: ci-dummy-jwt-refresh-secret-do-not-use-in-production
+      CORS_ORIGIN: http://localhost:5173
+
+    steps:
+      - name: Setup Node.js & Install Dependencies
+        uses: ./.github/actions/setup-node-env
+        with:
+          node-version: 22
 
       - name: Compile and Build Stack
         run: npm run build
