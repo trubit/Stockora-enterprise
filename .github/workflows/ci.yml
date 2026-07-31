@@ -15,6 +15,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Setup Node.js & Install Dependencies
         uses: ./.github/actions/setup-node-env
         with:
@@ -40,6 +43,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Setup Node.js & Install Dependencies
         uses: ./.github/actions/setup-node-env
         with:
@@ -64,6 +70,9 @@ jobs:
       CORS_ORIGIN: http://localhost:5173
 
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Setup Node.js & Install Dependencies
         uses: ./.github/actions/setup-node-env
         with:
@@ -86,6 +95,9 @@ jobs:
       CORS_ORIGIN: http://localhost:5173
 
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Setup Node.js & Install Dependencies
         uses: ./.github/actions/setup-node-env
         with:
