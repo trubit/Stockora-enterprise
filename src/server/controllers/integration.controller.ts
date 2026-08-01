@@ -5,6 +5,9 @@ import { Transaction } from '../models/Transaction.js';
 import { AuditLog } from '../models/AuditLog.js';
 import { ValidationError } from '../errors/AppError.js';
 import { verifyPaystackSignature } from '../utils/paystack.js';
+import { verifyStripeSignature } from '../utils/stripe.js';
+import { PaymentController } from './payment.controller.js';
+import { config } from '../../config/environment.js';
 import mongoose from 'mongoose';
 
 export class IntegrationController {
@@ -55,26 +58,31 @@ export class IntegrationController {
   }
 
   public static async stripeWebhook(
-    req: AuthenticatedRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    const { event, data } = req.body;
-    if (!event || !data) {
-      return next(new ValidationError('Invalid webhook event payload.'));
+    const signature = req.headers['stripe-signature'] as string;
+    if (!signature) {
+      return next(new ValidationError('Missing stripe-signature header.'));
+    }
+
+    const payload = JSON.stringify(req.body);
+    const secret = config.stripeWebhookSecret;
+
+    const isValid = verifyStripeSignature(payload, signature, secret);
+    if (!isValid) {
+      return next(new ValidationError('Invalid Stripe signature.'));
     }
 
     try {
-      // Mock Stripe webhook processing (e.g., payment_intent.succeeded)
-      if (event === 'payment_intent.succeeded') {
-        const { metadata } = data;
-        const txNum = metadata?.transactionNumber;
-        if (txNum) {
-          const transaction = await Transaction.findOne({ transactionNumber: txNum });
-          if (transaction) {
-            transaction.status = 'COMPLETED';
-            await transaction.save();
-          }
+      const { type, data } = req.body;
+      if (type === 'payment_intent.succeeded') {
+        const object = data?.object;
+        const reference = object?.metadata?.reference || object?.id;
+
+        if (reference) {
+          await PaymentController.verifyAndProcessPayment('STRIPE', reference);
         }
       }
 
@@ -95,7 +103,7 @@ export class IntegrationController {
     }
 
     const payload = JSON.stringify(req.body);
-    const secret = process.env.PAYSTACK_WEBHOOK_SECRET || 'your_paystack_webhook_secret_here';
+    const secret = config.paystackWebhookSecret;
 
     const isValid = verifyPaystackSignature(payload, signature, secret);
     if (!isValid) {
@@ -105,13 +113,9 @@ export class IntegrationController {
     try {
       const { event, data } = req.body;
       if (event === 'charge.success') {
-        const txNum = data?.reference;
-        if (txNum) {
-          const transaction = await Transaction.findOne({ transactionNumber: txNum });
-          if (transaction) {
-            transaction.status = 'COMPLETED';
-            await transaction.save();
-          }
+        const reference = data?.reference;
+        if (reference) {
+          await PaymentController.verifyAndProcessPayment('PAYSTACK', reference);
         }
       }
 

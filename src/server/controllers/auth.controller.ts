@@ -91,7 +91,14 @@ export class AuthController {
       return next(new ValidationError('Email and password are required.'));
     }
 
-    const ipAddress = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '';
+    const xForwardedFor = req.headers['x-forwarded-for'];
+    const parsedForwardedIp =
+      typeof xForwardedFor === 'string'
+        ? xForwardedFor.split(',')[0].trim()
+        : Array.isArray(xForwardedFor) && xForwardedFor.length > 0
+          ? xForwardedFor[0].split(',')[0].trim()
+          : '';
+    const ipAddress = parsedForwardedIp || req.socket.remoteAddress || '';
     const userAgent = req.headers['user-agent'] || '';
 
     try {

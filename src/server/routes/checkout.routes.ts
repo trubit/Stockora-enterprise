@@ -1,0 +1,12 @@
+import { Router } from 'express';
+import { PaymentController } from '../controllers/payment.controller.js';
+import { authenticate } from '../middleware/auth.js';
+
+const router = Router();
+
+// Secure payment checkout lifecycle endpoints
+router.post('/initialize', authenticate, PaymentController.initializeCheckout);
+router.all('/verify', PaymentController.verifyCheckout); // supports GET/POST verify parameters
+router.post('/refund', authenticate, PaymentController.refundCheckout);
+
+export { router as checkoutRouter };

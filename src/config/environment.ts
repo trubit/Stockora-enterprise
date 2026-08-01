@@ -13,6 +13,11 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string({ required_error: 'JWT_REFRESH_SECRET is required' }),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
   UPLOAD_MAX_SIZE: z.coerce.number().default(5242880),
+  PAYSTACK_SECRET_KEY: z.string().optional().default('sk_test_paystack_secret_placeholder'),
+  PAYSTACK_PUBLIC_KEY: z.string().optional().default('pk_test_paystack_public_placeholder'),
+  PAYSTACK_WEBHOOK_SECRET: z.string().optional().default('whsec_paystack_webhook_placeholder'),
+  STRIPE_SECRET_KEY: z.string().optional().default('sk_test_stripe_secret_placeholder'),
+  STRIPE_WEBHOOK_SECRET: z.string().optional().default('whsec_stripe_webhook_placeholder'),
 });
 
 let parsedEnv: z.infer<typeof envSchema>;
@@ -39,6 +44,11 @@ export const config = {
   jwtRefreshSecret: parsedEnv.JWT_REFRESH_SECRET,
   corsOrigin: parsedEnv.CORS_ORIGIN,
   uploadMaxSize: parsedEnv.UPLOAD_MAX_SIZE,
+  paystackSecretKey: parsedEnv.PAYSTACK_SECRET_KEY,
+  paystackPublicKey: parsedEnv.PAYSTACK_PUBLIC_KEY,
+  paystackWebhookSecret: parsedEnv.PAYSTACK_WEBHOOK_SECRET,
+  stripeSecretKey: parsedEnv.STRIPE_SECRET_KEY,
+  stripeWebhookSecret: parsedEnv.STRIPE_WEBHOOK_SECRET,
   isProduction: parsedEnv.NODE_ENV === 'production',
   isDevelopment: parsedEnv.NODE_ENV === 'development',
   isTest: parsedEnv.NODE_ENV === 'test',

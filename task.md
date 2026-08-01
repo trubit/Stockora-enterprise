@@ -7,7 +7,10 @@
   - [x] Sales tax collected metrics (8% tax sum)
   - [x] Best sellers ranking and payment methods breakdown
 - [x] Mount finance router under `/api/v1` in `src/server/routes/api.ts`
-- [x] Create frontend `FinancialReports.tsx` page view (`src/client/pages/admin/FinancialReports.tsx`) displaying real-time aggregated metrics
-- [x] Register client route mapping in `src/client/App.tsx` and sidebar link in `Layout.tsx`
-- [x] Write Vitest integration tests verifying P&L arithmetic, Balance Sheet formulas, cash flows, and collected tax reports
-- [x] Run full project verification (eslint, tsc type-check, production build)
+- [x] **Phase 1: Environment & Config Updates**
+  - [x] Add `PAYSTACK_SECRET_KEY`, `PAYSTACK_PUBLIC_KEY`, `PAYSTACK_WEBHOOK_SECRET`, `STRIPE_SECRET_KEY`, and `STRIPE_WEBHOOK_SECRET` configuration mappings to `src/config/environment.ts`
+
+- [/] **Phase 2: Payment Service (`payment.service.ts`)**
+  - [/] Implement robust `PaymentService` class utilizing `ResilientExecutor.execute`
+  - [/] Implement Paystack integration: `initializePaystack`, `verifyPaystack`, and `refundPaystack`
+  - [/] Implement Stripe integration: `initializeStripe`, `verifyStripe`, and `refundStripe`

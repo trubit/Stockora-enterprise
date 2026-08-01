@@ -30,8 +30,14 @@ export async function sessionGuard(
     }
 
     // IP or User Agent hijacking prevention check
-    const currentIp =
-      req.ipAddress || (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '';
+    const xForwardedFor = req.headers['x-forwarded-for'];
+    const parsedForwardedIp =
+      typeof xForwardedFor === 'string'
+        ? xForwardedFor.split(',')[0].trim()
+        : Array.isArray(xForwardedFor) && xForwardedFor.length > 0
+          ? xForwardedFor[0].split(',')[0].trim()
+          : '';
+    const currentIp = req.ipAddress || parsedForwardedIp || req.socket.remoteAddress || '';
     const currentUserAgent = req.headers['user-agent'] || '';
 
     // If either IP or UA changes dramatically, reject & flag (basic risk detection)

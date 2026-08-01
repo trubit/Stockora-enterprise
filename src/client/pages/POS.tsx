@@ -20,6 +20,16 @@ import {
   Tab,
   MenuItem,
   InputAdornment,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  RadioGroup,
+  Radio,
+  FormControlLabel,
+  CircularProgress,
+  FormControl,
+  FormLabel,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -68,6 +78,18 @@ export default function POS() {
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'MOBILE' | 'SPLIT'>('CASH');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [offlineCount, setOfflineCount] = useState(0);
+
+  // Resilient Payment Checkout states
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [customerEmail, setCustomerEmail] = useState('checkout-customer@stockora.com');
+  const [paymentProvider, setPaymentProvider] = useState<'PAYSTACK' | 'STRIPE'>('PAYSTACK');
+  const [checkoutReference, setCheckoutReference] = useState('');
+  const [checkoutStep, setCheckoutStep] = useState<'INITIAL' | 'AWAITING_VERIFY' | 'COMPLETED'>(
+    'INITIAL'
+  );
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
+  const [initializingPayment, setInitializingPayment] = useState(false);
+
   const { user, accessToken } = useAuthStore();
 
   const barcodeInputRef = useRef<HTMLInputElement>(null);
@@ -235,9 +257,83 @@ export default function POS() {
   const tax = subtotal * taxRate;
   const total = Math.max(0, subtotal + tax - discount);
 
+  const handleOnlineCheckoutInit = async () => {
+    setInitializingPayment(true);
+    try {
+      const payload = {
+        email: customerEmail,
+        provider: paymentProvider,
+        paymentMethod: paymentMethod === 'MOBILE' ? 'MOBILE' : 'CARD',
+        items: cart.map((item) => ({
+          productId: item.productId,
+          productName: item.productName,
+          sku: item.sku,
+          quantity: item.quantity,
+          price: item.price,
+          discount: item.discount,
+          total: item.total,
+        })),
+        discount,
+        tax,
+        subtotal,
+        total,
+        currency: 'USD',
+      };
+
+      const { data } = await apiClient.post('/checkout/initialize', payload);
+      setCheckoutReference(data.reference);
+      setCheckoutStep('AWAITING_VERIFY');
+      toast.success('Payment initialized successfully!');
+
+      if (data.authorizationUrl) {
+        window.open(data.authorizationUrl, '_blank', 'noreferrer,noopener');
+      }
+    } catch (err: unknown) {
+      console.error(err);
+      const error = err as { response?: { data?: { message?: string } } };
+      toast.error(error.response?.data?.message || 'Failed to initialize payment.');
+    } finally {
+      setInitializingPayment(false);
+    }
+  };
+
+  const handleOnlineCheckoutVerify = async () => {
+    setVerifyingPayment(true);
+    try {
+      const { data } = await apiClient.post('/checkout/verify', {
+        provider: paymentProvider,
+        reference: checkoutReference,
+      });
+
+      if (data.success && data.status === 'COMPLETED') {
+        toast.success('Payment Verified & Order Placed Successfully!');
+        setCheckoutStep('COMPLETED');
+        setCart([]);
+        setDiscount(0);
+        setCheckoutOpen(false);
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      } else {
+        toast.error('Payment verification failed or is still pending.');
+      }
+    } catch (err: unknown) {
+      console.error(err);
+      const error = err as { response?: { data?: { message?: string } } };
+      toast.error(error.response?.data?.message || 'Verification failed.');
+    } finally {
+      setVerifyingPayment(false);
+    }
+  };
+
   const handleCheckout = () => {
     if (cart.length === 0) {
       toast.error('Cart is empty.');
+      return;
+    }
+
+    if (paymentMethod === 'CARD' || paymentMethod === 'MOBILE') {
+      setCheckoutStep('INITIAL');
+      setCheckoutOpen(true);
       return;
     }
 
@@ -294,7 +390,11 @@ export default function POS() {
         badgeText={isOnline ? 'ONLINE SYNC' : 'OFFLINE MODE'}
         badgeColor={isOnline ? 'secondary' : 'warning'}
         action={
-          <Box component="form" onSubmit={handleBarcodeSubmit} sx={{ display: 'flex', gap: 1 }}>
+          <Box
+            component="form"
+            onSubmit={handleBarcodeSubmit}
+            sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' } }}
+          >
             <TextField
               inputRef={barcodeInputRef}
               label="Barcode Scanner"
@@ -310,7 +410,7 @@ export default function POS() {
                   </InputAdornment>
                 ),
               }}
-              sx={{ width: 220 }}
+              sx={{ flexGrow: 1, width: { xs: '100%', sm: 220 } }}
             />
             <Button
               type="submit"
@@ -426,7 +526,7 @@ export default function POS() {
               filteredProducts.map((p: Product) => {
                 const qtyLow = p.quantity <= p.lowStockAlert;
                 return (
-                  <Grid item xs={12} sm={6} md={4} key={p.id || p._id}>
+                  <Grid item xs={6} sm={6} md={4} key={p.id || p._id}>
                     <Card
                       onClick={() => addToCart(p)}
                       sx={{
@@ -502,11 +602,11 @@ export default function POS() {
           <Card
             className="glass-panel"
             sx={{
-              position: 'sticky',
+              position: { xs: 'static', lg: 'sticky' },
               top: 88,
               display: 'flex',
               flexDirection: 'column',
-              maxHeight: 'calc(100vh - 120px)',
+              maxHeight: { xs: 'none', lg: 'calc(100vh - 120px)' },
               borderRadius: '16px',
             }}
           >
@@ -710,6 +810,152 @@ export default function POS() {
           </Card>
         </Grid>
       </Grid>
+      {/* Resilient Payment Gateway Checkout Modal */}
+      <Dialog
+        open={checkoutOpen}
+        onClose={() => !verifyingPayment && !initializingPayment && setCheckoutOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: '#0f131f',
+            backgroundImage: 'none',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '16px',
+            color: '#f3f4f6',
+            p: 1.5,
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, fontSize: '1.25rem', pb: 1 }}>
+          Secure Online Payment
+        </DialogTitle>
+        <DialogContent sx={{ pb: 2 }}>
+          {checkoutStep === 'INITIAL' ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1.5 }}>
+              <Typography variant="body2" color="text.secondary">
+                Select your payment provider and enter customer details to initialize verification
+                checks.
+              </Typography>
+              <TextField
+                label="Customer Email"
+                variant="outlined"
+                fullWidth
+                size="small"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+              />
+              <FormControl component="fieldset">
+                <FormLabel
+                  component="legend"
+                  sx={{ color: 'text.secondary', fontSize: '0.8rem', fontWeight: 700, mb: 1 }}
+                >
+                  PAYMENT GATEWAY PROVIDER
+                </FormLabel>
+                <RadioGroup
+                  value={paymentProvider}
+                  onChange={(e) => setPaymentProvider(e.target.value as 'PAYSTACK' | 'STRIPE')}
+                >
+                  <FormControlLabel
+                    value="PAYSTACK"
+                    control={<Radio color="primary" />}
+                    label="Paystack API (Cards & Mobile Money)"
+                  />
+                  <FormControlLabel
+                    value="STRIPE"
+                    control={<Radio color="primary" />}
+                    label="Stripe API (International Cards)"
+                  />
+                </RadioGroup>
+              </FormControl>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mt: 1,
+                }}
+              >
+                <Typography variant="caption" color="text.secondary">
+                  EXPECTED TOTAL:
+                </Typography>
+                <Typography variant="h6" color="success.light" sx={{ fontWeight: 800 }}>
+                  ${total.toFixed(2)}
+                </Typography>
+              </Box>
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2.5,
+                mt: 1.5,
+                textAlign: 'center',
+                py: 2,
+              }}
+            >
+              <CircularProgress size={40} color="secondary" sx={{ mx: 'auto' }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                Awaiting Payment Verification...
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Please complete your checkout in the verification tab. Once successful, click the
+                button below to retrieve gateway logs.
+              </Typography>
+              <Box
+                sx={{
+                  p: 1.5,
+                  bgcolor: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  borderRadius: '8px',
+                }}
+              >
+                <Typography variant="caption" color="text.secondary" display="block">
+                  TRANSACTION REFERENCE
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ fontFamily: 'monospace', fontWeight: 700, color: 'primary.light' }}
+                >
+                  {checkoutReference}
+                </Typography>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button
+            onClick={() => setCheckoutOpen(false)}
+            disabled={initializingPayment || verifyingPayment}
+            color="inherit"
+            sx={{ fontWeight: 700 }}
+          >
+            Cancel
+          </Button>
+          {checkoutStep === 'INITIAL' ? (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleOnlineCheckoutInit}
+              disabled={initializingPayment || !customerEmail.includes('@')}
+              sx={{ fontWeight: 700, borderRadius: '8px' }}
+            >
+              {initializingPayment ? 'Initializing...' : 'Proceed to Gateway'}
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handleOnlineCheckoutVerify}
+              disabled={verifyingPayment}
+              sx={{ fontWeight: 700, borderRadius: '8px' }}
+            >
+              {verifyingPayment ? 'Verifying...' : 'Verify Payment Status'}
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

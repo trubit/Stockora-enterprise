@@ -25,8 +25,17 @@ class RedisManager {
           return true;
         },
         retryStrategy: (times: number) => {
-          const delay = Math.min(times * 100, 3000);
-          return delay;
+          if (times > 10) {
+            logger.error(
+              `[Redis] Maximum reconnection attempts (${times}) exceeded. Connection aborted.`
+            );
+            return null;
+          }
+          const baseDelay = 200;
+          const maxDelay = 5000;
+          const delay = Math.min(baseDelay * Math.pow(2, times - 1), maxDelay);
+          const jitteredDelay = Math.random() * delay;
+          return Math.max(50, jitteredDelay);
         },
       });
 

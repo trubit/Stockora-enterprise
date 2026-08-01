@@ -116,7 +116,8 @@ export default function SignUp() {
       >
         <Card
           sx={{
-            width: 420,
+            width: '100%',
+            maxWidth: 420,
             boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4), 0 0 40px rgba(139, 92, 246, 0.08)',
             border: '1px solid rgba(139, 92, 246, 0.15)',
             background:

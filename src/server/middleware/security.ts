@@ -38,6 +38,20 @@ const apiLimiter = rateLimit({
 });
 securityMiddleware.use('/api/', apiLimiter);
 
+// 3b. Stricter authentication rate limits to prevent Brute Force credentials stuffing
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: config.isProduction ? 15 : 150, // 15 login/register attempts per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    status: 429,
+    message: 'Too many authentication attempts from this IP, please try again after 15 minutes.',
+  },
+});
+securityMiddleware.use('/api/v1/auth/login', authLimiter);
+securityMiddleware.use('/api/v1/auth/register', authLimiter);
+
 // 4. Gzip/Brotli compression for performance optimization
 securityMiddleware.use(compression());
 
