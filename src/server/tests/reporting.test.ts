@@ -97,8 +97,20 @@ describe('Phase 23 Enterprise Reporting Integration tests', () => {
     await mongoose.connection.close();
   });
 
+  interface ExecSummaryResult {
+    revenue: number;
+    salesCount: number;
+    totalProducts: number;
+    inventoryValue: number;
+  }
+
+  interface KPIResult {
+    code: string;
+    currentValue: number;
+  }
+
   it('should compute executive summary successfully and store in Redis/DB cache', async () => {
-    const summary = await ReportingService.getExecutiveSummary(companyId.toString(), 'Company Owner');
+    const summary = (await ReportingService.getExecutiveSummary(companyId.toString(), 'Company Owner')) as unknown as ExecSummaryResult;
     expect(summary).toBeDefined();
     expect(summary.revenue).toBe(5.0);
     expect(summary.salesCount).toBe(1);
@@ -112,7 +124,7 @@ describe('Phase 23 Enterprise Reporting Integration tests', () => {
   });
 
   it('should calculate custom KPIs accurately', async () => {
-    const kpis = await ReportingService.getKPIs(companyId.toString());
+    const kpis = (await ReportingService.getKPIs(companyId.toString())) as unknown as KPIResult[];
     expect(kpis.length).toBeGreaterThan(0);
     const rev = kpis.find((k) => k.code === 'REVENUE');
     expect(rev).toBeDefined();

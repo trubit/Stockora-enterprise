@@ -149,7 +149,13 @@ export class ReportingService {
   public static async getSalesReport(companyId: string, startDate?: string, endDate?: string): Promise<unknown> {
     const cacheKey = `reporting:sales:${companyId}:${startDate || 'all'}:${endDate || 'all'}`;
     return this.getOrSetCache(cacheKey, 60, async () => {
-      const matchQuery: Record<string, unknown> = { status: 'COMPLETED' };
+      const matchQuery: {
+        status: string;
+        createdAt?: {
+          $gte?: Date;
+          $lte?: Date;
+        };
+      } = { status: 'COMPLETED' };
 
       if (startDate || endDate) {
         matchQuery.createdAt = {};
