@@ -119,6 +119,13 @@ export default function Layout() {
     { text: 'Marketing & Loyalty', icon: <LoyaltyIcon />, path: '/marketing' },
     { text: 'Communication Center', icon: <NotificationsActiveIcon />, path: '/communication' },
     { text: 'Financial Reports', icon: <PaymentsIcon />, path: '/finance' },
+    { text: 'Executive Dashboard', icon: <PaymentsIcon />, path: '/reports/executive' },
+    { text: 'Report Builder', icon: <SettingsIcon />, path: '/reports/builder' },
+    { text: 'Saved Reports', icon: <ReceiptIcon />, path: '/reports/saved' },
+    { text: 'Scheduled Reports', icon: <QueryBuilderIcon />, path: '/reports/scheduled' },
+    { text: 'KPI Targets', icon: <DashboardIcon />, path: '/reports/kpis' },
+    { text: 'Analytics Hub', icon: <AutoAwesomeIcon />, path: '/reports/analytics' },
+    { text: 'Export Logs', icon: <CategoryIcon />, path: '/reports/exports' },
     { text: 'AI Assistant & Forecasts', icon: <AutoAwesomeIcon />, path: '/ai-assistant' },
     { text: 'My Profile', icon: <AccountCircleIcon />, path: '/profile' },
   ];

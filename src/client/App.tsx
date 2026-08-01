@@ -37,6 +37,13 @@ import CurrencySettings from './pages/admin/CurrencySettings.tsx';
 import HardwareControl from './pages/admin/HardwareControl.tsx';
 import IntegrationManager from './pages/admin/IntegrationManager.tsx';
 import WarehouseVisualizer from './pages/admin/WarehouseVisualizer.tsx';
+import ExecutiveDashboard from './pages/admin/ExecutiveDashboard.tsx';
+import ReportBuilder from './pages/admin/ReportBuilder.tsx';
+import SavedReports from './pages/admin/SavedReports.tsx';
+import ScheduledReports from './pages/admin/ScheduledReports.tsx';
+import KPIManagement from './pages/admin/KPIManagement.tsx';
+import AnalyticsDashboard from './pages/admin/AnalyticsDashboard.tsx';
+import ExportCenter from './pages/admin/ExportCenter.tsx';
 import LandingPage from './pages/LandingPage.tsx';
 import { ProtectedRoute } from './routes/ProtectedRoute.tsx';
 
@@ -129,6 +136,13 @@ function App() {
             <Route path="integrations" element={<IntegrationManager />} />
             <Route path="warehouse-visualizer" element={<WarehouseVisualizer />} />
             <Route path="finance" element={<FinancialReports />} />
+            <Route path="reports/executive" element={<ExecutiveDashboard />} />
+            <Route path="reports/builder" element={<ReportBuilder />} />
+            <Route path="reports/saved" element={<SavedReports />} />
+            <Route path="reports/scheduled" element={<ScheduledReports />} />
+            <Route path="reports/kpis" element={<KPIManagement />} />
+            <Route path="reports/analytics" element={<AnalyticsDashboard />} />
+            <Route path="reports/exports" element={<ExportCenter />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

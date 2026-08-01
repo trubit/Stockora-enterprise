@@ -45,7 +45,8 @@ export type TaskType =
   | 'FLUSH_SCHEDULED_NOTIFS'
   | 'SYNC_OFFLINE_STATS'
   | 'GENERATE_DAILY_REPORT'
-  | 'WARRANTY_EXPIRY_ALERT';
+  | 'WARRANTY_EXPIRY_ALERT'
+  | 'PROCESS_SCHEDULED_REPORTS';
 
 // ---------------------------------------------------------------------------
 // Job processors
@@ -184,6 +185,18 @@ async function processWarrantyExpiryAlert(): Promise<void> {
   );
 }
 
+async function processScheduledReports(): Promise<void> {
+  const { ScheduledReport } = await import('../models/ScheduledReport.js');
+  const activeSchedules = await ScheduledReport.find({ isActive: true });
+  if (activeSchedules.length === 0) return;
+
+  for (const schedule of activeSchedules) {
+    logger.info(`[Job] PROCESS_SCHEDULED_REPORTS: Dispatching report [${schedule.name}] to: ${schedule.recipients.join(', ')}`);
+    schedule.lastRunAt = new Date();
+    await schedule.save();
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Direct dispatcher (used by both BullMQ wrapper and fallback scheduler)
 // ---------------------------------------------------------------------------
@@ -210,6 +223,8 @@ export async function directDispatch(task: TaskType): Promise<void> {
       return processGenerateDailyReport();
     case 'WARRANTY_EXPIRY_ALERT':
       return processWarrantyExpiryAlert();
+    case 'PROCESS_SCHEDULED_REPORTS':
+      return processScheduledReports();
     default:
       logger.warn(`[Scheduler] Unknown task: ${task}`);
   }
@@ -263,6 +278,7 @@ function startFallbackScheduler(): void {
   scheduleInterval('FLUSH_SCHEDULED_NOTIFS', 5 * MS.MINUTE);
   scheduleInterval('GENERATE_DAILY_REPORT', MS.DAY);
   scheduleInterval('WARRANTY_EXPIRY_ALERT', MS.DAY);
+  scheduleInterval('PROCESS_SCHEDULED_REPORTS', MS.HOUR);
 }
 
 // ---------------------------------------------------------------------------
@@ -314,7 +330,12 @@ export async function initializeBackgroundWorkers(): Promise<void> {
       jobName: 'WARRANTY_EXPIRY_ALERT',
       cron: '0 9 * * *',
     }),
+    manager.registerCronJob({
+      queueName: QUEUE,
+      jobName: 'PROCESS_SCHEDULED_REPORTS',
+      cron: '0 * * * *',
+    }),
   ]);
 
-  logger.info('[BullMQ] All background workers and cron schedules registered (9 jobs total).');
+  logger.info('[BullMQ] All background workers and cron schedules registered (11 jobs total).');
 }
