@@ -191,7 +191,9 @@ async function processScheduledReports(): Promise<void> {
   if (activeSchedules.length === 0) return;
 
   for (const schedule of activeSchedules) {
-    logger.info(`[Job] PROCESS_SCHEDULED_REPORTS: Dispatching report [${schedule.name}] to: ${schedule.recipients.join(', ')}`);
+    logger.info(
+      `[Job] PROCESS_SCHEDULED_REPORTS: Dispatching report [${schedule.name}] to: ${schedule.recipients.join(', ')}`
+    );
     schedule.lastRunAt = new Date();
     await schedule.save();
   }

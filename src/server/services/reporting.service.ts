@@ -65,7 +65,6 @@ export class ReportingService {
     const ttl = 300; // 5 minutes cache
 
     return this.getOrSetCache(cacheKey, ttl, async () => {
-
       // 1. Basic counts
       const [totalProducts, salesStats, purchaseStats] = await Promise.all([
         Product.countDocuments({}),
@@ -126,7 +125,6 @@ export class ReportingService {
   public static async getInventoryReport(companyId: string): Promise<unknown> {
     const cacheKey = `reporting:inventory:${companyId}`;
     return this.getOrSetCache(cacheKey, 600, async () => {
-
       const items = await Product.find({}).lean();
       const deadStock = items.filter((p) => p.quantity === 0 || !p.isActive);
       const lowStock = items.filter((p) => p.quantity <= p.lowStockAlert);
@@ -138,7 +136,9 @@ export class ReportingService {
         lowStockCount: lowStock.length,
         fastMovingCount: fastMoving.length,
         valuation: items.reduce((sum, p) => sum + p.price * p.quantity, 0),
-        lowStockList: lowStock.slice(0, 10).map((p) => ({ name: p.name, sku: p.sku, qty: p.quantity })),
+        lowStockList: lowStock
+          .slice(0, 10)
+          .map((p) => ({ name: p.name, sku: p.sku, qty: p.quantity })),
       };
     });
   }
@@ -146,7 +146,11 @@ export class ReportingService {
   /**
    * Retrieve Sales Performance Reports
    */
-  public static async getSalesReport(companyId: string, startDate?: string, endDate?: string): Promise<unknown> {
+  public static async getSalesReport(
+    companyId: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<unknown> {
     const cacheKey = `reporting:sales:${companyId}:${startDate || 'all'}:${endDate || 'all'}`;
     return this.getOrSetCache(cacheKey, 60, async () => {
       const matchQuery: {
@@ -202,7 +206,6 @@ export class ReportingService {
   public static async getKPIs(companyId: string): Promise<unknown[]> {
     const cacheKey = `reporting:kpis:${companyId}`;
     return this.getOrSetCache(cacheKey, 300, async () => {
-
       // Perform aggregation to calculate real-time values for KPI definitions
       const [salesSum, poSum] = await Promise.all([
         Transaction.aggregate([
@@ -217,7 +220,8 @@ export class ReportingService {
 
       const totalRevenue = salesSum[0]?.total || 0;
       const totalPurchases = poSum[0]?.total || 0;
-      const profitMargin = totalRevenue > 0 ? ((totalRevenue - totalPurchases) / totalRevenue) * 100 : 0;
+      const profitMargin =
+        totalRevenue > 0 ? ((totalRevenue - totalPurchases) / totalRevenue) * 100 : 0;
 
       return [
         {

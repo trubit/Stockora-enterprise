@@ -137,7 +137,9 @@ export default function ExecutiveDashboard() {
                   System Node Integrity & Database Health
                 </Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box
+                    sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  >
                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
                       Primary Database Connection
                     </Typography>
@@ -148,7 +150,9 @@ export default function ExecutiveDashboard() {
                       size="small"
                     />
                   </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box
+                    sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  >
                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
                       Redis Memory Cache Connection
                     </Typography>
@@ -159,7 +163,9 @@ export default function ExecutiveDashboard() {
                       size="small"
                     />
                   </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box
+                    sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  >
                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
                       Enterprise API Gateway Routing
                     </Typography>

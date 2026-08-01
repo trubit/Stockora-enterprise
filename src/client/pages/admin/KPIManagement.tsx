@@ -37,16 +37,26 @@ export default function KPIManagement() {
 
         <Grid container spacing={3}>
           {kpis.map((kpi) => {
-            const progress = Math.min(100, Math.round((kpi.currentValue / kpi.targetValue) * 100)) || 0;
+            const progress =
+              Math.min(100, Math.round((kpi.currentValue / kpi.targetValue) * 100)) || 0;
             return (
               <Grid item xs={12} md={6} key={kpi.code}>
                 <Card className="glass-panel" sx={{ borderRadius: '16px', p: 3 }}>
                   <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
                       <Typography variant="h6" sx={{ fontWeight: 800 }}>
                         {kpi.name}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: 'primary.light', fontWeight: 800 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: 'primary.light', fontWeight: 800 }}
+                      >
                         {kpi.category}
                       </Typography>
                     </Box>
@@ -58,7 +68,11 @@ export default function KPIManagement() {
                         <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                           Current: {kpi.currentValue.toLocaleString()}
                         </Typography>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }} color="text.secondary">
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ fontWeight: 700 }}
+                          color="text.secondary"
+                        >
                           Goal: {kpi.targetValue.toLocaleString()}
                         </Typography>
                       </Box>
@@ -68,7 +82,10 @@ export default function KPIManagement() {
                         sx={{ height: 10, borderRadius: 5 }}
                         color={progress >= 80 ? 'success' : progress >= 50 ? 'warning' : 'error'}
                       />
-                      <Typography variant="caption" sx={{ mt: 1, display: 'block', textAlign: 'right', fontWeight: 800 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ mt: 1, display: 'block', textAlign: 'right', fontWeight: 800 }}
+                      >
                         {progress}% achieved
                       </Typography>
                     </Box>

@@ -41,7 +41,11 @@ export class ReportingController {
   /**
    * Executive Dashboard Summary
    */
-  public static async getExecutiveSummary(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getExecutiveSummary(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const companyId = await ReportingController.getCompanyId();
       const roleName = req.user?.roleName || 'Employee';
@@ -56,7 +60,11 @@ export class ReportingController {
   /**
    * Inventory Valuation Report
    */
-  public static async getInventoryReport(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getInventoryReport(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const companyId = await ReportingController.getCompanyId();
       const report = await ReportingService.getInventoryReport(companyId);
@@ -69,7 +77,11 @@ export class ReportingController {
   /**
    * Sales Performance Report
    */
-  public static async getSalesReport(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getSalesReport(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const companyId = await ReportingController.getCompanyId();
       const { startDate, endDate } = req.query;
@@ -87,7 +99,11 @@ export class ReportingController {
   /**
    * KPI Indicators list
    */
-  public static async getKPIs(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getKPIs(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const companyId = await ReportingController.getCompanyId();
       const kpis = await ReportingService.getKPIs(companyId);
@@ -100,7 +116,11 @@ export class ReportingController {
   /**
    * Save custom report layout configuration
    */
-  public static async saveReport(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async saveReport(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const companyId = await ReportingController.getCompanyId();
       const userId = req.user?.id;
@@ -147,7 +167,11 @@ export class ReportingController {
   /**
    * List saved reports
    */
-  public static async getSavedReports(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getSavedReports(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const companyId = await ReportingController.getCompanyId();
       const list = await SavedReport.find({ companyId, isArchived: false }).sort({ createdAt: -1 });
@@ -160,7 +184,11 @@ export class ReportingController {
   /**
    * Create scheduled report delivery
    */
-  public static async createSchedule(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async createSchedule(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const companyId = await ReportingController.getCompanyId();
       const userId = req.user?.id;
@@ -191,7 +219,11 @@ export class ReportingController {
   /**
    * List scheduled reports
    */
-  public static async getScheduledReports(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getScheduledReports(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const companyId = await ReportingController.getCompanyId();
       const list = await ScheduledReport.find({ companyId }).sort({ createdAt: -1 });
@@ -204,7 +236,11 @@ export class ReportingController {
   /**
    * Request report export download center history
    */
-  public static async getExportHistory(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  public static async getExportHistory(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const companyId = await ReportingController.getCompanyId();
       const list = await ExportHistory.find({ companyId }).sort({ createdAt: -1 });

@@ -31,4 +31,7 @@ const ScheduledReportSchema = new Schema<IScheduledReport>(
   { timestamps: true }
 );
 
-export const ScheduledReport = mongoose.model<IScheduledReport>('ScheduledReport', ScheduledReportSchema);
+export const ScheduledReport = mongoose.model<IScheduledReport>(
+  'ScheduledReport',
+  ScheduledReportSchema
+);

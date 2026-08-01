@@ -5,7 +5,15 @@ import PageHeader from '../../components/PageHeader.tsx';
 import StatCard from '../../components/StatCard.tsx';
 import RevenueIcon from '@mui/icons-material/TrendingUp';
 import SalesIcon from '@mui/icons-material/ShoppingCart';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from 'recharts';
 import { motion } from 'framer-motion';
 
 interface SalesReport {
@@ -74,7 +82,10 @@ export default function AnalyticsDashboard() {
             </Typography>
             <Box sx={{ height: 350, width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={sales.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart
+                  data={sales.chartData}
+                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                >
                   <defs>
                     <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.4} />
@@ -85,7 +96,10 @@ export default function AnalyticsDashboard() {
                   <XAxis dataKey="date" stroke="#9ca3af" style={{ fontSize: 11 }} />
                   <YAxis stroke="#9ca3af" style={{ fontSize: 11 }} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.08)' }}
+                    contentStyle={{
+                      backgroundColor: '#111827',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                    }}
                   />
                   <Area
                     type="monotone"

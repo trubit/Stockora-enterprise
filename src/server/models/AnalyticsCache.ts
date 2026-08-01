@@ -17,4 +17,7 @@ const AnalyticsCacheSchema = new Schema<IAnalyticsCache>(
   { timestamps: true }
 );
 
-export const AnalyticsCache = mongoose.model<IAnalyticsCache>('AnalyticsCache', AnalyticsCacheSchema);
+export const AnalyticsCache = mongoose.model<IAnalyticsCache>(
+  'AnalyticsCache',
+  AnalyticsCacheSchema
+);

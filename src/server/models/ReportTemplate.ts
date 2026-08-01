@@ -2,7 +2,15 @@ import mongoose, { Schema, type Document } from 'mongoose';
 
 export interface IReportTemplate extends Document {
   name: string;
-  category: 'INVENTORY' | 'SALES' | 'PURCHASING' | 'FINANCE' | 'CUSTOMERS' | 'SUPPLIERS' | 'EMPLOYEES' | 'SYSTEM';
+  category:
+    | 'INVENTORY'
+    | 'SALES'
+    | 'PURCHASING'
+    | 'FINANCE'
+    | 'CUSTOMERS'
+    | 'SUPPLIERS'
+    | 'EMPLOYEES'
+    | 'SYSTEM';
   description: string;
   fields: string[];
   defaultFilters: Record<string, unknown>;
@@ -17,7 +25,16 @@ const ReportTemplateSchema = new Schema<IReportTemplate>(
     category: {
       type: String,
       required: true,
-      enum: ['INVENTORY', 'SALES', 'PURCHASING', 'FINANCE', 'CUSTOMERS', 'SUPPLIERS', 'EMPLOYEES', 'SYSTEM'],
+      enum: [
+        'INVENTORY',
+        'SALES',
+        'PURCHASING',
+        'FINANCE',
+        'CUSTOMERS',
+        'SUPPLIERS',
+        'EMPLOYEES',
+        'SYSTEM',
+      ],
       index: true,
     },
     description: { type: String },
@@ -28,4 +45,7 @@ const ReportTemplateSchema = new Schema<IReportTemplate>(
   { timestamps: true }
 );
 
-export const ReportTemplate = mongoose.model<IReportTemplate>('ReportTemplate', ReportTemplateSchema);
+export const ReportTemplate = mongoose.model<IReportTemplate>(
+  'ReportTemplate',
+  ReportTemplateSchema
+);

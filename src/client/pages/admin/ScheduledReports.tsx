@@ -1,6 +1,23 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Box, Card, CardContent, Typography, TextField, Button, MenuItem, Grid, LinearProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  TextField,
+  Button,
+  MenuItem,
+  Grid,
+  LinearProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+} from '@mui/material';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 import { apiClient } from '../../api/client.ts';
@@ -25,7 +42,11 @@ interface ScheduledReportsForm {
 }
 
 export default function ScheduledReports() {
-  const { data: schedules = [], isLoading, refetch } = useQuery<Schedule[]>({
+  const {
+    data: schedules = [],
+    isLoading,
+    refetch,
+  } = useQuery<Schedule[]>({
     queryKey: ['scheduled-reports'],
     queryFn: async () => {
       const { data } = await apiClient.get<Schedule[]>('/reports/scheduled');
@@ -59,7 +80,9 @@ export default function ScheduledReports() {
       reset();
       refetch();
     } catch (err: unknown) {
-      const errorMsg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to register schedule.';
+      const errorMsg =
+        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+        'Failed to register schedule.';
       toast.error(errorMsg);
     } finally {
       setSaving(false);

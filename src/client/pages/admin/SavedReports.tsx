@@ -38,8 +38,17 @@ export default function SavedReports() {
         />
 
         {saved.length === 0 ? (
-          <Box sx={{ py: 10, textAlign: 'center', border: '1px dashed rgba(255,255,255,0.06)', borderRadius: '12px' }}>
-            <Typography color="text.secondary">No saved report views found. Use the visual builder to create one.</Typography>
+          <Box
+            sx={{
+              py: 10,
+              textAlign: 'center',
+              border: '1px dashed rgba(255,255,255,0.06)',
+              borderRadius: '12px',
+            }}
+          >
+            <Typography color="text.secondary">
+              No saved report views found. Use the visual builder to create one.
+            </Typography>
           </Box>
         ) : (
           <Grid container spacing={3}>
@@ -59,7 +68,11 @@ export default function SavedReports() {
                     <Typography variant="body2" color="text.secondary">
                       Chart Preference: {rep.configuration.chartType?.toUpperCase() || 'NONE'}
                     </Typography>
-                    <Button variant="outlined" size="small" sx={{ mt: 'auto', alignSelf: 'flex-start' }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      sx={{ mt: 'auto', alignSelf: 'flex-start' }}
+                    >
                       Load Config
                     </Button>
                   </CardContent>

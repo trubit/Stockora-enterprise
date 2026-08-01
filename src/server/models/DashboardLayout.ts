@@ -40,4 +40,7 @@ const DashboardLayoutSchema = new Schema<IDashboardLayout>(
   { timestamps: true }
 );
 
-export const DashboardLayout = mongoose.model<IDashboardLayout>('DashboardLayout', DashboardLayoutSchema);
+export const DashboardLayout = mongoose.model<IDashboardLayout>(
+  'DashboardLayout',
+  DashboardLayoutSchema
+);

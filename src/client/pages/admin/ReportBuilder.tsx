@@ -1,5 +1,16 @@
 import { useState } from 'react';
-import { Box, Card, CardContent, Typography, TextField, Button, MenuItem, Grid, Checkbox, FormControlLabel } from '@mui/material';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  TextField,
+  Button,
+  MenuItem,
+  Grid,
+  Checkbox,
+  FormControlLabel,
+} from '@mui/material';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 import { apiClient } from '../../api/client.ts';
@@ -45,7 +56,9 @@ export default function ReportBuilder() {
       toast.success('Custom report config stored successfully!');
       reset();
     } catch (err: unknown) {
-      const errorMsg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to save configuration.';
+      const errorMsg =
+        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+        'Failed to save configuration.';
       toast.error(errorMsg);
     } finally {
       setSaving(false);
@@ -88,12 +101,7 @@ export default function ReportBuilder() {
                     ))}
                   </TextField>
 
-                  <TextField
-                    {...register('chartType')}
-                    fullWidth
-                    select
-                    label="Default Chart Type"
-                  >
+                  <TextField {...register('chartType')} fullWidth select label="Default Chart Type">
                     <MenuItem value="line">Line Chart</MenuItem>
                     <MenuItem value="bar">Bar Chart</MenuItem>
                     <MenuItem value="pie">Pie Chart</MenuItem>
