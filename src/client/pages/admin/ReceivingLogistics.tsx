@@ -140,8 +140,8 @@ export default function ReceivingLogistics() {
       refetchPOs();
     },
     onError: (err: unknown) => {
-      const apiErr = err as { response?: { data?: { error?: string } } };
-      const msg = apiErr.response?.data?.error || 'Failed to receive goods.';
+      const apiErr = err as { response?: { data?: { error?: { message?: string } } } };
+      const msg = apiErr.response?.data?.error?.message || 'Failed to receive goods.';
       toast.error(msg);
     },
   });
@@ -158,8 +158,8 @@ export default function ReceivingLogistics() {
       refetchPOs();
     },
     onError: (err: unknown) => {
-      const apiErr = err as { response?: { data?: { error?: string } } };
-      const msg = apiErr.response?.data?.error || 'Failed to match invoice.';
+      const apiErr = err as { response?: { data?: { error?: { message?: string } } } };
+      const msg = apiErr.response?.data?.error?.message || 'Failed to match invoice.';
       toast.error(msg);
     },
   });

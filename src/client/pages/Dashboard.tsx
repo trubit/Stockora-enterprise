@@ -34,6 +34,7 @@ import type { Product, Transaction } from '../../shared/types.js';
 import PageHeader from '../components/PageHeader.tsx';
 import StatCard from '../components/StatCard.tsx';
 import StatusChip from '../components/StatusChip.tsx';
+import { useAuthStore } from '../store/auth.ts';
 
 // Query functions
 const fetchProducts = async (): Promise<Product[]> => {
@@ -49,15 +50,23 @@ const fetchTransactions = async (): Promise<Transaction[]> => {
 export default function Dashboard() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+
+  const isOwnerOrAdmin =
+    user?.roleName === 'Company Owner' || user?.roleName === 'Super Administrator';
+  const hasProductsRead = isOwnerOrAdmin || user?.permissions?.includes('products:read');
+  const hasTransactionsRead = isOwnerOrAdmin || user?.permissions?.includes('transactions:read');
 
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
     queryFn: fetchProducts,
+    enabled: !!hasProductsRead,
   });
 
   const { data: transactions = [] } = useQuery({
     queryKey: ['transactions'],
     queryFn: fetchTransactions,
+    enabled: !!hasTransactionsRead,
   });
 
   // Real-time stock/sale synchronization directly to cache

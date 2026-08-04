@@ -12,6 +12,7 @@ import { SocketManager } from './sockets/manager.js';
 import { QueueManager } from './queue/bullmq.js';
 import { apiRouter } from './routes/api.js';
 import { notFoundHandler, errorHandler } from './errors/handlers.js';
+import { telemetryMiddleware } from './middleware/telemetry.middleware.js';
 import { seedRolesIfEmpty, seedProductsIfEmpty, seedDefaultsIfEmpty } from './database/seeder.js';
 import { initializeBackgroundWorkers } from './queue/jobs.worker.js';
 
@@ -41,6 +42,8 @@ app.use((req, _res, next) => {
   logger.http(`${req.method} ${req.url} - IP: ${req.ip} (PID: ${process.pid})`);
   next();
 });
+
+app.use(telemetryMiddleware);
 
 // Versioned APIs Route Prefix
 app.use('/api/v1', apiRouter);

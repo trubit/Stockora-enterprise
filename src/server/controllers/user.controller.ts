@@ -1,6 +1,7 @@
 import type { Response, NextFunction } from 'express';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { User } from '../models/User.js';
+import { Role } from '../models/Role.js';
 import { NotFoundError, ValidationError } from '../errors/AppError.js';
 import { UploadService } from '../services/upload.service.js';
 
@@ -15,7 +16,10 @@ export class UserController {
       if (!user) {
         return next(new NotFoundError('User not found.'));
       }
-      res.json(user);
+      const role = await Role.findOne({ name: user.roleName });
+      const userObj = user.toObject() as any;
+      userObj.permissions = role ? role.permissions : [];
+      res.json(userObj);
     } catch (err: unknown) {
       next(err);
     }

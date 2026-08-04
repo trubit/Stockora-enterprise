@@ -8,8 +8,10 @@ export interface User {
   email: string;
   role: UserRole;
   roleName?: string;
+  permissions?: string[];
   isActive: boolean;
   branchId?: string;
+  branchName?: string;
   avatarUrl?: string;
   preferredLanguage?: string;
   timeZone?: string;

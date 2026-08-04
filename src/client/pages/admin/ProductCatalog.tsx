@@ -30,6 +30,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { apiClient } from '../../api/client.ts';
+import { useAuthStore } from '../../store/auth.ts';
 import { toast } from 'react-hot-toast';
 import type { Product } from '../../../shared/types.js';
 import { motion } from 'framer-motion';
@@ -37,11 +38,17 @@ import { motion } from 'framer-motion';
 const textFieldStyle = {};
 
 export default function ProductCatalog() {
+  const { user } = useAuthStore();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [imageUrl, setImageUrl] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const canWriteProducts =
+    user?.roleName === 'Company Owner' ||
+    user?.roleName === 'Super Administrator' ||
+    user?.permissions?.includes('products:write');
 
   const { data: products = [], refetch } = useQuery({
     queryKey: ['products'],
@@ -218,26 +225,28 @@ export default function ProductCatalog() {
           >
             Product Catalog
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleOpenCreate}
-            sx={{
-              fontWeight: 700,
-              px: 3,
-              py: 1.2,
-              borderRadius: 2.5,
-              textTransform: 'none',
-              background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
-              boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
-              '&:hover': {
-                background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
-                boxShadow: '0 6px 20px rgba(139, 92, 246, 0.45)',
-              },
-            }}
-          >
-            Add Product
-          </Button>
+          {canWriteProducts && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleOpenCreate}
+              sx={{
+                fontWeight: 700,
+                px: 3,
+                py: 1.2,
+                borderRadius: 2.5,
+                textTransform: 'none',
+                background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
+                  boxShadow: '0 6px 20px rgba(139, 92, 246, 0.45)',
+                },
+              }}
+            >
+              Add Product
+            </Button>
+          )}
         </Box>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
           Add, modify, attribute, and catalog items for inventory, checkouts, and purchasing.

@@ -103,8 +103,8 @@ export default function StockAdjustments() {
       refetch();
     },
     onError: (err: unknown) => {
-      const apiErr = err as { response?: { data?: { error?: string } } };
-      const msg = apiErr.response?.data?.error || 'Failed to adjust stock.';
+      const apiErr = err as { response?: { data?: { error?: { message?: string } } } };
+      const msg = apiErr.response?.data?.error?.message || 'Failed to adjust stock.';
       toast.error(msg);
     },
   });

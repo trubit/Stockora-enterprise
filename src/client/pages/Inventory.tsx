@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../api/client.ts';
+import { useAuthStore } from '../store/auth.ts';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -58,8 +59,14 @@ const fetchProducts = async (): Promise<Product[]> => {
 
 export default function Inventory() {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
+
+  const canWriteProducts =
+    user?.roleName === 'Company Owner' ||
+    user?.roleName === 'Super Administrator' ||
+    user?.permissions?.includes('products:write');
 
   const { data: products = [], refetch } = useQuery({
     queryKey: ['products'],
@@ -244,20 +251,22 @@ export default function Inventory() {
             >
               Sync
             </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={() => setOpen(true)}
-              sx={{
-                fontWeight: 700,
-                borderRadius: '8px',
-                background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
-                boxShadow: '0 4px 14px rgba(139, 92, 246, 0.3)',
-              }}
-            >
-              Add Product
-            </Button>
+            {canWriteProducts && (
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<AddIcon />}
+                onClick={() => setOpen(true)}
+                sx={{
+                  fontWeight: 700,
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+                  boxShadow: '0 4px 14px rgba(139, 92, 246, 0.3)',
+                }}
+              >
+                Add Product
+              </Button>
+            )}
           </Box>
         }
       />

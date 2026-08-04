@@ -110,6 +110,7 @@ export class AuthController {
         deviceFingerprint
       );
 
+      const role = await Role.findOne({ name: user.roleName });
       res.json({
         accessToken,
         refreshToken,
@@ -119,6 +120,7 @@ export class AuthController {
           username: user.username,
           email: user.email,
           roleName: user.roleName,
+          permissions: role ? role.permissions : [],
           isActive: user.isActive,
           themePreference: user.themePreference,
           preferredLanguage: user.preferredLanguage,

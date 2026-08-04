@@ -67,7 +67,7 @@ export class QueueManager {
       if (match) {
         const major = parseInt(match[1], 10);
         if (major < 5) {
-          logger.warn(
+          logger.info(
             `[BullMQ] Redis version ${match[1]}.x detected — Redis Streams require ≥ 5.0. ` +
               'BullMQ disabled; falling back to Node.js setInterval scheduler.'
           );

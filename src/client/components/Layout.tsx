@@ -107,43 +107,229 @@ export default function Layout() {
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { text: 'POS Terminal', icon: <PosIcon />, path: '/pos' },
-    { text: 'Products Catalog', icon: <CategoryIcon />, path: '/products' },
-    { text: 'Inventory Catalog', icon: <InventoryIcon />, path: '/inventory' },
-    { text: 'Stock Adjustments', icon: <AdjustIcon />, path: '/adjustments' },
-    { text: 'Warehouse Transfers', icon: <SwapHorizIcon />, path: '/transfers' },
-    { text: 'Purchase Orders', icon: <ShoppingCartIcon />, path: '/purchase-orders' },
-    { text: 'Receiving AP', icon: <ReceiptIcon />, path: '/receiving' },
-    { text: 'Sales Orders', icon: <PointOfSaleIcon />, path: '/sales' },
-    { text: 'Sales Returns & RMAs', icon: <AssignmentReturnIcon />, path: '/returns' },
-    { text: 'Marketing & Loyalty', icon: <LoyaltyIcon />, path: '/marketing' },
-    { text: 'Communication Center', icon: <NotificationsActiveIcon />, path: '/communication' },
-    { text: 'Financial Reports', icon: <PaymentsIcon />, path: '/finance' },
-    { text: 'Executive Dashboard', icon: <PaymentsIcon />, path: '/reports/executive' },
-    { text: 'Report Builder', icon: <SettingsIcon />, path: '/reports/builder' },
-    { text: 'Saved Reports', icon: <ReceiptIcon />, path: '/reports/saved' },
-    { text: 'Scheduled Reports', icon: <QueryBuilderIcon />, path: '/reports/scheduled' },
-    { text: 'KPI Targets', icon: <DashboardIcon />, path: '/reports/kpis' },
-    { text: 'Analytics Hub', icon: <AutoAwesomeIcon />, path: '/reports/analytics' },
-    { text: 'Export Logs', icon: <CategoryIcon />, path: '/reports/exports' },
-    { text: 'AI Assistant & Forecasts', icon: <AutoAwesomeIcon />, path: '/ai-assistant' },
+    { text: 'POS Terminal', icon: <PosIcon />, path: '/pos', permission: 'transactions:write' },
+    {
+      text: 'Products Catalog',
+      icon: <CategoryIcon />,
+      path: '/products',
+      permission: 'products:read',
+    },
+    {
+      text: 'Inventory Catalog',
+      icon: <InventoryIcon />,
+      path: '/inventory',
+      permission: 'products:read',
+    },
+    {
+      text: 'Stock Adjustments',
+      icon: <AdjustIcon />,
+      path: '/adjustments',
+      permission: 'products:write',
+    },
+    {
+      text: 'Warehouse Transfers',
+      icon: <SwapHorizIcon />,
+      path: '/transfers',
+      permission: 'warehouses:read',
+    },
+    {
+      text: 'Purchase Orders',
+      icon: <ShoppingCartIcon />,
+      path: '/purchase-orders',
+      permission: 'suppliers:read',
+    },
+    {
+      text: 'Receiving AP',
+      icon: <ReceiptIcon />,
+      path: '/receiving',
+      permission: 'suppliers:read',
+    },
+    {
+      text: 'Sales Orders',
+      icon: <PointOfSaleIcon />,
+      path: '/sales',
+      permission: 'transactions:read',
+    },
+    {
+      text: 'Sales Returns & RMAs',
+      icon: <AssignmentReturnIcon />,
+      path: '/returns',
+      permission: 'returns:read',
+    },
+    {
+      text: 'Marketing & Loyalty',
+      icon: <LoyaltyIcon />,
+      path: '/marketing',
+      permission: 'promotions:read',
+    },
+    {
+      text: 'Communication Center',
+      icon: <NotificationsActiveIcon />,
+      path: '/communication',
+      permission: 'notifications:read',
+    },
+    {
+      text: 'Financial Reports',
+      icon: <PaymentsIcon />,
+      path: '/finance',
+      permission: 'finance:read',
+    },
+    {
+      text: 'Executive Dashboard',
+      icon: <PaymentsIcon />,
+      path: '/reports/executive',
+      permission: 'reports:read',
+    },
+    {
+      text: 'Report Builder',
+      icon: <SettingsIcon />,
+      path: '/reports/builder',
+      permission: 'reports:read',
+    },
+    {
+      text: 'Saved Reports',
+      icon: <ReceiptIcon />,
+      path: '/reports/saved',
+      permission: 'reports:read',
+    },
+    {
+      text: 'Scheduled Reports',
+      icon: <QueryBuilderIcon />,
+      path: '/reports/scheduled',
+      permission: 'reports:read',
+    },
+    {
+      text: 'KPI Targets',
+      icon: <DashboardIcon />,
+      path: '/reports/kpis',
+      permission: 'reports:read',
+    },
+    {
+      text: 'Analytics Hub',
+      icon: <AutoAwesomeIcon />,
+      path: '/reports/analytics',
+      permission: 'reports:read',
+    },
+    {
+      text: 'Export Logs',
+      icon: <CategoryIcon />,
+      path: '/reports/exports',
+      permission: 'reports:read',
+    },
+    { text: 'AI Copilot Assistant', icon: <AutoAwesomeIcon />, path: '/copilot/chat' },
+    {
+      text: 'AI Copilot Settings',
+      icon: <SettingsIcon />,
+      path: '/copilot/settings',
+      permission: 'security:write',
+    },
+    {
+      text: 'Workflow BPM Designer',
+      icon: <SettingsIcon />,
+      path: '/workflows/designer',
+      permission: 'workflows:write',
+    },
+    {
+      text: 'Workflow History',
+      icon: <QueryBuilderIcon />,
+      path: '/workflows/history',
+      permission: 'workflows:read',
+    },
+    {
+      text: 'Approvals Console',
+      icon: <PaymentsIcon />,
+      path: '/workflows/approvals',
+      permission: 'workflows:read',
+    },
+    {
+      text: 'Operations Center (SRE)',
+      icon: <DashboardIcon />,
+      path: '/observability/operations',
+      permission: 'security:read',
+    },
+    {
+      text: 'Audit Explorer',
+      icon: <SettingsIcon />,
+      path: '/observability/audit',
+      permission: 'audit:read',
+    },
     { text: 'My Profile', icon: <AccountCircleIcon />, path: '/profile' },
   ];
 
   const isAdmin = user?.roleName === 'Company Owner' || user?.roleName === 'Super Administrator';
+
+  const hasAccess = (permission?: string) => {
+    if (!permission) return true;
+    if (!user) return false;
+    if (user.roleName === 'Company Owner' || user.roleName === 'Super Administrator') return true;
+    return user.permissions?.includes(permission) || false;
+  };
+
   const adminItems = [
-    { text: 'Company Settings', icon: <BusinessIcon />, path: '/company' },
-    { text: 'Branches List', icon: <BranchIcon />, path: '/branches' },
-    { text: 'Currency & Tax Settings', icon: <PaymentsIcon />, path: '/currency' },
-    { text: 'Hardware Terminals', icon: <UsbIcon />, path: '/hardware' },
-    { text: 'Integrations & ERP', icon: <CloudQueueIcon />, path: '/integrations' },
-    { text: '3D Warehouse Visualizer', icon: <WarehouseIcon />, path: '/warehouse-visualizer' },
-    { text: 'Master Data', icon: <SettingsIcon />, path: '/master-data' },
-    { text: 'Suppliers Directory', icon: <LocalShippingIcon />, path: '/suppliers' },
-    { text: 'Customers Directory', icon: <PeopleIcon />, path: '/customers' },
-    { text: 'Scheduler Monitor', icon: <QueryBuilderIcon />, path: '/scheduler' },
-    { text: 'Admin Console', icon: <AdminPanelSettingsIcon />, path: '/console' },
+    {
+      text: 'Company Settings',
+      icon: <BusinessIcon />,
+      path: '/company',
+      permission: 'companies:read',
+    },
+    { text: 'Branches List', icon: <BranchIcon />, path: '/branches', permission: 'branches:read' },
+    {
+      text: 'Currency & Tax Settings',
+      icon: <PaymentsIcon />,
+      path: '/currency',
+      permission: 'finance:read',
+    },
+    {
+      text: 'Hardware Terminals',
+      icon: <UsbIcon />,
+      path: '/hardware',
+      permission: 'security:read',
+    },
+    {
+      text: 'Integrations & ERP',
+      icon: <CloudQueueIcon />,
+      path: '/integrations',
+      permission: 'security:read',
+    },
+    {
+      text: '3D Warehouse Visualizer',
+      icon: <WarehouseIcon />,
+      path: '/warehouse-visualizer',
+      permission: 'warehouses:read',
+    },
+    {
+      text: 'Master Data',
+      icon: <SettingsIcon />,
+      path: '/master-data',
+      permission: 'master_data:read',
+    },
+    {
+      text: 'Suppliers Directory',
+      icon: <LocalShippingIcon />,
+      path: '/suppliers',
+      permission: 'suppliers:read',
+    },
+    {
+      text: 'Customers Directory',
+      icon: <PeopleIcon />,
+      path: '/customers',
+      permission: 'customers:read',
+    },
+    {
+      text: 'Scheduler Monitor',
+      icon: <QueryBuilderIcon />,
+      path: '/scheduler',
+      permission: 'automation:read',
+    },
+    {
+      text: 'Admin Console',
+      icon: <AdminPanelSettingsIcon />,
+      path: '/console',
+      permission: 'security:read',
+    },
   ];
+
+  const showAdminSection = isAdmin || adminItems.some((item) => hasAccess(item.permission));
 
   const drawerContent = (
     <Box
@@ -210,46 +396,50 @@ export default function Layout() {
       {/* Navigation List */}
       <Box sx={{ flexGrow: 1, overflowY: 'auto', px: 1.5, py: 2 }}>
         <List disablePadding>
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
-                <ListItemButton
-                  className={isActive ? 'premium-sidebar-item active' : 'premium-sidebar-item'}
-                  onClick={() => {
-                    navigate(item.path);
-                    setMobileOpen(false);
-                  }}
-                  sx={{
-                    borderRadius: '8px',
-                    color: isActive ? '#ffffff' : 'text.secondary',
-                    bgcolor: isActive ? 'rgba(139, 92, 246, 0.08) !important' : 'transparent',
-                    borderLeft: isActive ? '3px solid #8b5cf6' : '3px solid transparent',
-                    '&:hover': {
-                      bgcolor: isActive ? 'rgba(139, 92, 246, 0.12)' : 'rgba(255, 255, 255, 0.02)',
-                      color: '#ffffff',
-                    },
-                  }}
-                >
-                  <ListItemIcon
-                    sx={{ color: isActive ? 'primary.light' : 'text.secondary', minWidth: 38 }}
-                  >
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={item.text}
-                    primaryTypographyProps={{
-                      fontSize: '0.85rem',
-                      fontWeight: isActive ? 700 : 500,
-                      letterSpacing: '0.01em',
+          {menuItems
+            .filter((item) => hasAccess(item.permission))
+            .map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+                  <ListItemButton
+                    className={isActive ? 'premium-sidebar-item active' : 'premium-sidebar-item'}
+                    onClick={() => {
+                      navigate(item.path);
+                      setMobileOpen(false);
                     }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            );
-          })}
+                    sx={{
+                      borderRadius: '8px',
+                      color: isActive ? '#ffffff' : 'text.secondary',
+                      bgcolor: isActive ? 'rgba(139, 92, 246, 0.08) !important' : 'transparent',
+                      borderLeft: isActive ? '3px solid #8b5cf6' : '3px solid transparent',
+                      '&:hover': {
+                        bgcolor: isActive
+                          ? 'rgba(139, 92, 246, 0.12)'
+                          : 'rgba(255, 255, 255, 0.02)',
+                        color: '#ffffff',
+                      },
+                    }}
+                  >
+                    <ListItemIcon
+                      sx={{ color: isActive ? 'primary.light' : 'text.secondary', minWidth: 38 }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.text}
+                      primaryTypographyProps={{
+                        fontSize: '0.85rem',
+                        fontWeight: isActive ? 700 : 500,
+                        letterSpacing: '0.01em',
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
 
-          {isAdmin && (
+          {showAdminSection && (
             <>
               <Divider sx={{ my: 2.5, borderColor: 'rgba(255,255,255,0.03)' }} />
               <Typography
@@ -266,46 +456,53 @@ export default function Layout() {
               >
                 ADMINISTRATION
               </Typography>
-              {adminItems.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
-                    <ListItemButton
-                      className={isActive ? 'premium-sidebar-item active' : 'premium-sidebar-item'}
-                      onClick={() => {
-                        navigate(item.path);
-                        setMobileOpen(false);
-                      }}
-                      sx={{
-                        borderRadius: '8px',
-                        color: isActive ? '#ffffff' : 'text.secondary',
-                        bgcolor: isActive ? 'rgba(139, 92, 246, 0.08) !important' : 'transparent',
-                        borderLeft: isActive ? '3px solid #8b5cf6' : '3px solid transparent',
-                        '&:hover': {
-                          bgcolor: isActive
-                            ? 'rgba(139, 92, 246, 0.12)'
-                            : 'rgba(255, 255, 255, 0.02)',
-                          color: '#ffffff',
-                        },
-                      }}
-                    >
-                      <ListItemIcon
-                        sx={{ color: isActive ? 'primary.light' : 'text.secondary', minWidth: 38 }}
-                      >
-                        {item.icon}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={item.text}
-                        primaryTypographyProps={{
-                          fontSize: '0.85rem',
-                          fontWeight: isActive ? 700 : 500,
-                          letterSpacing: '0.01em',
+              {adminItems
+                .filter((item) => hasAccess(item.permission))
+                .map((item) => {
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+                      <ListItemButton
+                        className={
+                          isActive ? 'premium-sidebar-item active' : 'premium-sidebar-item'
+                        }
+                        onClick={() => {
+                          navigate(item.path);
+                          setMobileOpen(false);
                         }}
-                      />
-                    </ListItemButton>
-                  </ListItem>
-                );
-              })}
+                        sx={{
+                          borderRadius: '8px',
+                          color: isActive ? '#ffffff' : 'text.secondary',
+                          bgcolor: isActive ? 'rgba(139, 92, 246, 0.08) !important' : 'transparent',
+                          borderLeft: isActive ? '3px solid #8b5cf6' : '3px solid transparent',
+                          '&:hover': {
+                            bgcolor: isActive
+                              ? 'rgba(139, 92, 246, 0.12)'
+                              : 'rgba(255, 255, 255, 0.02)',
+                            color: '#ffffff',
+                          },
+                        }}
+                      >
+                        <ListItemIcon
+                          sx={{
+                            color: isActive ? 'primary.light' : 'text.secondary',
+                            minWidth: 38,
+                          }}
+                        >
+                          {item.icon}
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={item.text}
+                          primaryTypographyProps={{
+                            fontSize: '0.85rem',
+                            fontWeight: isActive ? 700 : 500,
+                            letterSpacing: '0.01em',
+                          }}
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                  );
+                })}
             </>
           )}
 

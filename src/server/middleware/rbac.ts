@@ -6,6 +6,7 @@ import { AuthorizationError } from '../errors/AppError.js';
 export function rbacMiddleware(requiredPermissions: string[]) {
   return async (req: AuthenticatedRequest, _res: Response, next: NextFunction): Promise<void> => {
     if (!req.user) {
+      console.warn('[RBAC Debug] Access Denied: req.user is undefined.');
       return next(new AuthorizationError());
     }
 
@@ -14,11 +15,19 @@ export function rbacMiddleware(requiredPermissions: string[]) {
     try {
       const role = await Role.findOne({ name: roleName });
       if (!role) {
+        console.warn(
+          `[RBAC Debug] Access Denied: Role not found in database for roleName: "${roleName}".`
+        );
         return next(new AuthorizationError());
       }
 
       const hasPermission = requiredPermissions.every((perm) => role.permissions.includes(perm));
       if (!hasPermission) {
+        console.warn(
+          `[RBAC Debug] Access Denied: Role "${roleName}" lacks required permissions: ${JSON.stringify(
+            requiredPermissions
+          )}. Role permissions: ${JSON.stringify(role.permissions)}`
+        );
         return next(new AuthorizationError());
       }
 

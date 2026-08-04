@@ -242,8 +242,8 @@ export default function SalesBackOffice() {
       refetchOrders();
     },
     onError: (err: unknown) => {
-      const apiErr = err as { response?: { data?: { error?: string } } };
-      const msg = apiErr.response?.data?.error || 'Failed to dispatch shipment.';
+      const apiErr = err as { response?: { data?: { error?: { message?: string } } } };
+      const msg = apiErr.response?.data?.error?.message || 'Failed to dispatch shipment.';
       toast.error(msg);
     },
   });

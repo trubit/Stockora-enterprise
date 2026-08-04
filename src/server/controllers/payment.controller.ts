@@ -5,6 +5,8 @@ import { Product } from '../models/Product.js';
 import { PaymentService, type PaymentProvider } from '../services/payment.service.js';
 import { ValidationError, NotFoundError } from '../errors/AppError.js';
 import { logger } from '../logger.js';
+import { Branch } from '../models/Branch.js';
+import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { SocketManager } from '../sockets/manager.js';
 import { redis } from '../database/redis.js';
 
@@ -76,6 +78,16 @@ export class PaymentController {
       // Generate a unique reference number
       const reference = `TX-PAY-${Date.now().toString().slice(-6)}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
 
+      // Dynamically resolve cashier and branch information
+      const authReq = req as AuthenticatedRequest;
+      const user = authReq.user;
+      const cashierId = user?.id || 'cashier-1';
+      const cashierName = user?.username || 'POS Cashier';
+
+      const activeBranch = await Branch.findOne({ isActive: true });
+      const branchId = activeBranch?._id?.toString() || 'branch-1';
+      const branchName = activeBranch?.name || 'Primary Branch';
+
       // Create standard transaction but mark it as PENDING
       const transaction = await Transaction.create({
         transactionNumber: reference,
@@ -89,11 +101,23 @@ export class PaymentController {
         paymentMethod: payload.paymentMethod,
         currencyCode: payload.currency.toUpperCase(),
         exchangeRate: 1.0,
-        cashierId: 'cashier-1',
-        cashierName: 'POS Console Client',
-        branchId: 'branch-1',
-        branchName: 'Main HQ',
+        cashierId,
+        cashierName,
+        branchId,
+        branchName,
       });
+
+      // Determine frontend origin for redirecting back to user interface
+      const referer = req.headers.referer || '';
+      let frontendOrigin = `${req.protocol}://${req.get('host')}`;
+      if (referer) {
+        try {
+          const urlObj = new URL(referer);
+          frontendOrigin = urlObj.origin;
+        } catch {
+          // ignore
+        }
+      }
 
       // Call payment service with resiliency protection
       const paymentResult = await PaymentService.initialize(payload.provider, {
@@ -101,7 +125,7 @@ export class PaymentController {
         amount: payload.total,
         currency: payload.currency,
         reference,
-        callbackUrl: `${req.protocol}://${req.get('host')}/api/v1/checkout/verify?provider=${payload.provider}&reference=${reference}`,
+        callbackUrl: `${frontendOrigin}/pos?provider=${payload.provider}&reference=${reference}`,
       });
 
       res.status(200).json({
@@ -214,8 +238,8 @@ export class PaymentController {
   ): Promise<void> {
     try {
       const input = {
-        provider: req.body.provider || req.query.provider,
-        reference: req.body.reference || req.query.reference,
+        provider: (req.body && req.body.provider) || req.query.provider,
+        reference: (req.body && req.body.reference) || req.query.reference,
       };
 
       const { provider, reference } = verifyCheckoutSchema.parse(input);
@@ -228,7 +252,12 @@ export class PaymentController {
       if (result.success) {
         res.json(result);
       } else {
-        res.status(400).json(result);
+        // Return 200 so the client can inspect result.success cleanly without Axios throwing.
+        // A 400 here fires the global error interceptor and swallows the useful gatewayResponse.
+        res.status(200).json({
+          ...result,
+          message: result.gatewayResponse || 'Payment not yet confirmed by gateway.',
+        });
       }
     } catch (err: unknown) {
       next(err);

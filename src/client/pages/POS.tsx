@@ -92,6 +92,21 @@ export default function POS() {
 
   const { user, accessToken } = useAuthStore();
 
+  const { data: branches = [] } = useQuery({
+    queryKey: ['branches'],
+    queryFn: async () => {
+      try {
+        const { data } = await apiClient.get('/org/branches');
+        return data;
+      } catch {
+        return [];
+      }
+    },
+  });
+
+  const activeBranchName = user?.branchName || (branches as any[])[0]?.name || 'Primary Branch';
+  const activeCashierName = user?.username || 'POS Cashier';
+
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
   const syncOfflineTransactions = useCallback(async () => {
@@ -280,7 +295,7 @@ export default function POS() {
         currency: 'USD',
       };
 
-      const { data } = await apiClient.post('/checkout/initialize', payload);
+      const { data } = await apiClient.post('/checkout/initialize', payload, { timeout: 30000 });
       setCheckoutReference(data.reference);
       setCheckoutStep('AWAITING_VERIFY');
       toast.success('Payment initialized successfully!');
@@ -300,10 +315,14 @@ export default function POS() {
   const handleOnlineCheckoutVerify = async () => {
     setVerifyingPayment(true);
     try {
-      const { data } = await apiClient.post('/checkout/verify', {
-        provider: paymentProvider,
-        reference: checkoutReference,
-      });
+      const { data } = await apiClient.post(
+        '/checkout/verify',
+        {
+          provider: paymentProvider,
+          reference: checkoutReference,
+        },
+        { timeout: 20000 }
+      );
 
       if (data.success && data.status === 'COMPLETED') {
         toast.success('Payment Verified & Order Placed Successfully!');
@@ -313,8 +332,12 @@ export default function POS() {
         setCheckoutOpen(false);
         queryClient.invalidateQueries({ queryKey: ['products'] });
         queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      } else if (data.status === 'PENDING') {
+        toast(data.message || 'Payment is still pending. Please wait a moment and try again.', {
+          icon: '⏳',
+        });
       } else {
-        toast.error('Payment verification failed or is still pending.');
+        toast.error(data.message || 'Payment could not be verified. Please contact support.');
       }
     } catch (err: unknown) {
       console.error(err);
@@ -324,6 +347,61 @@ export default function POS() {
       setVerifyingPayment(false);
     }
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const refParam = params.get('reference');
+    const providerParam = params.get('provider');
+
+    if (refParam && providerParam) {
+      setCheckoutReference(refParam);
+      setPaymentProvider(providerParam.toUpperCase() as 'PAYSTACK' | 'STRIPE');
+      setCheckoutStep('AWAITING_VERIFY');
+      setCheckoutOpen(true);
+
+      // Clean the URL query params so they don't trigger verification on refresh
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+
+      // Trigger automatic verification immediately
+      setVerifyingPayment(true);
+      apiClient
+        .post(
+          '/checkout/verify',
+          {
+            provider: providerParam.toUpperCase(),
+            reference: refParam,
+          },
+          { timeout: 20000 }
+        )
+        .then(({ data }) => {
+          if (data.success && data.status === 'COMPLETED') {
+            toast.success('Payment Verified & Order Placed Successfully!');
+            setCheckoutStep('COMPLETED');
+            setCart([]);
+            setDiscount(0);
+            setCheckoutOpen(false);
+            queryClient.invalidateQueries({ queryKey: ['products'] });
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+          } else if (data.status === 'PENDING') {
+            toast(
+              data.message || 'Payment is still pending. Please use the Verify button to retry.',
+              { icon: '⏳' }
+            );
+          } else {
+            toast.error(data.message || 'Payment could not be verified. Please contact support.');
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+          const error = err as { response?: { data?: { message?: string } } };
+          toast.error(error.response?.data?.message || 'Verification failed.');
+        })
+        .finally(() => {
+          setVerifyingPayment(false);
+        });
+    }
+  }, [queryClient]);
 
   const handleCheckout = () => {
     if (cart.length === 0) {
@@ -344,8 +422,8 @@ export default function POS() {
       tax,
       subtotal,
       total,
-      cashierName: user?.username || 'Jane Doe',
-      branchName: 'Main HQ',
+      cashierName: activeCashierName,
+      branchName: activeBranchName,
     };
 
     if (!navigator.onLine) {
@@ -365,8 +443,8 @@ export default function POS() {
         discount,
         total,
         paymentMethod,
-        cashierName: user?.username || 'Jane Doe',
-        branchName: 'Main HQ',
+        cashierName: activeCashierName,
+        branchName: activeBranchName,
         capturedAt: new Date().toISOString(),
       }).then(async () => {
         const count = await getPendingQueueCount();

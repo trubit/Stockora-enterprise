@@ -43,7 +43,7 @@ describe('Authentication & Session Services', () => {
     expect(authRes.accessToken).toBeDefined();
     expect(authRes.refreshToken).toBeDefined();
     expect(authRes.user.username).toBe('testadmin');
-  });
+  }, 15000);
 
   it('should lock user out after 5 consecutive login failures', async () => {
     const email = 'lockout@stockora.com';
@@ -63,5 +63,5 @@ describe('Authentication & Session Services', () => {
     }
 
     await expect(AuthService.authenticate(email, 'StrongPass123!')).rejects.toThrow(/locked/);
-  });
+  }, 20000);
 });

@@ -81,8 +81,8 @@ export default function ScheduledReports() {
       refetch();
     } catch (err: unknown) {
       const errorMsg =
-        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
-        'Failed to register schedule.';
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || 'Failed to register schedule.';
       toast.error(errorMsg);
     } finally {
       setSaving(false);

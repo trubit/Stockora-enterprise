@@ -140,8 +140,8 @@ export default function WarehouseTransfers() {
       refetch();
     },
     onError: (err: unknown) => {
-      const apiErr = err as { response?: { data?: { error?: string } } };
-      const msg = apiErr.response?.data?.error || 'Failed to create transfer.';
+      const apiErr = err as { response?: { data?: { error?: { message?: string } } } };
+      const msg = apiErr.response?.data?.error?.message || 'Failed to create transfer.';
       toast.error(msg);
     },
   });
@@ -155,8 +155,8 @@ export default function WarehouseTransfers() {
       refetch();
     },
     onError: (err: unknown) => {
-      const apiErr = err as { response?: { data?: { error?: string } } };
-      const msg = apiErr.response?.data?.error || 'Failed to update transfer status.';
+      const apiErr = err as { response?: { data?: { error?: { message?: string } } } };
+      const msg = apiErr.response?.data?.error?.message || 'Failed to update transfer status.';
       toast.error(msg);
     },
   });

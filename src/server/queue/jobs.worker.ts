@@ -268,7 +268,7 @@ function scheduleInterval(name: TaskType, intervalMs: number): void {
 }
 
 function startFallbackScheduler(): void {
-  logger.warn(
+  logger.info(
     '[Scheduler] Redis < 5 detected — BullMQ disabled. Starting Node.js setInterval fallback.'
   );
   scheduleInterval('CHECK_LOW_STOCK', MS.HOUR);

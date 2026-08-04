@@ -30,8 +30,12 @@ import { currencyRouter } from './currency.routes.js';
 import { integrationRouter } from './integration.routes.js';
 import { checkoutRouter } from './checkout.routes.js';
 import { reportingRouter } from './reporting.routes.js';
+import { workflowRouter } from './workflow.routes.js';
+import { observabilityRouter } from './observability.routes.js';
+import { copilotRouter } from './copilot.routes.js';
 import { Product } from '../models/Product.js';
 import { Transaction } from '../models/Transaction.js';
+import { Branch } from '../models/Branch.js';
 import { redis } from '../database/redis.js';
 
 const io = SocketManager.getInstance();
@@ -108,6 +112,14 @@ apiRouter.post('/transactions', async (req, res, next) => {
       }
     }
 
+    const user = (req as any).user;
+    const resolvedCashierId = user?.id || 'cashier-1';
+    const resolvedCashierName = cashierName || user?.username || 'POS Cashier';
+
+    const activeBranch = await Branch.findOne({ isActive: true });
+    const resolvedBranchId = activeBranch?._id?.toString() || 'branch-1';
+    const resolvedBranchName = branchName || activeBranch?.name || 'Primary Branch';
+
     const newTransaction = await Transaction.create({
       transactionNumber: `TX-${Date.now().toString().slice(-6)}`,
       type: 'SALE',
@@ -118,10 +130,10 @@ apiRouter.post('/transactions', async (req, res, next) => {
       discount: Number(discount || 0),
       total: Number(total),
       paymentMethod: paymentMethod || 'CASH',
-      cashierId: 'cashier-1',
-      cashierName: cashierName || 'Jane Doe',
-      branchId: 'branch-1',
-      branchName: branchName || 'Main HQ',
+      cashierId: resolvedCashierId,
+      cashierName: resolvedCashierName,
+      branchId: resolvedBranchId,
+      branchName: resolvedBranchName,
     });
 
     await redis.del(['products:all', 'transactions:all']);
@@ -162,3 +174,6 @@ apiRouter.use('/currency', currencyRouter);
 apiRouter.use('/integrations', integrationRouter);
 apiRouter.use('/checkout', checkoutRouter);
 apiRouter.use('/reports', reportingRouter);
+apiRouter.use('/workflows', workflowRouter);
+apiRouter.use('/observability', observabilityRouter);
+apiRouter.use('/copilot', copilotRouter);

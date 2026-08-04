@@ -79,6 +79,8 @@ export const SYSTEM_PERMISSIONS = {
   FINANCE_WRITE: 'finance:write',
   REPORTS_READ: 'reports:read',
   REPORTS_WRITE: 'reports:write',
+  WORKFLOWS_READ: 'workflows:read',
+  WORKFLOWS_WRITE: 'workflows:write',
 } as const;
 
 export type SystemPermission = (typeof SYSTEM_PERMISSIONS)[keyof typeof SYSTEM_PERMISSIONS];

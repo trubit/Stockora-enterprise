@@ -19,29 +19,52 @@ import PrintIcon from '@mui/icons-material/Print';
 import BarcodeIcon from '@mui/icons-material/QrCodeScanner';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { toast } from 'react-hot-toast';
+import { useQuery } from '@tanstack/react-query';
 import { initBarcodeScanner, WebUSBPrinter } from '../../utils/hardware.ts';
+import { apiClient } from '../../api/client.ts';
+import { useAuthStore } from '../../store/auth.ts';
 
 const textFieldStyle = { mt: 1 };
 
 export default function HardwareControl() {
+  const { user } = useAuthStore();
+  const { data: companySettings } = useQuery({
+    queryKey: ['companySettings'],
+    queryFn: async () => {
+      try {
+        const { data } = await apiClient.get('/org/settings');
+        return data;
+      } catch {
+        return null;
+      }
+    },
+  });
+
+  const companyName = companySettings?.name || 'Stockora Enterprise';
+  const companyAddress = companySettings?.address || 'Main Location';
+  const cashierName = user?.username || 'Active Cashier';
+
   const [scannedLogs, setScannedLogs] = useState<string[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [printerInstance] = useState(() => new WebUSBPrinter());
-  const [testReceiptText, setTestReceiptText] = useState(
-    '================================\n' +
-      '        STOCKORA MOCK POS       \n' +
-      '       123 Main Street Rd       \n' +
+  const [testReceiptText, setTestReceiptText] = useState('');
+
+  useEffect(() => {
+    setTestReceiptText(
       '================================\n' +
-      'Item A               x1  $15.00\n' +
-      'Item B               x2  $30.00\n' +
-      '--------------------------------\n' +
-      'Subtotal:                $45.00\n' +
-      'Tax (8% GST):             $3.60\n' +
-      'TOTAL:                   $48.60\n' +
-      '================================\n' +
-      '       Thank you for shopping!  \n' +
-      '================================\n'
-  );
+        `        ${companyName.toUpperCase()} POS       \n` +
+        `       ${companyAddress}       \n` +
+        `       Cashier: ${cashierName}       \n` +
+        '================================\n' +
+        'Sample Item          x1  $15.00\n' +
+        '--------------------------------\n' +
+        'Subtotal:                $15.00\n' +
+        'TOTAL:                   $15.00\n' +
+        '================================\n' +
+        '       Thank you for shopping!  \n' +
+        '================================\n'
+    );
+  }, [companyName, companyAddress, cashierName]);
 
   // Bind barcode scanner event listener
   useEffect(() => {

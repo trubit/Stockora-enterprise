@@ -101,8 +101,8 @@ export default function SalesReturns() {
       refetch();
     },
     onError: (err: unknown) => {
-      const apiErr = err as { response?: { data?: { error?: string } } };
-      const msg = apiErr.response?.data?.error || 'Failed to process return.';
+      const apiErr = err as { response?: { data?: { error?: { message?: string } } } };
+      const msg = apiErr.response?.data?.error?.message || 'Failed to process return.';
       toast.error(msg);
     },
   });
