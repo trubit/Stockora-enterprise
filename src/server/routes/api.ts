@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import mongoose from 'mongoose';
+import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { SocketManager } from '../sockets/manager.js';
 import { authRouter } from './auth.routes.js';
 import { userRouter } from './user.routes.js';
@@ -112,7 +113,7 @@ apiRouter.post('/transactions', async (req, res, next) => {
       }
     }
 
-    const user = (req as any).user;
+    const user = (req as AuthenticatedRequest).user;
     const resolvedCashierId = user?.id || 'cashier-1';
     const resolvedCashierName = cashierName || user?.username || 'POS Cashier';
 

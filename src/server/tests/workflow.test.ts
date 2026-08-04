@@ -63,7 +63,7 @@ describe('Phase 26 Workflow bpm, rules, and SLA tests', () => {
 
   it('should start a workflow, process steps, create approval tasks, and complete after response', async () => {
     // 1. Definition configuration
-    const definition = await WorkflowDefinition.create({
+    await WorkflowDefinition.create({
       companyId,
       name: 'Sales Approval Flow',
       triggerEvent: 'SALE_COMPLETED',

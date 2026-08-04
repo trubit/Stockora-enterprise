@@ -19,11 +19,10 @@ export class WorkflowService {
   /**
    * Start a workflow instance triggered by an event
    */
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   public static async startWorkflow(
     companyId: string,
     triggerEvent: string,
-    variables: Record<string, any>
+    variables: Record<string, unknown>
   ): Promise<IWorkflowInstance | null> {
     const definition = await WorkflowDefinition.findOne({
       companyId: new mongoose.Types.ObjectId(companyId),

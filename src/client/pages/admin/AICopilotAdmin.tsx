@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Box,
   Card,
@@ -26,7 +27,17 @@ interface PromptTemplate {
 }
 
 export default function AICopilotAdmin() {
-  const [templates, setTemplates] = useState<PromptTemplate[]>([]);
+  const { data: templates = [], refetch: fetchTemplates } = useQuery({
+    queryKey: ['copilotTemplates'],
+    queryFn: async () => {
+      try {
+        const res = await apiClient.get('/copilot/templates');
+        return res.data.data as PromptTemplate[];
+      } catch {
+        return [];
+      }
+    },
+  });
   const [promptName, setPromptName] = useState('');
   const [promptText, setPromptText] = useState('');
   const [promptCategory, setPromptCategory] = useState('INSIGHTS');
@@ -35,19 +46,6 @@ export default function AICopilotAdmin() {
   const [docTitle, setDocTitle] = useState('');
   const [docContent, setDocContent] = useState('');
   const [docCategory, setDocCategory] = useState<'PRODUCT' | 'POLICY' | 'SOP' | 'FAQ'>('SOP');
-
-  useEffect(() => {
-    fetchTemplates();
-  }, []);
-
-  const fetchTemplates = async () => {
-    try {
-      const res = await apiClient.get('/copilot/templates');
-      setTemplates(res.data.data);
-    } catch {
-      // Quiet fail
-    }
-  };
 
   const handleSaveTemplate = async () => {
     if (!promptName || !promptText) {
@@ -192,7 +190,9 @@ export default function AICopilotAdmin() {
                     size="small"
                     label="Doc Category"
                     value={docCategory}
-                    onChange={(e) => setDocCategory(e.target.value as any)}
+                    onChange={(e) =>
+                      setDocCategory(e.target.value as 'PRODUCT' | 'POLICY' | 'SOP' | 'FAQ')
+                    }
                     SelectProps={{ style: { color: '#fff' } }}
                   >
                     <MenuItem value="PRODUCT">Product Specifications</MenuItem>

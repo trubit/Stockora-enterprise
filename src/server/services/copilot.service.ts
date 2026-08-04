@@ -40,7 +40,7 @@ export class CopilotService {
       cost: Number((inputTokens * 0.000001).toFixed(6)),
     });
 
-    let aiReply = '';
+    let aiReply: string;
     try {
       // Outbound inference call wrapped in exponential backoff resiliency limits
       aiReply = await ResilientExecutor.execute({ name: `copilot-chat:${sessionId}` }, async () => {
@@ -70,7 +70,7 @@ export class CopilotService {
   /**
    * Fetch chat logs history matching active session ID
    */
-  public static async getHistory(sessionId: string): Promise<any[]> {
+  public static async getHistory(sessionId: string): Promise<unknown[]> {
     return AICopilotMessage.find({ sessionId }).sort({ createdAt: 1 });
   }
 }

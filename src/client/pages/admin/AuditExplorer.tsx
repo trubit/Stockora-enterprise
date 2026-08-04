@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Box,
   Card,
@@ -36,30 +37,24 @@ interface AuditLogItem {
 }
 
 export default function AuditExplorer() {
-  const [logs, setLogs] = useState<AuditLogItem[]>([]);
   const [targetModel, setTargetModel] = useState('');
   const [action, setAction] = useState('');
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchLogs();
-  }, []);
+  const { data: logs = [], isLoading: loading } = useQuery({
+    queryKey: ['auditLogs', targetModel, action],
+    queryFn: async () => {
+      try {
+        const params: Record<string, string> = {};
+        if (targetModel) params.targetModel = targetModel;
+        if (action) params.action = action;
 
-  const fetchLogs = async () => {
-    setLoading(true);
-    try {
-      const params: Record<string, string> = {};
-      if (targetModel) params.targetModel = targetModel;
-      if (action) params.action = action;
-
-      const res = await apiClient.get('/observability/audit', { params });
-      setLogs(res.data.data);
-    } catch {
-      // Quiet fail
-    } finally {
-      setLoading(false);
-    }
-  };
+        const res = await apiClient.get('/observability/audit', { params });
+        return res.data.data as AuditLogItem[];
+      } catch {
+        return [];
+      }
+    },
+  });
 
   return (
     <Box p={3}>

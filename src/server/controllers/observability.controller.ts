@@ -3,7 +3,6 @@ import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { ObservabilityService } from '../services/observability.service.js';
 import { Incident } from '../models/Incident.js';
 import { AuditLog } from '../models/AuditLog.js';
-import { AppError } from '../errors/AppError.js';
 import { Company } from '../models/Company.js';
 
 export class ObservabilityController {
@@ -54,7 +53,7 @@ export class ObservabilityController {
       const companyId = await ObservabilityController.getCompanyId();
 
       const { action, targetModel, limit = 50 } = req.query;
-      const query: Record<string, string> = {};
+      const query: Record<string, string> = { companyId };
 
       if (action) query.action = action as string;
       if (targetModel) query.targetModel = targetModel as string;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Box,
   Card,
@@ -26,9 +26,31 @@ interface IncidentItem {
 }
 
 export default function OperationsCenter() {
-  const [metrics, setMetrics] = useState<any>(null);
-  const [incidents, setIncidents] = useState<IncidentItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: metrics } = useQuery({
+    queryKey: ['observabilityMetrics'],
+    queryFn: async () => {
+      try {
+        const res = await apiClient.get('/observability/metrics');
+        return res.data.data;
+      } catch {
+        return null;
+      }
+    },
+    refetchInterval: 15000,
+  });
+
+  const { data: incidents = [], isLoading: loading } = useQuery({
+    queryKey: ['observabilityIncidents'],
+    queryFn: async () => {
+      try {
+        const res = await apiClient.get('/observability/incidents');
+        return res.data.data as IncidentItem[];
+      } catch {
+        return [];
+      }
+    },
+    refetchInterval: 15000,
+  });
 
   // Simulated latency chart data
   const data = [
@@ -39,27 +61,6 @@ export default function OperationsCenter() {
     { time: '10:20', latency: 55 },
     { time: '10:25', latency: 42 },
   ];
-
-  useEffect(() => {
-    fetchOperationsData();
-    const interval = setInterval(fetchOperationsData, 15000); // Poll every 15s
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchOperationsData = async () => {
-    try {
-      const [resMetrics, resIncidents] = await Promise.all([
-        apiClient.get('/observability/metrics'),
-        apiClient.get('/observability/incidents'),
-      ]);
-      setMetrics(resMetrics.data.data);
-      setIncidents(resIncidents.data.data);
-    } catch {
-      // Quiet fail to prevent loops
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getStatusColor = (status: string) => {
     return status === 'HEALTHY' ? 'success' : 'error';

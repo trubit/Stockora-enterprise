@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 import { TelemetryMetric } from '../models/TelemetryMetric.js';
 import { Incident } from '../models/Incident.js';
 import { ObservabilityService } from '../services/observability.service.js';
-import { AlertingService } from '../services/alerting.service.js';
 
 describe('Phase 27 Observability telemetry, metrics, and incident audits', () => {
   const companyId = new mongoose.Types.ObjectId();

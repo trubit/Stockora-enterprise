@@ -31,8 +31,7 @@ export class RuleService {
   /**
    * Evaluate a rule against variables payload
    */
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  public static evaluateRule(rule: IBusinessRule, payload: Record<string, any>): boolean {
+  public static evaluateRule(rule: IBusinessRule, payload: Record<string, unknown>): boolean {
     if (!rule.conditions || rule.conditions.length === 0) return true;
 
     // Default strategy is AND matching: all conditions must pass
@@ -45,11 +44,10 @@ export class RuleService {
   /**
    * Evaluate and fetch matching rules for an event
    */
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   public static async evaluateRulesForEvent(
     companyId: string,
     triggerEvent: string,
-    payload: Record<string, any>
+    payload: Record<string, unknown>
   ): Promise<IBusinessRule[]> {
     const rules = await BusinessRule.find({
       companyId,

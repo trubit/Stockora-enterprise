@@ -1,8 +1,7 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { Response, NextFunction } from 'express';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { WorkflowDefinition } from '../models/WorkflowDefinition.js';
 import { WorkflowInstance } from '../models/WorkflowInstance.js';
-import { Task } from '../models/Task.js';
 import { WorkflowService } from '../services/workflow.service.js';
 import { TaskService } from '../services/task.service.js';
 import { AppError } from '../errors/AppError.js';

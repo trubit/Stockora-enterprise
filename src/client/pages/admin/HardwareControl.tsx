@@ -50,20 +50,22 @@ export default function HardwareControl() {
   const [testReceiptText, setTestReceiptText] = useState('');
 
   useEffect(() => {
-    setTestReceiptText(
-      '================================\n' +
-        `        ${companyName.toUpperCase()} POS       \n` +
-        `       ${companyAddress}       \n` +
-        `       Cashier: ${cashierName}       \n` +
+    queueMicrotask(() => {
+      setTestReceiptText(
         '================================\n' +
-        'Sample Item          x1  $15.00\n' +
-        '--------------------------------\n' +
-        'Subtotal:                $15.00\n' +
-        'TOTAL:                   $15.00\n' +
-        '================================\n' +
-        '       Thank you for shopping!  \n' +
-        '================================\n'
-    );
+          `        ${companyName.toUpperCase()} POS       \n` +
+          `       ${companyAddress}       \n` +
+          `       Cashier: ${cashierName}       \n` +
+          '================================\n' +
+          'Sample Item          x1  $15.00\n' +
+          '--------------------------------\n' +
+          'Subtotal:                $15.00\n' +
+          'TOTAL:                   $15.00\n' +
+          '================================\n' +
+          '       Thank you for shopping!  \n' +
+          '================================\n'
+      );
+    });
   }, [companyName, companyAddress, cashierName]);
 
   // Bind barcode scanner event listener

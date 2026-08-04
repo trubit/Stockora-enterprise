@@ -58,8 +58,9 @@ export class WebUSBPrinter {
       await this.device.selectConfiguration(1);
       await this.device.claimInterface(0);
       return true;
-    } catch (err: any) {
-      if (err && err.name === 'NotFoundError') {
+    } catch (err: unknown) {
+      const error = err as { name?: string };
+      if (error && error.name === 'NotFoundError') {
         console.warn('[WebUSB Connect] Device selection cancelled by user or no device selected.');
       } else {
         console.error('[WebUSB Connect Error]', err);

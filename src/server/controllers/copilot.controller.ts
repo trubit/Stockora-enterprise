@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { Response, NextFunction } from 'express';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { CopilotService } from '../services/copilot.service.js';
 import { PromptTemplate } from '../models/PromptTemplate.js';

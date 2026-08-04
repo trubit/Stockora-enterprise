@@ -37,7 +37,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import ScanIcon from '@mui/icons-material/QrCodeScanner';
 import CheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
-import type { Product, TransactionItem, Transaction } from '../../shared/types.js';
+import type { Product, TransactionItem, Transaction, Branch } from '../../shared/types.js';
 import { useAuthStore } from '../store/auth.ts';
 import { toast } from 'react-hot-toast';
 import PageHeader from '../components/PageHeader.tsx';
@@ -104,7 +104,7 @@ export default function POS() {
     },
   });
 
-  const activeBranchName = user?.branchName || (branches as any[])[0]?.name || 'Primary Branch';
+  const activeBranchName = user?.branchName || (branches as Branch[])[0]?.name || 'Primary Branch';
   const activeCashierName = user?.username || 'POS Cashier';
 
   const barcodeInputRef = useRef<HTMLInputElement>(null);
@@ -354,17 +354,17 @@ export default function POS() {
     const providerParam = params.get('provider');
 
     if (refParam && providerParam) {
-      setCheckoutReference(refParam);
-      setPaymentProvider(providerParam.toUpperCase() as 'PAYSTACK' | 'STRIPE');
-      setCheckoutStep('AWAITING_VERIFY');
-      setCheckoutOpen(true);
-
       // Clean the URL query params so they don't trigger verification on refresh
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
 
-      // Trigger automatic verification immediately
-      setVerifyingPayment(true);
+      queueMicrotask(() => {
+        setCheckoutReference(refParam);
+        setPaymentProvider(providerParam.toUpperCase() as 'PAYSTACK' | 'STRIPE');
+        setCheckoutStep('AWAITING_VERIFY');
+        setCheckoutOpen(true);
+        setVerifyingPayment(true);
+      });
       apiClient
         .post(
           '/checkout/verify',

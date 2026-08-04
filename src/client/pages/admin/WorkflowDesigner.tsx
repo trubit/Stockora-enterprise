@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Box,
   Card,
@@ -38,25 +39,22 @@ interface Workflow {
 }
 
 export default function WorkflowDesigner() {
-  const [workflows, setWorkflows] = useState<Workflow[]>([]);
+  const { data: workflows = [], refetch: fetchWorkflows } = useQuery({
+    queryKey: ['workflowDefinitions'],
+    queryFn: async () => {
+      try {
+        const res = await apiClient.get('/workflows/definitions');
+        return res.data.data as Workflow[];
+      } catch {
+        return [];
+      }
+    },
+  });
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [triggerEvent, setTriggerEvent] = useState('SALE_COMPLETED');
   const [steps, setSteps] = useState<Step[]>([]);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    fetchWorkflows();
-  }, []);
-
-  const fetchWorkflows = async () => {
-    try {
-      const res = await apiClient.get('/workflows/definitions');
-      setWorkflows(res.data.data);
-    } catch {
-      toast.error('Failed to load workflows.');
-    }
-  };
 
   const addStep = () => {
     const newStep: Step = {

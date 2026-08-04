@@ -28,16 +28,16 @@ export default function AICopilot() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [sessionId] = useState(`session-${Date.now()}`);
+  const [sessionId] = useState(() => `session-${Date.now()}`);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const handleSend = async (textToSend?: string) => {
     const text = textToSend || input;

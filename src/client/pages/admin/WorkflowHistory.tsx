@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Box,
   Table,
@@ -33,23 +33,17 @@ interface WorkflowInstance {
 }
 
 export default function WorkflowHistory() {
-  const [instances, setInstances] = useState<WorkflowInstance[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchInstances();
-  }, []);
-
-  const fetchInstances = async () => {
-    try {
-      const res = await apiClient.get('/workflows/instances');
-      setInstances(res.data.data);
-    } catch {
-      // Quiet fail or standard log
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: instances = [], isLoading: loading } = useQuery({
+    queryKey: ['workflowInstances'],
+    queryFn: async () => {
+      try {
+        const res = await apiClient.get('/workflows/instances');
+        return res.data.data as WorkflowInstance[];
+      } catch {
+        return [];
+      }
+    },
+  });
 
   const getStatusChipColor = (status: string) => {
     switch (status) {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Box,
   Card,
@@ -29,23 +29,17 @@ interface TaskItem {
 }
 
 export default function ApprovalConsole() {
-  const [tasks, setTasks] = useState<TaskItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  const fetchTasks = async () => {
-    try {
+  const {
+    data: tasks = [],
+    isLoading: loading,
+    refetch: fetchTasks,
+  } = useQuery({
+    queryKey: ['workflowTasks'],
+    queryFn: async () => {
       const res = await apiClient.get('/workflows/tasks');
-      setTasks(res.data.data);
-    } catch {
-      toast.error('Failed to load pending tasks.');
-    } finally {
-      setLoading(false);
-    }
-  };
+      return res.data.data as TaskItem[];
+    },
+  });
 
   const handleAction = async (taskId: string, action: 'APPROVE' | 'REJECT') => {
     try {
