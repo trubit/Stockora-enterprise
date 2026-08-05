@@ -40,7 +40,7 @@ import CheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
 import type { Product, TransactionItem, Transaction, Branch } from '../../shared/types.js';
 import { useAuthStore } from '../store/auth.ts';
 import { toast } from 'react-hot-toast';
-import ReceiptModal, { type ReceiptData } from '../components/ReceiptModal.tsx';
+import ReceiptModal, { type ReceiptData } from '../components/ReceiptModal';
 import PrintIcon from '@mui/icons-material/Print';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import PageHeader from '../components/PageHeader.tsx';
