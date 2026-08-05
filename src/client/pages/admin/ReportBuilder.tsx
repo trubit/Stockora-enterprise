@@ -30,7 +30,7 @@ interface ReportBuilderForm {
 }
 
 export default function ReportBuilder() {
-  const { register, handleSubmit, reset, watch } = useForm<ReportBuilderForm>({
+  const { register, handleSubmit, reset } = useForm<ReportBuilderForm>({
     defaultValues: {
       name: '',
       templateId: '64d4b1a4c9b841a4c9b84002',
@@ -89,7 +89,6 @@ export default function ReportBuilder() {
 
                   <TextField
                     {...register('templateId')}
-                    value={watch('templateId') || ''}
                     fullWidth
                     select
                     label="Target Base Template"
@@ -102,13 +101,7 @@ export default function ReportBuilder() {
                     ))}
                   </TextField>
 
-                  <TextField
-                    {...register('chartType')}
-                    value={watch('chartType') || ''}
-                    fullWidth
-                    select
-                    label="Default Chart Type"
-                  >
+                  <TextField {...register('chartType')} fullWidth select label="Default Chart Type">
                     <MenuItem value="line">Line Chart</MenuItem>
                     <MenuItem value="bar">Bar Chart</MenuItem>
                     <MenuItem value="pie">Pie Chart</MenuItem>
