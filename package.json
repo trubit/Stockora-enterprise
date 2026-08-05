@@ -13,6 +13,7 @@
     "start": "node dist/server/src/server/index.js",
     "preview": "vite preview",
     "lint": "eslint .",
+    "lint:ci": "eslint . --quiet",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,json,md}\"",
     "type-check": "tsc -b tsconfig.app.json --noEmit && tsc -p tsconfig.server.json --noEmit",
