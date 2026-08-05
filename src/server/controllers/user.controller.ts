@@ -17,7 +17,7 @@ export class UserController {
         return next(new NotFoundError('User not found.'));
       }
       const role = await Role.findOne({ name: user.roleName });
-      const userObj = user.toObject() as Record<string, unknown>;
+      const userObj = (user.toObject() as unknown) as Record<string, unknown>;
       userObj.permissions = role ? role.permissions : [];
       res.json(userObj);
     } catch (err: unknown) {

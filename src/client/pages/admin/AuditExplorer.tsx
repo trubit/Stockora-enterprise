@@ -40,7 +40,7 @@ export default function AuditExplorer() {
   const [targetModel, setTargetModel] = useState('');
   const [action, setAction] = useState('');
 
-  const { data: logs = [], isLoading: loading } = useQuery({
+  const { data: logs = [], isLoading: loading, refetch: fetchLogs } = useQuery({
     queryKey: ['auditLogs', targetModel, action],
     queryFn: async () => {
       try {
@@ -115,7 +115,7 @@ export default function AuditExplorer() {
                 variant="contained"
                 fullWidth
                 startIcon={<SearchIcon />}
-                onClick={fetchLogs}
+                onClick={() => fetchLogs()}
                 sx={{
                   background: 'linear-gradient(45deg, #9C27B0 30%, #E91E63 90%)',
                   color: 'white',
