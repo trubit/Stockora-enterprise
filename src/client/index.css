@@ -167,18 +167,21 @@ body {
 .gradient-text {
   background: linear-gradient(135deg, #d8b4fe 0%, #8b5cf6 50%, #4f46e5 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .emerald-gradient-text {
   background: linear-gradient(135deg, #34d399 0%, #059669 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .sky-gradient-text {
   background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
