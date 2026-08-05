@@ -40,6 +40,9 @@ import CheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
 import type { Product, TransactionItem, Transaction, Branch } from '../../shared/types.js';
 import { useAuthStore } from '../store/auth.ts';
 import { toast } from 'react-hot-toast';
+import ReceiptModal, { type ReceiptData } from '../components/ReceiptModal.tsx';
+import PrintIcon from '@mui/icons-material/Print';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import PageHeader from '../components/PageHeader.tsx';
 import {
   queueOfflineTransaction,
@@ -90,6 +93,11 @@ export default function POS() {
   const [verifyingPayment, setVerifyingPayment] = useState(false);
   const [initializingPayment, setInitializingPayment] = useState(false);
 
+  // Receipt Modal and Recent Transactions states
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
+  const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+  const [recentSalesOpen, setRecentSalesOpen] = useState(false);
+
   const { user, accessToken } = useAuthStore();
 
   const { data: branches = [] } = useQuery({
@@ -106,6 +114,55 @@ export default function POS() {
 
   const activeBranchName = user?.branchName || (branches as Branch[])[0]?.name || 'Primary Branch';
   const activeCashierName = user?.username || 'POS Cashier';
+
+  // Recent transactions list
+  const { data: recentTransactions = [] } = useQuery({
+    queryKey: ['transactions'],
+    queryFn: async () => {
+      try {
+        const { data } = await apiClient.get('/transactions');
+        return data as Transaction[];
+      } catch {
+        return [];
+      }
+    },
+  });
+
+  const triggerPrintReceipt = (
+    tx: Omit<Partial<Transaction>, 'paymentMethod'> & {
+      items?: Array<TransactionItem | Record<string, unknown>>;
+      paymentMethod?: string;
+    },
+    customEmail?: string
+  ) => {
+    const rawItems = tx.items || [];
+    const items = rawItems.map((i) => {
+      const itemObj = i as unknown as Record<string, unknown>;
+      const productName = String(itemObj.productName || 'Item');
+      const sku = String(itemObj.sku || 'N/A');
+      const quantity = Number(itemObj.quantity || 1);
+      const price = Number(itemObj.price ?? itemObj.unitPrice ?? 0);
+      const total = Number(itemObj.total ?? itemObj.lineTotal ?? quantity * price);
+      return { productName, sku, quantity, price, total };
+    });
+
+    const data: ReceiptData = {
+      transactionNumber: tx.transactionNumber || generateOfflineTransactionNumber(),
+      createdAt: tx.createdAt || new Date().toISOString(),
+      cashierName: tx.cashierName || activeCashierName,
+      branchName: tx.branchName || activeBranchName,
+      customerEmail: customEmail || customerEmail,
+      items,
+      subtotal: tx.subtotal ?? items.reduce((acc, curr) => acc + curr.total, 0),
+      tax: tx.tax ?? 0,
+      discount: tx.discount ?? 0,
+      total: tx.total ?? items.reduce((acc, curr) => acc + curr.total, 0),
+      paymentMethod: String(tx.paymentMethod || paymentMethod),
+    };
+
+    setReceiptData(data);
+    setReceiptModalOpen(true);
+  };
 
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
@@ -160,8 +217,16 @@ export default function POS() {
       const { data } = await apiClient.post<Transaction>('/transactions', transactionData);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data: Transaction) => {
       toast.success('Transaction Completed Successfully!');
+      triggerPrintReceipt({
+        ...data,
+        items: cart,
+        subtotal,
+        tax,
+        discount,
+        total,
+      });
       setCart([]);
       setDiscount(0);
       // Invalidate queries to fetch updated stock quantities
@@ -326,6 +391,18 @@ export default function POS() {
 
       if (data.success && data.status === 'COMPLETED') {
         toast.success('Payment Verified & Order Placed Successfully!');
+        triggerPrintReceipt(
+          {
+            transactionNumber: checkoutReference || generateOfflineTransactionNumber(),
+            items: cart,
+            subtotal,
+            tax,
+            discount,
+            total,
+            paymentMethod: `${paymentProvider} (${paymentMethod})`,
+          },
+          customerEmail
+        );
         setCheckoutStep('COMPLETED');
         setCart([]);
         setDiscount(0);
@@ -427,9 +504,10 @@ export default function POS() {
     };
 
     if (!navigator.onLine) {
+      const txNum = generateOfflineTransactionNumber();
       queueOfflineTransaction({
         id: generateOfflineId(),
-        transactionNumber: generateOfflineTransactionNumber(),
+        transactionNumber: txNum,
         items: cart.map((item) => ({
           productId: item.productId,
           productName: item.productName,
@@ -449,6 +527,15 @@ export default function POS() {
       }).then(async () => {
         const count = await getPendingQueueCount();
         setOfflineCount(count);
+        triggerPrintReceipt({
+          transactionNumber: txNum,
+          items: cart,
+          subtotal,
+          tax,
+          discount,
+          total,
+          paymentMethod: `${paymentMethod} (OFFLINE)`,
+        });
         setCart([]);
         setDiscount(0);
         toast.success('Offline checkout stored locally. Will sync automatically.');
@@ -469,36 +556,62 @@ export default function POS() {
         badgeColor={isOnline ? 'secondary' : 'warning'}
         action={
           <Box
-            component="form"
-            onSubmit={handleBarcodeSubmit}
-            sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' } }}
+            sx={{
+              display: 'flex',
+              gap: 1.5,
+              width: { xs: '100%', sm: 'auto' },
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
           >
-            <TextField
-              inputRef={barcodeInputRef}
-              label="Barcode Scanner"
-              variant="outlined"
-              size="small"
-              value={barcodeInput}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setBarcodeInput(e.target.value)}
-              placeholder="Scan e.g. 40012011..."
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <ScanIcon fontSize="small" color="primary" />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ flexGrow: 1, width: { xs: '100%', sm: 220 } }}
-            />
             <Button
-              type="submit"
-              variant="contained"
-              color="primary"
+              variant="outlined"
+              color="inherit"
               size="small"
-              sx={{ px: 2.5, fontWeight: 700, borderRadius: '8px' }}
+              onClick={() => setRecentSalesOpen(true)}
+              startIcon={<ReceiptLongIcon color="secondary" />}
+              sx={{
+                fontWeight: 700,
+                borderRadius: '8px',
+                borderColor: 'rgba(255,255,255,0.2)',
+                whiteSpace: 'nowrap',
+              }}
             >
-              Scan
+              Recent Receipts
             </Button>
+
+            <Box
+              component="form"
+              onSubmit={handleBarcodeSubmit}
+              sx={{ display: 'flex', gap: 1, flexGrow: 1 }}
+            >
+              <TextField
+                inputRef={barcodeInputRef}
+                label="Barcode Scanner"
+                variant="outlined"
+                size="small"
+                value={barcodeInput}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setBarcodeInput(e.target.value)}
+                placeholder="Scan e.g. 40012011..."
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <ScanIcon fontSize="small" color="primary" />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ flexGrow: 1, width: { xs: '100%', sm: 200 } }}
+              />
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                size="small"
+                sx={{ px: 2.5, fontWeight: 700, borderRadius: '8px' }}
+              >
+                Scan
+              </Button>
+            </Box>
           </Box>
         }
       />
@@ -1033,6 +1146,119 @@ export default function POS() {
             </Button>
           )}
         </DialogActions>
+      </Dialog>
+
+      {/* Printable Customer Receipt Invoice Modal */}
+      <ReceiptModal
+        open={receiptModalOpen}
+        onClose={() => setReceiptModalOpen(false)}
+        receiptData={receiptData}
+      />
+
+      {/* Recent Sales & Receipts Dialog */}
+      <Dialog
+        open={recentSalesOpen}
+        onClose={() => setRecentSalesOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: '#0f131f',
+            backgroundImage: 'none',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '16px',
+            color: '#f3f4f6',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: 800,
+            fontSize: '1.25rem',
+            pb: 1,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ReceiptLongIcon color="secondary" />
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              Recent Sales & Printable Invoice Receipts
+            </Typography>
+          </Box>
+          <Button onClick={() => setRecentSalesOpen(false)} color="inherit" size="small">
+            Close
+          </Button>
+        </DialogTitle>
+        <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+          {recentTransactions.length === 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
+              No recent transactions recorded.
+            </Typography>
+          ) : (
+            <List disablePadding>
+              {recentTransactions.slice(0, 15).map((tx, idx) => (
+                <Box key={tx.id || tx._id || idx}>
+                  <ListItem
+                    sx={{
+                      py: 1.5,
+                      px: 2,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      bgcolor: 'rgba(255,255,255,0.02)',
+                      borderRadius: '8px',
+                      mb: 1,
+                    }}
+                  >
+                    <Box>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{ fontWeight: 800, fontFamily: 'monospace', color: 'primary.light' }}
+                      >
+                        {tx.transactionNumber || `TX-${tx.id || idx}`}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {tx.createdAt ? new Date(tx.createdAt).toLocaleString() : 'Recent'} •
+                        Cashier: {tx.cashierName || 'Staff'} • {tx.items?.length || 0} item(s)
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Box sx={{ textAlign: 'right' }}>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ fontWeight: 900, color: 'success.light' }}
+                        >
+                          ${(tx.total || 0).toFixed(2)}
+                        </Typography>
+                        <Chip
+                          label={tx.paymentMethod || 'CASH'}
+                          size="small"
+                          sx={{ height: 18, fontSize: '0.625rem', fontWeight: 800 }}
+                        />
+                      </Box>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        startIcon={<PrintIcon />}
+                        onClick={() => {
+                          triggerPrintReceipt(tx);
+                          setRecentSalesOpen(false);
+                        }}
+                        sx={{ fontWeight: 700, borderRadius: '6px' }}
+                      >
+                        Print Invoice
+                      </Button>
+                    </Box>
+                  </ListItem>
+                </Box>
+              ))}
+            </List>
+          )}
+        </DialogContent>
       </Dialog>
     </Box>
   );
