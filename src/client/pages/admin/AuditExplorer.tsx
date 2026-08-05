@@ -40,7 +40,11 @@ export default function AuditExplorer() {
   const [targetModel, setTargetModel] = useState('');
   const [action, setAction] = useState('');
 
-  const { data: logs = [], isLoading: loading, refetch: fetchLogs } = useQuery({
+  const {
+    data: logs = [],
+    isLoading: loading,
+    refetch: fetchLogs,
+  } = useQuery({
     queryKey: ['auditLogs', targetModel, action],
     queryFn: async () => {
       try {
