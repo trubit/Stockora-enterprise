@@ -139,10 +139,16 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ open, onClose, recei
 
           {/* RECEIPT HEADER */}
           <Box sx={{ textAlign: 'center', mb: 2 }}>
-            <Typography variant="h5" sx={{ fontWeight: 900, letterSpacing: -0.5, color: '#111827' }}>
+            <Typography
+              variant="h5"
+              sx={{ fontWeight: 900, letterSpacing: -0.5, color: '#111827' }}
+            >
               STOCKORA ENTERPRISE
             </Typography>
-            <Typography variant="caption" sx={{ color: '#4b5563', display: 'block', fontWeight: 600 }}>
+            <Typography
+              variant="caption"
+              sx={{ color: '#4b5563', display: 'block', fontWeight: 600 }}
+            >
               {receiptData.branchName || 'Headquarters Branch'} • POS Sales Terminal
             </Typography>
             <Typography variant="caption" sx={{ color: '#6b7280', display: 'block' }}>
@@ -213,16 +219,27 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ open, onClose, recei
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ color: '#6b7280', fontWeight: 700, fontSize: '0.725rem', px: 0 }}>
+                  <TableCell
+                    sx={{ color: '#6b7280', fontWeight: 700, fontSize: '0.725rem', px: 0 }}
+                  >
                     ITEM DESCRIPTION
                   </TableCell>
-                  <TableCell align="center" sx={{ color: '#6b7280', fontWeight: 700, fontSize: '0.725rem', px: 0 }}>
+                  <TableCell
+                    align="center"
+                    sx={{ color: '#6b7280', fontWeight: 700, fontSize: '0.725rem', px: 0 }}
+                  >
                     QTY
                   </TableCell>
-                  <TableCell align="right" sx={{ color: '#6b7280', fontWeight: 700, fontSize: '0.725rem', px: 0 }}>
+                  <TableCell
+                    align="right"
+                    sx={{ color: '#6b7280', fontWeight: 700, fontSize: '0.725rem', px: 0 }}
+                  >
                     PRICE
                   </TableCell>
-                  <TableCell align="right" sx={{ color: '#6b7280', fontWeight: 700, fontSize: '0.725rem', px: 0 }}>
+                  <TableCell
+                    align="right"
+                    sx={{ color: '#6b7280', fontWeight: 700, fontSize: '0.725rem', px: 0 }}
+                  >
                     TOTAL
                   </TableCell>
                 </TableRow>
@@ -231,20 +248,47 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ open, onClose, recei
                 {receiptData.items.map((item, index) => (
                   <TableRow key={index}>
                     <TableCell sx={{ py: 1, px: 0, borderBottom: '1px solid #f3f4f6' }}>
-                      <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.8rem', color: '#111827' }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: 700, fontSize: '0.8rem', color: '#111827' }}
+                      >
                         {item.productName}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: '#9ca3af', fontSize: '0.675rem', display: 'block' }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: '#9ca3af', fontSize: '0.675rem', display: 'block' }}
+                      >
                         SKU: {item.sku}
                       </Typography>
                     </TableCell>
-                    <TableCell align="center" sx={{ py: 1, px: 0, borderBottom: '1px solid #f3f4f6', fontWeight: 700, fontSize: '0.8rem' }}>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        py: 1,
+                        px: 0,
+                        borderBottom: '1px solid #f3f4f6',
+                        fontWeight: 700,
+                        fontSize: '0.8rem',
+                      }}
+                    >
                       {item.quantity}
                     </TableCell>
-                    <TableCell align="right" sx={{ py: 1, px: 0, borderBottom: '1px solid #f3f4f6', fontSize: '0.8rem' }}>
+                    <TableCell
+                      align="right"
+                      sx={{ py: 1, px: 0, borderBottom: '1px solid #f3f4f6', fontSize: '0.8rem' }}
+                    >
                       ${item.price.toFixed(2)}
                     </TableCell>
-                    <TableCell align="right" sx={{ py: 1, px: 0, borderBottom: '1px solid #f3f4f6', fontWeight: 800, fontSize: '0.8rem' }}>
+                    <TableCell
+                      align="right"
+                      sx={{
+                        py: 1,
+                        px: 0,
+                        borderBottom: '1px solid #f3f4f6',
+                        fontWeight: 800,
+                        fontSize: '0.8rem',
+                      }}
+                    >
                       ${item.total.toFixed(2)}
                     </TableCell>
                   </TableRow>
@@ -258,22 +302,36 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ open, onClose, recei
           {/* FINANCIAL SUMMARY BOX */}
           <Box sx={{ width: '100%', ml: 'auto', fontSize: '0.825rem', color: '#374151' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-              <Typography variant="body2" sx={{ color: '#6b7280' }}>Subtotal</Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>${receiptData.subtotal.toFixed(2)}</Typography>
+              <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                Subtotal
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                ${receiptData.subtotal.toFixed(2)}
+              </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-              <Typography variant="body2" sx={{ color: '#6b7280' }}>Sales Tax (8%)</Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>${receiptData.tax.toFixed(2)}</Typography>
+              <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                Sales Tax (8%)
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                ${receiptData.tax.toFixed(2)}
+              </Typography>
             </Box>
             {receiptData.discount > 0 && (
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5, color: '#dc2626' }}>
+              <Box
+                sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5, color: '#dc2626' }}
+              >
                 <Typography variant="body2">Discount</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>-${receiptData.discount.toFixed(2)}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                  -${receiptData.discount.toFixed(2)}
+                </Typography>
               </Box>
             )}
             <Divider sx={{ my: 1, borderColor: '#111827' }} />
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 900, color: '#111827' }}>GRAND TOTAL</Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 900, color: '#111827' }}>
+                GRAND TOTAL
+              </Typography>
               <Typography variant="h6" sx={{ fontWeight: 900, color: '#059669' }}>
                 ${receiptData.total.toFixed(2)}
               </Typography>
@@ -284,7 +342,10 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ open, onClose, recei
 
           {/* RECEIPT FOOTER */}
           <Box sx={{ textAlign: 'center', mt: 2 }}>
-            <Typography variant="caption" sx={{ fontWeight: 700, color: '#4b5563', display: 'block' }}>
+            <Typography
+              variant="caption"
+              sx={{ fontWeight: 700, color: '#4b5563', display: 'block' }}
+            >
               Thank you for shopping with us!
             </Typography>
             <Typography variant="caption" sx={{ color: '#9ca3af', fontSize: '0.65rem' }}>
@@ -298,11 +359,15 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ open, onClose, recei
                   height: 32,
                   width: '70%',
                   mx: 'auto',
-                  background: 'repeating-linear-gradient(90deg, #000 0px, #000 2px, #fff 2px, #fff 4px, #000 4px, #000 7px, #fff 7px, #fff 9px)',
+                  background:
+                    'repeating-linear-gradient(90deg, #000 0px, #000 2px, #fff 2px, #fff 4px, #000 4px, #000 7px, #fff 7px, #fff 9px)',
                   borderRadius: '2px',
                 }}
               />
-              <Typography variant="caption" sx={{ fontFamily: 'monospace', fontSize: '0.625rem', color: '#6b7280' }}>
+              <Typography
+                variant="caption"
+                sx={{ fontFamily: 'monospace', fontSize: '0.625rem', color: '#6b7280' }}
+              >
                 {receiptData.transactionNumber}
               </Typography>
             </Box>
@@ -311,7 +376,12 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ open, onClose, recei
       </DialogContent>
 
       <DialogActions className="no-print" sx={{ px: 3, pb: 2.5, gap: 1 }}>
-        <Button onClick={onClose} variant="outlined" color="inherit" sx={{ borderRadius: '8px', fontWeight: 700 }}>
+        <Button
+          onClick={onClose}
+          variant="outlined"
+          color="inherit"
+          sx={{ borderRadius: '8px', fontWeight: 700 }}
+        >
           Close
         </Button>
         <Button
