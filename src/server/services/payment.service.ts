@@ -192,7 +192,7 @@ export class PaymentService {
     // We divide Paystack's amount by 100 to get the face-value number and compare.
     // Allow a tolerance of 0.5 to account for rounding differences.
     if (Math.abs(actualAmount - expectedAmount) > 0.5) {
-      logger.error(
+      logger.warn(
         `[PaymentService] Amount mismatch for reference ${reference}. Expected: ${expectedAmount}, Actual from gateway: ${actualAmount} (${currency})`
       );
       return {
