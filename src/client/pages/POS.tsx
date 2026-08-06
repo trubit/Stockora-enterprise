@@ -37,7 +37,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import ScanIcon from '@mui/icons-material/QrCodeScanner';
 import CheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
-import type { Product, TransactionItem, Transaction, Branch } from '../../shared/types.js';
+import type { Product, TransactionItem, Transaction, Branch, Receipt } from '../../shared/types.js';
 import { useAuthStore } from '../store/auth.ts';
 import { toast } from 'react-hot-toast';
 import ReceiptModal, { type ReceiptData } from '../components/ReceiptModal';
@@ -115,13 +115,12 @@ export default function POS() {
   const activeBranchName = user?.branchName || (branches as Branch[])[0]?.name || 'Primary Branch';
   const activeCashierName = user?.username || 'POS Cashier';
 
-  // Recent transactions list
-  const { data: recentTransactions = [] } = useQuery({
-    queryKey: ['transactions'],
+  const { data: receipts = [] } = useQuery({
+    queryKey: ['receipts'],
     queryFn: async () => {
       try {
-        const { data } = await apiClient.get('/transactions');
-        return data as Transaction[];
+        const { data } = await apiClient.get('/receipts');
+        return data as Receipt[];
       } catch {
         return [];
       }
@@ -1192,14 +1191,14 @@ export default function POS() {
           </Button>
         </DialogTitle>
         <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-          {recentTransactions.length === 0 ? (
+          {receipts.length === 0 ? (
             <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
-              No recent transactions recorded.
+              No recent receipts recorded.
             </Typography>
           ) : (
             <List disablePadding>
-              {recentTransactions.slice(0, 15).map((tx, idx) => (
-                <Box key={tx.id || tx._id || idx}>
+              {receipts.slice(0, 15).map((receipt, idx) => (
+                <Box key={receipt.id || receipt._id || idx}>
                   <ListItem
                     sx={{
                       py: 1.5,
@@ -1217,11 +1216,14 @@ export default function POS() {
                         variant="subtitle2"
                         sx={{ fontWeight: 800, fontFamily: 'monospace', color: 'primary.light' }}
                       >
-                        {tx.transactionNumber || `TX-${tx.id || idx}`}
+                        {receipt.transactionNumber || `TX-${receipt.id || idx}`}
                       </Typography>
                       <Typography variant="caption" color="text.secondary" display="block">
-                        {tx.createdAt ? new Date(tx.createdAt).toLocaleString() : 'Recent'} •
-                        Cashier: {tx.cashierName || 'Staff'} • {tx.items?.length || 0} item(s)
+                        {receipt.createdAt
+                          ? new Date(receipt.createdAt).toLocaleString()
+                          : 'Recent'}{' '}
+                        • Cashier: {receipt.data.cashierName || 'Staff'} •{' '}
+                        {receipt.data.items?.length || 0} item(s)
                       </Typography>
                     </Box>
 
@@ -1231,10 +1233,10 @@ export default function POS() {
                           variant="subtitle2"
                           sx={{ fontWeight: 900, color: 'success.light' }}
                         >
-                          ${(tx.total || 0).toFixed(2)}
+                          ${(receipt.data.total || 0).toFixed(2)}
                         </Typography>
                         <Chip
-                          label={tx.paymentMethod || 'CASH'}
+                          label={receipt.data.paymentMethod || 'CASH'}
                           size="small"
                           sx={{ height: 18, fontSize: '0.625rem', fontWeight: 800 }}
                         />
@@ -1245,12 +1247,24 @@ export default function POS() {
                         size="small"
                         startIcon={<PrintIcon />}
                         onClick={() => {
-                          triggerPrintReceipt(tx);
+                          triggerPrintReceipt({
+                            transactionNumber: receipt.transactionNumber,
+                            createdAt: receipt.data.createdAt,
+                            cashierName: receipt.data.cashierName,
+                            branchName: receipt.data.branchName,
+                            customerEmail: receipt.data.customerEmail,
+                            items: receipt.data.items,
+                            subtotal: receipt.data.subtotal,
+                            tax: receipt.data.tax,
+                            discount: receipt.data.discount,
+                            total: receipt.data.total,
+                            paymentMethod: receipt.data.paymentMethod,
+                          });
                           setRecentSalesOpen(false);
                         }}
                         sx={{ fontWeight: 700, borderRadius: '6px' }}
                       >
-                        Print Invoice
+                        Reopen Receipt
                       </Button>
                     </Box>
                   </ListItem>

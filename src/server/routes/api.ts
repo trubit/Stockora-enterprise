@@ -37,7 +37,9 @@ import { copilotRouter } from './copilot.routes.js';
 import { Product } from '../models/Product.js';
 import { Transaction } from '../models/Transaction.js';
 import { Branch } from '../models/Branch.js';
+import { Receipt } from '../models/Receipt.js';
 import { redis } from '../database/redis.js';
+import { authenticate } from '../middleware/auth.js';
 
 const io = SocketManager.getInstance();
 
@@ -138,9 +140,38 @@ apiRouter.post('/transactions', async (req, res, next) => {
     });
 
     await redis.del(['products:all', 'transactions:all']);
+    await Receipt.create({
+      transactionId: newTransaction._id,
+      transactionNumber: newTransaction.transactionNumber,
+      customerEmail: newTransaction.customerEmail,
+      branchId: newTransaction.branchId,
+      cashierId: newTransaction.cashierId,
+      data: {
+        transactionNumber: newTransaction.transactionNumber,
+        items: newTransaction.items,
+        subtotal: newTransaction.subtotal,
+        tax: newTransaction.tax,
+        discount: newTransaction.discount,
+        total: newTransaction.total,
+        paymentMethod: newTransaction.paymentMethod,
+        cashierName: newTransaction.cashierName,
+        branchName: newTransaction.branchName,
+        createdAt: newTransaction.createdAt,
+      },
+    });
+
     io.emitGlobal('transaction:completed', newTransaction);
 
     res.status(201).json(newTransaction);
+  } catch (err) {
+    next(err);
+  }
+});
+
+apiRouter.get('/receipts', authenticate, async (_req, res, next) => {
+  try {
+    const receipts = await Receipt.find().sort({ createdAt: -1 }).limit(100).lean();
+    res.json(receipts);
   } catch (err) {
     next(err);
   }

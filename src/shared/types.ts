@@ -115,6 +115,32 @@ export interface Transaction {
   cashierName: string;
   branchId: string;
   branchName: string;
+  customerEmail?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Receipt {
+  id: string;
+  _id?: string;
+  transactionId: string;
+  transactionNumber: string;
+  customerEmail?: string;
+  branchId?: string;
+  cashierId?: string;
+  data: {
+    transactionNumber: string;
+    items: TransactionItem[];
+    subtotal: number;
+    tax: number;
+    discount: number;
+    total: number;
+    paymentMethod: string;
+    cashierName: string;
+    branchName: string;
+    customerEmail?: string;
+    createdAt?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }

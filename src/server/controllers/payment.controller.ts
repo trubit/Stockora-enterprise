@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { Transaction, type ITransaction } from '../models/Transaction.js';
 import { Product } from '../models/Product.js';
+import { Receipt } from '../models/Receipt.js';
 import { PaymentService, type PaymentProvider } from '../services/payment.service.js';
 import { ValidationError, NotFoundError } from '../errors/AppError.js';
 import { logger } from '../logger.js';
@@ -105,6 +106,7 @@ export class PaymentController {
         cashierName,
         branchId,
         branchName,
+        customerEmail: payload.email,
       });
 
       // Determine frontend origin for redirecting back to user interface
@@ -202,6 +204,31 @@ export class PaymentController {
 
       transaction.status = 'COMPLETED';
       await transaction.save();
+
+      // Persist receipt if it does not exist yet
+      const existingReceipt = await Receipt.findOne({ transactionId: transaction._id });
+      if (!existingReceipt) {
+        await Receipt.create({
+          transactionId: transaction._id,
+          transactionNumber: transaction.transactionNumber,
+          customerEmail: transaction.customerEmail,
+          branchId: transaction.branchId,
+          cashierId: transaction.cashierId,
+          data: {
+            transactionNumber: transaction.transactionNumber,
+            items: transaction.items,
+            subtotal: transaction.subtotal,
+            tax: transaction.tax,
+            discount: transaction.discount,
+            total: transaction.total,
+            paymentMethod: transaction.paymentMethod,
+            cashierName: transaction.cashierName,
+            branchName: transaction.branchName,
+            customerEmail: transaction.customerEmail,
+            createdAt: transaction.createdAt,
+          },
+        });
+      }
 
       // Clear cache layer
       await redis.del(['products:all', 'transactions:all']);

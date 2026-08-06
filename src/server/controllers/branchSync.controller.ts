@@ -3,6 +3,7 @@ import type { AuthenticatedRequest } from '../middleware/auth.js';
 import { Transaction } from '../models/Transaction.js';
 import { Product } from '../models/Product.js';
 import { Warehouse } from '../models/Warehouse.js';
+import { Receipt } from '../models/Receipt.js';
 import { AuditLog } from '../models/AuditLog.js';
 import { ValidationError, NotFoundError } from '../errors/AppError.js';
 import { logger } from '../logger.js';
@@ -102,6 +103,28 @@ export class BranchSyncController {
           cashierName: tx.cashierName || 'Offline Cashier',
           branchId: tx.branchId,
           branchName: tx.branchName || 'Offline Branch',
+          customerEmail: tx.customerEmail,
+        });
+
+        await Receipt.create({
+          transactionId: syncedTx._id,
+          transactionNumber: syncedTx.transactionNumber,
+          customerEmail: syncedTx.customerEmail,
+          branchId: syncedTx.branchId,
+          cashierId: syncedTx.cashierId,
+          data: {
+            transactionNumber: syncedTx.transactionNumber,
+            items: syncedTx.items,
+            subtotal: syncedTx.subtotal,
+            tax: syncedTx.tax,
+            discount: syncedTx.discount,
+            total: syncedTx.total,
+            paymentMethod: syncedTx.paymentMethod,
+            cashierName: syncedTx.cashierName,
+            branchName: syncedTx.branchName,
+            customerEmail: syncedTx.customerEmail,
+            createdAt: syncedTx.createdAt,
+          },
         });
 
         await AuditLog.create({

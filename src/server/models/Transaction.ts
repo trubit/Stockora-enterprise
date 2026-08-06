@@ -26,6 +26,7 @@ export interface ITransaction extends Document {
   cashierName: string;
   branchId: string;
   branchName: string;
+  customerEmail?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -62,6 +63,7 @@ const TransactionSchema = new Schema<ITransaction>(
       enum: ['CASH', 'CARD', 'MOBILE', 'SPLIT'],
       default: 'CASH',
     },
+    customerEmail: { type: String, required: false },
     currencyCode: { type: String, default: 'USD', uppercase: true },
     exchangeRate: { type: Number, default: 1.0 },
     cashierId: { type: String, required: true, index: true },
