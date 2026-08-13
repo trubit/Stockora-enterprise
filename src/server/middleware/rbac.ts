@@ -91,3 +91,7 @@ export function abacMiddleware() {
     next();
   };
 }
+
+// Export aliases to support all route import styles
+export const rbac = rbacMiddleware;
+export const checkPermissions = rbacMiddleware;

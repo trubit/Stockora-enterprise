@@ -50,6 +50,33 @@ import OperationsCenter from './pages/admin/OperationsCenter.tsx';
 import AuditExplorer from './pages/admin/AuditExplorer.tsx';
 import AICopilot from './pages/admin/AICopilot.tsx';
 import AICopilotAdmin from './pages/admin/AICopilotAdmin.tsx';
+import InventoryIntelligenceDashboard from './pages/inventory/InventoryIntelligenceDashboard.tsx';
+import DemandForecasting from './pages/inventory/DemandForecasting.tsx';
+import ReorderRecommendations from './pages/inventory/ReorderRecommendations.tsx';
+import SupplierIntelligence from './pages/inventory/SupplierIntelligence.tsx';
+import StockOptimization from './pages/inventory/StockOptimization.tsx';
+import CRMDashboard from './pages/crm/CRMDashboard.tsx';
+import Customer360 from './pages/crm/Customer360.tsx';
+import CustomerSegments from './pages/crm/CustomerSegments.tsx';
+import CampaignManager from './pages/crm/CampaignManager.tsx';
+import LoyaltyDashboard from './pages/crm/LoyaltyDashboard.tsx';
+import CouponsPromotions from './pages/crm/CouponsPromotions.tsx';
+import POSTerminal from './pages/pos/POSTerminal.tsx';
+import RegisterSessionManager from './pages/pos/RegisterSessionManager.tsx';
+import OmnichannelOrderManagement from './pages/orders/OmnichannelOrderManagement.tsx';
+import OrderFulfillmentManager from './pages/orders/OrderFulfillmentManager.tsx';
+import ReturnsRefundsManager from './pages/orders/ReturnsRefundsManager.tsx';
+import FinanceDashboard from './pages/finance/FinanceDashboard.tsx';
+import ChartOfAccountsManager from './pages/finance/ChartOfAccountsManager.tsx';
+import JournalEntryConsole from './pages/finance/JournalEntryConsole.tsx';
+import GeneralLedgerView from './pages/finance/GeneralLedgerView.tsx';
+import FinancialStatementsView from './pages/finance/FinancialStatementsView.tsx';
+import ExpenseManager from './pages/finance/ExpenseManager.tsx';
+import ARAPManagement from './pages/finance/ARAPManagement.tsx';
+import BankReconciliationConsole from './pages/finance/BankReconciliationConsole.tsx';
+import TaxManagementConsole from './pages/finance/TaxManagementConsole.tsx';
+import FiscalPeriodManager from './pages/finance/FiscalPeriodManager.tsx';
+import BudgetingConsole from './pages/finance/BudgetingConsole.tsx';
 import LandingPage from './pages/LandingPage.tsx';
 import { ProtectedRoute } from './routes/ProtectedRoute.tsx';
 
@@ -122,15 +149,22 @@ function App() {
             <Route path="offline-sync" element={<OfflineSyncMonitor />} />
           </Route>
 
-          {/* POS Terminal */}
+          {/* POS Terminal & Register Manager */}
           <Route element={<ProtectedRoute requiredPermission="transactions:write" />}>
             <Route path="pos" element={<POS />} />
+            <Route path="pos/terminal" element={<POSTerminal />} />
+            <Route path="pos/register" element={<RegisterSessionManager />} />
           </Route>
 
           {/* Products & Inventory Catalog */}
           <Route element={<ProtectedRoute requiredPermission="products:read" />}>
             <Route path="products" element={<ProductCatalog />} />
             <Route path="inventory" element={<Inventory />} />
+            <Route path="inventory/intelligence" element={<InventoryIntelligenceDashboard />} />
+            <Route path="inventory/forecasting" element={<DemandForecasting />} />
+            <Route path="inventory/reorder" element={<ReorderRecommendations />} />
+            <Route path="inventory/suppliers" element={<SupplierIntelligence />} />
+            <Route path="inventory/optimization" element={<StockOptimization />} />
             <Route path="transfers" element={<WarehouseTransfers />} />
             <Route path="receiving" element={<ReceivingLogistics />} />
           </Route>
@@ -146,14 +180,21 @@ function App() {
             <Route path="suppliers" element={<Suppliers />} />
           </Route>
 
-          {/* Customers Directory */}
+          {/* Customers Directory & Enterprise CRM */}
           <Route element={<ProtectedRoute requiredPermission="customers:read" />}>
             <Route path="customers" element={<Customers />} />
+            <Route path="crm/dashboard" element={<CRMDashboard />} />
+            <Route path="crm/customer360" element={<Customer360 />} />
+            <Route path="crm/segments" element={<CustomerSegments />} />
+            <Route path="crm/loyalty" element={<LoyaltyDashboard />} />
           </Route>
 
-          {/* Sales Back Office */}
+          {/* Sales & Omnichannel Order Management */}
           <Route element={<ProtectedRoute requiredPermission="transactions:read" />}>
             <Route path="sales" element={<SalesBackOffice />} />
+            <Route path="orders/omnichannel" element={<OmnichannelOrderManagement />} />
+            <Route path="orders/fulfillment" element={<OrderFulfillmentManager />} />
+            <Route path="orders/returns" element={<ReturnsRefundsManager />} />
           </Route>
 
           {/* Sales Returns */}
@@ -161,9 +202,11 @@ function App() {
             <Route path="returns" element={<ReturnsLogistics />} />
           </Route>
 
-          {/* Marketing & Loyalty */}
+          {/* Marketing & Loyalty Campaigns */}
           <Route element={<ProtectedRoute requiredPermission="promotions:read" />}>
             <Route path="marketing" element={<MarketingManager />} />
+            <Route path="crm/campaigns" element={<CampaignManager />} />
+            <Route path="crm/coupons" element={<CouponsPromotions />} />
           </Route>
 
           {/* Communication Center */}
@@ -174,6 +217,17 @@ function App() {
           {/* Finance & Currency Settings */}
           <Route element={<ProtectedRoute requiredPermission="finance:read" />}>
             <Route path="finance" element={<FinancialReports />} />
+            <Route path="finance/dashboard" element={<FinanceDashboard />} />
+            <Route path="finance/accounts" element={<ChartOfAccountsManager />} />
+            <Route path="finance/journals" element={<JournalEntryConsole />} />
+            <Route path="finance/ledger" element={<GeneralLedgerView />} />
+            <Route path="finance/statements" element={<FinancialStatementsView />} />
+            <Route path="finance/expenses" element={<ExpenseManager />} />
+            <Route path="finance/ar-ap" element={<ARAPManagement />} />
+            <Route path="finance/banking" element={<BankReconciliationConsole />} />
+            <Route path="finance/tax" element={<TaxManagementConsole />} />
+            <Route path="finance/periods" element={<FiscalPeriodManager />} />
+            <Route path="finance/budgets" element={<BudgetingConsole />} />
             <Route path="currency" element={<CurrencySettings />} />
           </Route>
 

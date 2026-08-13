@@ -51,8 +51,28 @@ export default function FinancialReports() {
   const { data: reports, isLoading } = useQuery<FinancialData>({
     queryKey: ['financial-reports'],
     queryFn: async () => {
-      const { data } = await apiClient.get<FinancialData>('/finance/reports');
-      return data;
+      const res = await apiClient.get<any>('/finance/reports');
+      const payload = res.data?.data || res.data || {};
+      return {
+        revenue: payload.revenue || 0,
+        cogs: payload.cogs || 0,
+        grossProfit: payload.grossProfit || 0,
+        salesTaxCollected: payload.taxSummary?.netTaxLiability || payload.salesTaxCollected || 0,
+        balanceSheet: {
+          inventoryValuation: payload.balanceSheet?.inventoryValuation || 0,
+          cashOnHand: payload.balanceSheet?.totalAssets || 0,
+          totalAssets: payload.balanceSheet?.totalAssets || 0,
+          accountsPayable: payload.balanceSheet?.totalLiabilities || 0,
+          equity: payload.balanceSheet?.totalEquity || 0,
+        },
+        cashFlow: payload.cashFlow || {
+          inflow: payload.revenue || 0,
+          outflow: payload.cogs || 0,
+          netCashFlow: (payload.revenue || 0) - (payload.cogs || 0),
+        },
+        bestSellers: payload.bestSellers || [],
+        paymentMethods: payload.paymentMethods || { Cash: 0, Card: 0, Online: 0 },
+      };
     },
   });
 
@@ -64,10 +84,10 @@ export default function FinancialReports() {
     );
   }
 
-  // Prep payment charts data
-  const paymentChartData = Object.keys(reports.paymentMethods).map((method) => ({
+  // Prep payment charts data safely
+  const paymentChartData = Object.keys(reports.paymentMethods || {}).map((method) => ({
     name: method,
-    Amount: reports.paymentMethods[method],
+    Amount: reports.paymentMethods[method] || 0,
   }));
 
   return (

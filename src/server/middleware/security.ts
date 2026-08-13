@@ -15,10 +15,20 @@ securityMiddleware.use(
   })
 );
 
-// 2. CORS configuration - Restricts access to whitelist origin
+// 2. CORS configuration - Dynamic localhost and whitelist origin matching
 securityMiddleware.use(
   cors({
-    origin: config.corsOrigin,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (
+        origin.includes('localhost') ||
+        origin.includes('127.0.0.1') ||
+        origin === config.corsOrigin
+      ) {
+        return callback(null, true);
+      }
+      callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],

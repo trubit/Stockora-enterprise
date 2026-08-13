@@ -7,11 +7,21 @@ import type { AuthenticatedRequest } from '../middleware/auth.js';
 
 export class ProductController {
   public static async getProducts(
-    _req: AuthenticatedRequest,
+    req: AuthenticatedRequest,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
+      const search = req.query.search as string;
+      if (search && search.trim() !== '') {
+        const regex = new RegExp(search.trim(), 'i');
+        const products = await Product.find({
+          $or: [{ name: regex }, { sku: regex }, { category: regex }, { barcode: regex }],
+        }).lean();
+        res.json(products);
+        return;
+      }
+
       const cached = await redis.get('products:all');
       if (cached) {
         res.json(JSON.parse(cached));

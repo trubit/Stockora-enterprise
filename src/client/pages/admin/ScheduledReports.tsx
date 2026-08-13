@@ -128,6 +128,7 @@ export default function ScheduledReports() {
 
                   <TextField
                     {...register('format')}
+                    defaultValue="PDF"
                     fullWidth
                     select
                     label="Distribution Format"

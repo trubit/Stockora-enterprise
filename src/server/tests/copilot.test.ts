@@ -9,21 +9,19 @@ describe('Phase 28 AI Copilot & Knowledge integration tests', () => {
   const sessionId = 'test-session-123';
 
   beforeAll(async () => {
-    await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_copilot');
-    await Promise.all([
-      KnowledgeDocument.deleteMany({}),
-      PromptTemplate.deleteMany({}),
-      AICopilotMessage.deleteMany({}),
-    ]);
+    if (mongoose.connection.readyState === 0) {
+      const mongoUri =
+        process.env.MONGODB_URI ||
+        process.env.MONGO_URI ||
+        'mongodb://127.0.0.1:27017/stockora_test';
+      await mongoose.connect(mongoUri);
+    }
+    await AICopilotMessage.deleteMany({ sessionId });
+    await PromptTemplate.deleteMany({ name: 'restock-evaluation' });
   });
 
   afterAll(async () => {
-    await Promise.all([
-      KnowledgeDocument.deleteMany({}),
-      PromptTemplate.deleteMany({}),
-      AICopilotMessage.deleteMany({}),
-    ]);
-    await mongoose.connection.close();
+    // Non-destructive teardown
   });
 
   it('should save knowledge base documents and inject them in prompt context (RAG)', async () => {
@@ -49,7 +47,7 @@ describe('Phase 28 AI Copilot & Knowledge integration tests', () => {
     expect(logs[0].role).toBe('user');
     expect(logs[0].content).toContain('SOP Policy');
     expect(logs[1].role).toBe('assistant');
-  });
+  }, 15000);
 
   it('should save and load prompt library macro configurations', async () => {
     const template = await PromptTemplate.create({

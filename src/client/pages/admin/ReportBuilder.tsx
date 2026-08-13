@@ -89,6 +89,7 @@ export default function ReportBuilder() {
 
                   <TextField
                     {...register('templateId')}
+                    defaultValue="64d4b1a4c9b841a4c9b84002"
                     fullWidth
                     select
                     label="Target Base Template"
@@ -101,7 +102,13 @@ export default function ReportBuilder() {
                     ))}
                   </TextField>
 
-                  <TextField {...register('chartType')} fullWidth select label="Default Chart Type">
+                  <TextField
+                    {...register('chartType')}
+                    defaultValue="bar"
+                    fullWidth
+                    select
+                    label="Default Chart Type"
+                  >
                     <MenuItem value="line">Line Chart</MenuItem>
                     <MenuItem value="bar">Bar Chart</MenuItem>
                     <MenuItem value="pie">Pie Chart</MenuItem>

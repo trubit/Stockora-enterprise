@@ -1,107 +1,172 @@
 import type { Response, NextFunction } from 'express';
-import { Transaction } from '../models/Transaction.js';
-import { StockMovement } from '../models/StockMovement.js';
-import { Product } from '../models/Product.js';
-import { SupplierInvoice } from '../models/SupplierInvoice.js';
+import { FinanceService } from '../services/finance.service.js';
+import { TaxReconciliationService } from '../services/tax-reconciliation.service.js';
+import { Account } from '../models/Account.js';
+import { JournalEntry } from '../models/JournalEntry.js';
+import { FiscalPeriod } from '../models/FiscalPeriod.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 
 export class FinanceController {
   public static async getFinancialReport(
-    _req: AuthenticatedRequest,
+    req: AuthenticatedRequest,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
-      // 1. Revenue
-      const salesTransactions = await Transaction.find({
-        type: 'SALE',
-        status: 'COMPLETED',
-      }).lean();
-      const revenue = salesTransactions.reduce((acc, t) => acc + (t.total || 0), 0);
-      const taxCollected = salesTransactions.reduce((acc, t) => acc + (t.tax || 0), 0);
+      const tenantId = (req.user as any)?.tenantId || (req.user as any)?.companyId;
+      await FinanceService.initializeChartOfAccounts(tenantId);
 
-      // 2. Cost of Goods Sold (COGS)
-      const salesMovements = await StockMovement.find({ type: 'SALE' }).lean();
-      // Since stock movements for sales have negative quantity:
-      const cogs = salesMovements.reduce((acc, m) => {
-        const qty = Math.abs(m.quantity || 0);
-        const cost = m.costPrice || 0;
-        return acc + qty * cost;
-      }, 0);
-
-      const grossProfit = revenue - taxCollected - cogs;
-
-      // 3. Balance Sheet Assets: Inventory Valuation
-      const products = await Product.find({ isActive: true }).lean();
-      const inventoryValuation = products.reduce(
-        (acc, p) => acc + (p.quantity || 0) * (p.costPrice || p.cost || 0),
-        0
-      );
-      const cashOnHand = revenue; // Simplifying cash on hand as total completed revenues
-      const totalAssets = inventoryValuation + cashOnHand;
-
-      // 4. Liabilities: Accounts Payable (unpaid vendor invoices)
-      const unpaidInvoices = await SupplierInvoice.find({ status: { $ne: 'PAID' } }).lean();
-      const accountsPayable = unpaidInvoices.reduce((acc, inv) => acc + (inv.amount || 0), 0);
-
-      // 5. Equity
-      const equity = totalAssets - accountsPayable;
-
-      // 6. Cash Flow
-      const paidInvoices = await SupplierInvoice.find({ status: 'PAID' }).lean();
-      const cashOutflow = paidInvoices.reduce((acc, inv) => acc + (inv.amount || 0), 0);
-      const netCashFlow = cashOnHand - cashOutflow;
-
-      // 7. Best Selling Products
-      const productSalesMap: {
-        [key: string]: { name: string; sku: string; qty: number; revenue: number };
-      } = {};
-      for (const t of salesTransactions) {
-        for (const item of t.items) {
-          if (!productSalesMap[item.productId]) {
-            productSalesMap[item.productId] = {
-              name: item.productName,
-              sku: item.sku,
-              qty: 0,
-              revenue: 0,
-            };
-          }
-          productSalesMap[item.productId].qty += item.quantity || 0;
-          productSalesMap[item.productId].revenue += item.total || 0;
-        }
-      }
-      const bestSellers = Object.values(productSalesMap)
-        .sort((a, b) => b.qty - a.qty)
-        .slice(0, 5);
-
-      // 8. Revenue by Payment Method
-      const paymentMethods = salesTransactions.reduce((acc: { [key: string]: number }, t) => {
-        const method = t.paymentMethod || 'CASH';
-        acc[method] = (acc[method] || 0) + (t.total || 0);
-        return acc;
-      }, {});
+      const pnl = await FinanceService.getProfitAndLoss(tenantId);
+      const balanceSheet = await FinanceService.getBalanceSheet(tenantId);
+      const trialBalance = await FinanceService.getTrialBalance(tenantId);
+      const taxSummary = await TaxReconciliationService.getTaxSummary(tenantId);
 
       res.json({
-        revenue,
-        cogs,
-        grossProfit,
-        salesTaxCollected: taxCollected,
-        balanceSheet: {
-          inventoryValuation,
-          cashOnHand,
-          totalAssets,
-          accountsPayable,
-          equity,
+        success: true,
+        data: {
+          revenue: pnl.netRevenue,
+          cogs: pnl.cogs,
+          grossProfit: pnl.grossProfit,
+          grossMarginPercentage: pnl.grossMarginPercentage,
+          operatingExpenses: pnl.operatingExpenses,
+          operatingProfit: pnl.operatingProfit,
+          balanceSheet,
+          trialBalance,
+          taxSummary,
         },
-        cashFlow: {
-          inflow: cashOnHand,
-          outflow: cashOutflow,
-          netCashFlow,
-        },
-        bestSellers,
-        paymentMethods,
       });
-    } catch (err: unknown) {
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public static async getChartOfAccounts(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const tenantId = (req.user as any)?.tenantId || (req.user as any)?.companyId;
+      await FinanceService.initializeChartOfAccounts(tenantId);
+      const query = tenantId
+        ? { $or: [{ tenantId }, { tenantId: null }, { tenantId: { $exists: false } }] }
+        : {};
+      const accounts = await Account.find(query).sort({ code: 1 });
+      res.json({ success: true, data: accounts });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public static async createAccount(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const tenantId = (req.user as any)?.tenantId || (req.user as any)?.companyId;
+      const { code, name, type, parentAccountId, description } = req.body;
+
+      const account = await Account.create({
+        tenantId,
+        code,
+        name,
+        type,
+        parentAccountId,
+        description,
+        currentBalance: 0,
+        currency: 'USD',
+        isActive: true,
+      });
+
+      res.status(201).json({ success: true, data: account });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public static async postJournalEntry(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const tenantId = (req.user as any)?.tenantId || (req.user as any)?.companyId;
+      const userId = (req.user as any)?.id;
+
+      const journal = await FinanceService.postJournalEntry({
+        ...req.body,
+        tenantId,
+        userId,
+      });
+
+      res.status(201).json({ success: true, data: journal });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public static async getJournalEntries(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const tenantId = (req.user as any)?.tenantId || (req.user as any)?.companyId;
+      const query = tenantId
+        ? { $or: [{ tenantId }, { tenantId: null }, { tenantId: { $exists: false } }] }
+        : {};
+      const entries = await JournalEntry.find(query).sort({ postingDate: -1 }).limit(100);
+      res.json({ success: true, data: entries });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public static async getFiscalPeriods(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const tenantId = (req.user as any)?.tenantId || (req.user as any)?.companyId;
+      const query = tenantId
+        ? { $or: [{ tenantId }, { tenantId: null }, { tenantId: { $exists: false } }] }
+        : {};
+      const periods = await FiscalPeriod.find(query).sort({ year: -1, month: -1 });
+      res.json({ success: true, data: periods });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public static async closeFiscalPeriod(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { periodCode } = req.body;
+      const userId = (req.user as any)?.id;
+      const tenantId = (req.user as any)?.tenantId || (req.user as any)?.companyId;
+
+      const query = tenantId
+        ? { periodCode, $or: [{ tenantId }, { tenantId: null }, { tenantId: { $exists: false } }] }
+        : { periodCode };
+
+      const period = await FiscalPeriod.findOne(query);
+      if (!period) {
+        res.status(404).json({ success: false, message: `Fiscal period ${periodCode} not found.` });
+        return;
+      }
+
+      period.status = 'CLOSED';
+      period.closedBy = userId as any;
+      period.closedAt = new Date();
+      await period.save();
+
+      res.json({ success: true, data: period });
+    } catch (err) {
       next(err);
     }
   }

@@ -46,11 +46,40 @@ export type TaskType =
   | 'SYNC_OFFLINE_STATS'
   | 'GENERATE_DAILY_REPORT'
   | 'WARRANTY_EXPIRY_ALERT'
-  | 'PROCESS_SCHEDULED_REPORTS';
+  | 'PROCESS_SCHEDULED_REPORTS'
+  | 'INVENTORY_INTELLIGENCE_SCAN'
+  | 'CRM_SEGMENTATION_EVAL'
+  | 'CRM_CHURN_SCAN'
+  | 'EXPIRE_INVENTORY_RESERVATION';
 
 // ---------------------------------------------------------------------------
 // Job processors
 // ---------------------------------------------------------------------------
+
+async function processReservationExpiration(): Promise<void> {
+  const { ReservationService } = await import('../services/reservation.service.js');
+  const count = await ReservationService.expireStaleReservations();
+  if (count > 0) {
+    logger.info(`[Job] EXPIRE_INVENTORY_RESERVATION: Released ${count} stale stock reservations.`);
+  }
+}
+
+async function processCrmScan(): Promise<void> {
+  const { CRMService } = await import('../services/crm.service.js');
+  await CRMService.evaluateSegments();
+  logger.info('[Job] CRM_SEGMENTATION_EVAL: Customer segments refreshed.');
+}
+
+async function processInventoryIntelligenceScan(): Promise<void> {
+  const { InventoryOptimizationService } =
+    await import('../services/inventory-optimization.service.js');
+  const { SupplierIntelligenceService } =
+    await import('../services/supplier-intelligence.service.js');
+
+  await InventoryOptimizationService.scanStockoutRisks();
+  await SupplierIntelligenceService.evaluateAllSuppliers();
+  logger.info('[Job] INVENTORY_INTELLIGENCE_SCAN: Stockout risks and supplier scores refreshed.');
+}
 
 async function processLowStockCheck(): Promise<void> {
   const products = await Product.find({ quantity: { $lte: 5 }, isActive: true }).limit(20);
@@ -205,6 +234,11 @@ async function processScheduledReports(): Promise<void> {
 
 export async function directDispatch(task: TaskType): Promise<void> {
   switch (task) {
+    case 'CRM_SEGMENTATION_EVAL':
+    case 'CRM_CHURN_SCAN':
+      return processCrmScan();
+    case 'INVENTORY_INTELLIGENCE_SCAN':
+      return processInventoryIntelligenceScan();
     case 'CHECK_LOW_STOCK':
       return processLowStockCheck();
     case 'DB_CLEANUP':
@@ -227,6 +261,8 @@ export async function directDispatch(task: TaskType): Promise<void> {
       return processWarrantyExpiryAlert();
     case 'PROCESS_SCHEDULED_REPORTS':
       return processScheduledReports();
+    case 'EXPIRE_INVENTORY_RESERVATION':
+      return processReservationExpiration();
     default:
       logger.warn(`[Scheduler] Unknown task: ${task}`);
   }
@@ -281,6 +317,7 @@ function startFallbackScheduler(): void {
   scheduleInterval('GENERATE_DAILY_REPORT', MS.DAY);
   scheduleInterval('WARRANTY_EXPIRY_ALERT', MS.DAY);
   scheduleInterval('PROCESS_SCHEDULED_REPORTS', MS.HOUR);
+  scheduleInterval('EXPIRE_INVENTORY_RESERVATION', 5 * MS.MINUTE);
 }
 
 // ---------------------------------------------------------------------------
@@ -337,7 +374,12 @@ export async function initializeBackgroundWorkers(): Promise<void> {
       jobName: 'PROCESS_SCHEDULED_REPORTS',
       cron: '0 * * * *',
     }),
+    manager.registerCronJob({
+      queueName: QUEUE,
+      jobName: 'EXPIRE_INVENTORY_RESERVATION',
+      cron: '*/5 * * * *',
+    }),
   ]);
 
-  logger.info('[BullMQ] All background workers and cron schedules registered (11 jobs total).');
+  logger.info('[BullMQ] All background workers and cron schedules registered (12 jobs total).');
 }

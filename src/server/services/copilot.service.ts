@@ -51,7 +51,7 @@ export class CopilotService {
       const errMsg = err instanceof Error ? err.message : String(err);
       logger.error(`[Copilot Service] Inference failed: ${errMsg}`);
       aiReply =
-        'I apologize, but I encountered a connection issue communicating with our AI inference node. Please try again.';
+        'The AI provider is currently unavailable, so I am returning a local fallback response. Please try again shortly.';
     }
 
     // Save Assistant reply

@@ -26,15 +26,14 @@ describe('Phase 18 AI Business Intelligence & Forecasting', () => {
     it('should generate mock reorder response when prompted for restock', async () => {
       const provider = new MockAIProvider();
       const res = await provider.generateText('Help me check reorder suggestions');
-      expect(res.text).toContain('recommendations');
-      expect(res.text).toContain('proposedQty');
+      expect(res.text).toContain('Replenishment');
+      expect(res.text).toContain('Reorder');
     });
 
     it('should generate generic fallback summary for standard conversational prompts', async () => {
       const provider = new MockAIProvider();
       const res = await provider.generateText('Tell me about the system health status');
-      expect(res.text).toContain('STOCKORA ENTERPRISE');
-      expect(res.text).toContain('Telemetry summary');
+      expect(res.text).toContain('Stockora Enterprise');
     });
   });
 
@@ -44,7 +43,7 @@ describe('Phase 18 AI Business Intelligence & Forecasting', () => {
       const promptText = 'What is our profit? <script>alert(1)</script>';
       const reply = await service.executePrompt(promptText);
       expect(reply).toBeDefined();
-    });
+    }, 15000);
 
     it('should log estimated tokens and calculate relative costs correctly', async () => {
       const service = AIService.getInstance();

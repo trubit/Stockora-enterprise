@@ -9,6 +9,12 @@ export const financeRouter = Router();
 financeRouter.use(authMiddleware);
 
 financeRouter.get(
+  '/report',
+  rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_READ]),
+  FinanceController.getFinancialReport
+);
+
+financeRouter.get(
   '/reports',
   rbacMiddleware([SYSTEM_PERMISSIONS.PRODUCTS_READ]),
   FinanceController.getFinancialReport

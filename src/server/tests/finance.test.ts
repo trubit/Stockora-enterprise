@@ -12,14 +12,20 @@ describe('Corporate Finance & GAAP Reporting Integration', () => {
   let userId: mongoose.Types.ObjectId;
 
   beforeAll(async () => {
-    await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_finance');
+    if (mongoose.connection.readyState === 0) {
+      const mongoUri =
+        process.env.MONGODB_URI ||
+        process.env.MONGO_URI ||
+        'mongodb://127.0.0.1:27017/stockora_test';
+      await mongoose.connect(mongoUri);
+    }
+    userId = new mongoose.Types.ObjectId();
+
     await Product.deleteMany({});
     await Supplier.deleteMany({});
     await SupplierInvoice.deleteMany({});
     await Transaction.deleteMany({});
     await StockMovement.deleteMany({});
-
-    userId = new mongoose.Types.ObjectId();
 
     // Register supplier
     const sup = await Supplier.create({
@@ -48,12 +54,8 @@ describe('Corporate Finance & GAAP Reporting Integration', () => {
   });
 
   afterAll(async () => {
-    await Product.deleteMany({});
-    await Supplier.deleteMany({});
-    await SupplierInvoice.deleteMany({});
-    await Transaction.deleteMany({});
-    await StockMovement.deleteMany({});
-    await mongoose.connection.close();
+    await Product.deleteMany({ sku: 'SKU-FIN-1' });
+    await Supplier.deleteMany({ code: 'CMC-VEND' });
   });
 
   it('should accurately calculate P&L, balance sheets, and cash flows', async () => {
@@ -126,7 +128,7 @@ describe('Corporate Finance & GAAP Reporting Integration', () => {
     expect(taxCollected).toBe(8.0);
 
     // COGS
-    const salesMovements = await StockMovement.find({ type: 'SALE' }).lean();
+    const salesMovements = await StockMovement.find({ type: 'SALE', productId }).lean();
     const cogs = salesMovements.reduce((acc, m) => {
       const qty = Math.abs(m.quantity || 0);
       const cost = m.costPrice || 0;
@@ -140,7 +142,7 @@ describe('Corporate Finance & GAAP Reporting Integration', () => {
     expect(grossProfit).toBe(52.0);
 
     // Balance Sheet Assets
-    const products = await Product.find({ isActive: true }).lean();
+    const products = await Product.find({ sku: 'SKU-FIN-1' }).lean();
     const inventoryValuation = products.reduce(
       (acc, p) => acc + (p.quantity || 0) * (p.costPrice || p.cost || 0),
       0

@@ -14,25 +14,17 @@ describe('Phase 26 Workflow bpm, rules, and SLA tests', () => {
   const userId = new mongoose.Types.ObjectId();
 
   beforeAll(async () => {
-    await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_workflows');
-    await Promise.all([
-      WorkflowDefinition.deleteMany({}),
-      WorkflowInstance.deleteMany({}),
-      BusinessRule.deleteMany({}),
-      Task.deleteMany({}),
-      SLAPolicy.deleteMany({}),
-    ]);
+    if (mongoose.connection.readyState === 0) {
+      const mongoUri =
+        process.env.MONGODB_URI ||
+        process.env.MONGO_URI ||
+        'mongodb://127.0.0.1:27017/stockora_test';
+      await mongoose.connect(mongoUri);
+    }
   });
 
   afterAll(async () => {
-    await Promise.all([
-      WorkflowDefinition.deleteMany({}),
-      WorkflowInstance.deleteMany({}),
-      BusinessRule.deleteMany({}),
-      Task.deleteMany({}),
-      SLAPolicy.deleteMany({}),
-    ]);
-    await mongoose.connection.close();
+    // Non-destructive teardown
   });
 
   it('should correctly evaluate rules logic with operators', async () => {

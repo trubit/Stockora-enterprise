@@ -14,13 +14,19 @@ describe('Sales & POS Cycles Integration', () => {
   let userId: mongoose.Types.ObjectId;
 
   beforeAll(async () => {
-    await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_sales');
-    await Product.deleteMany({});
-    await Customer.deleteMany({});
-    await SalesQuote.deleteMany({});
-    await SalesOrder.deleteMany({});
+    if (mongoose.connection.readyState === 0) {
+      const mongoUri =
+        process.env.MONGODB_URI ||
+        process.env.MONGO_URI ||
+        'mongodb://127.0.0.1:27017/stockora_test';
+      await mongoose.connect(mongoUri);
+    }
+    await Product.deleteMany({ sku: { $in: ['SKU-SALE-1', 'SKU-DISPATCH-1'] } });
+    await Customer.deleteMany({ name: 'Global Supply Corp' });
+    await SalesQuote.deleteMany({ quoteNumber: 'QT-TEST-001' });
+    await SalesOrder.deleteMany({ orderNumber: 'SO-TEST-001' });
     await SalesShipment.deleteMany({});
-    await SalesReturn.deleteMany({});
+    await SalesReturn.deleteMany({ returnNumber: 'RT-TEST-001' });
     await StockMovement.deleteMany({});
 
     userId = new mongoose.Types.ObjectId();
@@ -54,14 +60,8 @@ describe('Sales & POS Cycles Integration', () => {
   });
 
   afterAll(async () => {
-    await Product.deleteMany({});
-    await Customer.deleteMany({});
-    await SalesQuote.deleteMany({});
-    await SalesOrder.deleteMany({});
-    await SalesShipment.deleteMany({});
-    await SalesReturn.deleteMany({});
-    await StockMovement.deleteMany({});
-    await mongoose.connection.close();
+    await Product.deleteMany({ sku: { $in: ['SKU-SALE-1', 'SKU-DISPATCH-1'] } });
+    await Customer.deleteMany({ name: 'Global Supply Corp' });
   });
 
   it('should process sales quotes acceptances', async () => {

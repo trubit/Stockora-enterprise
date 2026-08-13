@@ -96,5 +96,7 @@ export async function authMiddleware(
   }
 }
 
-// Export authMiddleware as authenticate to support both import styles in routes
+// Export authMiddleware aliases to support all route import styles cleanly
 export const authenticate = authMiddleware;
+export const authenticateToken = authMiddleware;
+export const requireAuth = authMiddleware;

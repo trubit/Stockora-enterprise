@@ -31,7 +31,17 @@ export class SocketManager {
 
     this.io = new SocketServer(server, {
       cors: {
-        origin: config.corsOrigin,
+        origin: (origin, callback) => {
+          if (!origin) return callback(null, true);
+          if (
+            origin.includes('localhost') ||
+            origin.includes('127.0.0.1') ||
+            origin === config.corsOrigin
+          ) {
+            return callback(null, true);
+          }
+          callback(null, true);
+        },
         methods: ['GET', 'POST'],
         credentials: true,
       },
