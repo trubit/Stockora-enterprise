@@ -1,16 +1,6 @@
-import React, { useState } from 'react';
-import {
-  Box,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  Button,
-  TextField,
-  MenuItem,
-  Paper,
-} from '@mui/material';
-import { Inventory as PackIcon, LocalShipping as DispatchIcon } from '@mui/icons-material';
+import { useState } from 'react';
+import { Box, Typography, Grid, Button, TextField, MenuItem, Paper } from '@mui/material';
+import { Inventory as PackIcon } from '@mui/icons-material';
 import { api } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 

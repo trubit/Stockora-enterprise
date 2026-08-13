@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Typography,
   Grid,
-  Card,
-  CardContent,
   Button,
   TextField,
   MenuItem,
@@ -17,7 +15,7 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
-import { QrCodeScanner as CountIcon, CheckCircle as ApproveIcon } from '@mui/icons-material';
+import { QrCodeScanner as CountIcon, CheckCircleOutline as ApproveIcon } from '@mui/icons-material';
 import { api } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 

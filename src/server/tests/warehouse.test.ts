@@ -21,6 +21,7 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
   let recLocId: string;
   let storeLocId: string;
   let productId: string;
+  let productSku: string;
   let userId: string;
 
   beforeAll(async () => {
@@ -32,8 +33,8 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
     const user = await User.create({
       username: `wh_admin_${Date.now()}`,
       email: `wh_admin_${Date.now()}@stockora.io`,
-      passwordHash: 'hashed_pw',
-      role: 'ADMIN',
+      password: 'password123',
+      roleName: 'admin',
     });
     userId = user._id.toString();
 
@@ -48,6 +49,7 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
       lowStockAlert: 10,
     });
     productId = prod._id.toString();
+    productSku = prod.sku;
   });
 
   it('should create warehouse, zone, receiving location, and storage location', async () => {
@@ -201,7 +203,7 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
       pickingService.scanAndPickItem({
         pickListId: pickList._id.toString(),
         itemId,
-        scannedSku: (await Product.findById(productId))!.sku,
+        scannedSku: productSku,
         scannedLocationCode: 'WRONG-LOC-B99',
         quantityToPick: 10,
         pickerId: userId,
@@ -209,11 +211,10 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
     ).rejects.toThrow(/WRONG LOCATION SCANNED/);
 
     // Successful Pick Scan
-    const validSku = (await Product.findById(productId))!.sku;
     const result = await pickingService.scanAndPickItem({
       pickListId: pickList._id.toString(),
       itemId,
-      scannedSku: validSku,
+      scannedSku: productSku,
       scannedLocationCode: 'A-01-02-03',
       quantityToPick: 10,
       pickerId: userId,
@@ -267,6 +268,23 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
       name: 'Secondary Transit Warehouse',
       code: `WH-SEC-${Date.now().toString().slice(-4)}`,
       capacityUnits: 5000,
+    });
+
+    const destZone = await warehouseService.createZone({
+      companyId: destWh.companyId.toString(),
+      warehouseId: destWh._id.toString(),
+      name: 'Destination Zone',
+      code: 'DEST-ZONE',
+      createdBy: userId,
+    });
+
+    await warehouseService.createLocation({
+      companyId: destWh.companyId.toString(),
+      warehouseId: destWh._id.toString(),
+      zoneId: destZone._id.toString(),
+      locationCode: 'DEST-REC-01',
+      locationType: 'RECEIVING',
+      createdBy: userId,
     });
 
     const transfer = await warehouseTransferService.requestTransfer({

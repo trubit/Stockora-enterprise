@@ -16,13 +16,15 @@ export interface IWarehouseTransferItem {
 
 export type TransferStatus =
   | 'DRAFT'
+  | 'PENDING'
   | 'REQUESTED'
   | 'APPROVED'
   | 'PICKING'
   | 'IN_TRANSIT'
   | 'PARTIALLY_RECEIVED'
   | 'RECEIVED'
-  | 'CANCELLED';
+  | 'CANCELLED'
+  | 'COMPLETED';
 
 export interface IWarehouseTransfer extends Document {
   companyId?: mongoose.Types.ObjectId;
@@ -75,6 +77,7 @@ const WarehouseTransferSchema = new Schema<IWarehouseTransfer>(
       type: String,
       enum: [
         'DRAFT',
+        'PENDING',
         'REQUESTED',
         'APPROVED',
         'PICKING',
@@ -82,6 +85,7 @@ const WarehouseTransferSchema = new Schema<IWarehouseTransfer>(
         'PARTIALLY_RECEIVED',
         'RECEIVED',
         'CANCELLED',
+        'COMPLETED',
       ],
       default: 'REQUESTED',
       required: true,

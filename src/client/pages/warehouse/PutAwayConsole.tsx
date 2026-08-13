@@ -1,10 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
-  Grid,
-  Card,
-  CardContent,
   Button,
   Chip,
   Table,
@@ -52,7 +49,7 @@ export default function PutAwayConsole() {
   };
 
   useEffect(() => {
-    api.get('/warehouses').then((res) => {
+    api.get('/warehouses').then((res: any) => {
       setWarehouses(res.data || []);
       if (res.data && res.data.length > 0) setSelectedWarehouseId(res.data[0]._id);
     });

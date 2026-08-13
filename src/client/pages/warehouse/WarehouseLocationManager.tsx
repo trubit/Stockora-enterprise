@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -14,14 +14,11 @@ import {
   Chip,
   LinearProgress,
   MenuItem,
-  IconButton,
-  Tooltip,
 } from '@mui/material';
 import {
   Add as AddIcon,
   LocationOn as LocationIcon,
   Layers as ZoneIcon,
-  Inventory as InventoryIcon,
 } from '@mui/icons-material';
 import { api } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
@@ -73,7 +70,7 @@ export default function WarehouseLocationManager() {
   };
 
   useEffect(() => {
-    api.get('/warehouses').then((res) => {
+    api.get('/warehouses').then((res: any) => {
       setWarehouses(res.data || []);
       if (res.data && res.data.length > 0) {
         setSelectedWarehouseId(res.data[0]._id);

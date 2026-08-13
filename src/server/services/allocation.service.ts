@@ -36,7 +36,10 @@ export class AllocationService {
     } = params;
 
     // Get active warehouses
-    const warehouses = await Warehouse.find({ companyId, isActive: true });
+    let warehouses = await Warehouse.find({ companyId, isActive: true });
+    if (warehouses.length === 0) {
+      warehouses = await Warehouse.find({ isActive: true });
+    }
     if (warehouses.length === 0) {
       throw new ValidationError('No active warehouses found for allocation.');
     }

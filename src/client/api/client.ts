@@ -10,6 +10,8 @@ export const apiClient = axios.create({
   },
 });
 
+export const api = apiClient;
+
 // Request Interceptor: Attach JWT bearer keys automatically
 apiClient.interceptors.request.use(
   (config) => {
