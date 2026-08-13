@@ -8,13 +8,37 @@ import { CycleCount } from '../models/CycleCount.js';
 import { StockMovement } from '../models/StockMovement.js';
 import { memoryCache } from '../utils/cache.js';
 
+export interface IWarehouseAnalytics {
+  warehouseId: string;
+  warehouseName: string;
+  capacity: {
+    totalLocations: number;
+    totalCapacityUnits: number;
+    usedUnits: number;
+    utilizationPercentage: number;
+  };
+  fulfillment: {
+    totalPickLists: number;
+    completedPickLists: number;
+    pendingPickLists: number;
+    pickAccuracyPercentage: number;
+    totalPackagesPacked: number;
+    totalDispatchesExecuted: number;
+  };
+  logistics: {
+    pendingPutawayTasks: number;
+    recentStockMovements30d: number;
+    totalCycleCountVarianceValue: number;
+  };
+}
+
 export class WarehouseAnalyticsService {
   /**
    * Executive Warehouse Dashboard Analytics
    */
-  async getWarehouseAnalytics(warehouseId: string) {
+  async getWarehouseAnalytics(warehouseId: string): Promise<IWarehouseAnalytics> {
     const cacheKey = `analytics:warehouse:${warehouseId}`;
-    const cached = memoryCache.get(cacheKey);
+    const cached = memoryCache.get<IWarehouseAnalytics>(cacheKey);
     if (cached) return cached;
 
     const warehouse = await Warehouse.findById(warehouseId);
@@ -63,7 +87,7 @@ export class WarehouseAnalyticsService {
     const counts = await CycleCount.find({ warehouseId, status: 'COMPLETED' });
     const totalVarianceValue = counts.reduce((acc, c) => acc + (c.totalVarianceValue || 0), 0);
 
-    const data = {
+    const data: IWarehouseAnalytics = {
       warehouseId,
       warehouseName: warehouse?.name || 'Warehouse',
       capacity: {

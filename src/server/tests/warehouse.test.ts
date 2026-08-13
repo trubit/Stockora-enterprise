@@ -184,7 +184,7 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
       createdBy: userId,
     });
 
-    const itemId = pickList.items[0]._id.toString();
+    const itemId = (pickList.items[0] as any)._id.toString();
 
     // Wrong Product Protection Check
     await expect(
@@ -323,7 +323,10 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
     if (count.items.length > 0) {
       const firstItem = count.items[0];
       const submitted = await cycleCountService.submitCountResults(count._id.toString(), userId, [
-        { itemId: firstItem._id.toString(), countedQuantity: firstItem.expectedQuantity + 2 },
+        {
+          itemId: (firstItem as any)._id.toString(),
+          countedQuantity: firstItem.expectedQuantity + 2,
+        },
       ]);
 
       expect(submitted.totalVarianceCount).toBe(2);

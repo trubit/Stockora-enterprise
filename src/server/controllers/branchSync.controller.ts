@@ -247,7 +247,9 @@ export class BranchSyncController {
         warehouseName: w.name,
         warehouseCode: w.code,
         branchName: (w.branchId as unknown as { name: string })?.name || 'HQ Branch',
-        availableStock: Math.floor(product.quantity * (w.capacity ? w.capacity / 10000 : 0.5)),
+        availableStock: Math.floor(
+          product.quantity * (w.capacityUnits ? w.capacityUnits / 10000 : 0.5)
+        ),
       }));
 
       res.json({

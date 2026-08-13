@@ -1,17 +1,15 @@
 import type { Response, NextFunction } from 'express';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
-import { warehouseService } from '../services/warehouse.service.ts';
-import { inventoryLocationService } from '../services/inventory-location.service.ts';
-import { putAwayService } from '../services/putaway.service.ts';
-import { allocationService } from '../services/allocation.service.ts';
-import { pickingService } from '../services/picking.service.ts';
-import { packingService } from '../services/packing.service.ts';
-import { dispatchService } from '../services/dispatch.service.ts';
-import { warehouseTransferService } from '../services/warehouse-transfer.service.ts';
-import { cycleCountService } from '../services/cycle-count.service.ts';
-import { warehouseAnalyticsService } from '../services/warehouse-analytics.service.ts';
-import { warehouseAIService } from '../services/warehouse-ai.service.ts';
-import { ValidationError } from '../errors/AppError.js';
+import { warehouseService } from '../services/warehouse.service.js';
+import { putAwayService } from '../services/putaway.service.js';
+import { allocationService } from '../services/allocation.service.js';
+import { pickingService } from '../services/picking.service.js';
+import { packingService } from '../services/packing.service.js';
+import { dispatchService } from '../services/dispatch.service.js';
+import { warehouseTransferService } from '../services/warehouse-transfer.service.js';
+import { cycleCountService } from '../services/cycle-count.service.js';
+import { warehouseAnalyticsService } from '../services/warehouse-analytics.service.js';
+import { warehouseAIService } from '../services/warehouse-ai.service.js';
 
 export class WarehouseController {
   // Warehouses
@@ -43,7 +41,8 @@ export class WarehouseController {
 
   async getWarehouseById(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
-      const warehouse = await warehouseService.getWarehouseById(req.params.id);
+      const warehouseId = req.params.id as string;
+      const warehouse = await warehouseService.getWarehouseById(warehouseId);
       res.json(warehouse);
     } catch (err) {
       next(err);
@@ -55,9 +54,10 @@ export class WarehouseController {
     try {
       const companyId = (req.user as any)?.companyId || 'default-company';
       const userId = req.user?.id || 'system';
+      const warehouseId = req.params.id as string;
       const zone = await warehouseService.createZone({
         ...req.body,
-        warehouseId: req.params.id,
+        warehouseId,
         companyId,
         createdBy: userId,
       });
@@ -69,7 +69,8 @@ export class WarehouseController {
 
   async getZones(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
-      const zones = await warehouseService.getZones(req.params.id);
+      const warehouseId = req.params.id as string;
+      const zones = await warehouseService.getZones(warehouseId);
       res.json(zones);
     } catch (err) {
       next(err);
@@ -80,9 +81,10 @@ export class WarehouseController {
     try {
       const companyId = (req.user as any)?.companyId || 'default-company';
       const userId = req.user?.id || 'system';
+      const warehouseId = req.params.id as string;
       const location = await warehouseService.createLocation({
         ...req.body,
-        warehouseId: req.params.id,
+        warehouseId,
         companyId,
         createdBy: userId,
       });
@@ -94,7 +96,8 @@ export class WarehouseController {
 
   async getLocations(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
-      const locations = await warehouseService.getLocations(req.params.id, req.query as any);
+      const warehouseId = req.params.id as string;
+      const locations = await warehouseService.getLocations(warehouseId, req.query as any);
       res.json(locations);
     } catch (err) {
       next(err);
@@ -106,9 +109,10 @@ export class WarehouseController {
     try {
       const companyId = (req.user as any)?.companyId || 'default-company';
       const userId = req.user?.id || 'system';
+      const warehouseId = req.params.id as string;
       const tasks = await putAwayService.createPutAwayTasksFromReceipt({
         companyId,
-        warehouseId: req.params.id,
+        warehouseId,
         goodsReceiptId: req.body.goodsReceiptId,
         strategy: req.body.strategy,
         createdBy: userId,
@@ -136,7 +140,8 @@ export class WarehouseController {
 
   async getPendingPutAway(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
-      const tasks = await putAwayService.getPendingTasks(req.params.id);
+      const warehouseId = req.params.id as string;
+      const tasks = await putAwayService.getPendingTasks(warehouseId);
       res.json(tasks);
     } catch (err) {
       next(err);
@@ -161,7 +166,8 @@ export class WarehouseController {
 
   async releaseAllocation(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
-      const allocation = await allocationService.releaseAllocation(req.params.id);
+      const allocationId = req.params.id as string;
+      const allocation = await allocationService.releaseAllocation(allocationId);
       res.json(allocation);
     } catch (err) {
       next(err);
@@ -260,7 +266,8 @@ export class WarehouseController {
   async executeDispatch(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id || 'system';
-      const dispatch = await dispatchService.executeDispatch(req.params.id, userId);
+      const dispatchId = req.params.id as string;
+      const dispatch = await dispatchService.executeDispatch(dispatchId, userId);
       res.json(dispatch);
     } catch (err) {
       next(err);
@@ -284,7 +291,8 @@ export class WarehouseController {
   async approveTransfer(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id || 'system';
-      const transfer = await warehouseTransferService.approveTransfer(req.params.id, userId);
+      const transferId = req.params.id as string;
+      const transfer = await warehouseTransferService.approveTransfer(transferId, userId);
       res.json(transfer);
     } catch (err) {
       next(err);
@@ -294,8 +302,9 @@ export class WarehouseController {
   async shipTransfer(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id || 'system';
+      const transferId = req.params.id as string;
       const transfer = await warehouseTransferService.shipTransfer(
-        req.params.id,
+        transferId,
         userId,
         req.body.trackingNumber
       );
@@ -308,8 +317,9 @@ export class WarehouseController {
   async receiveTransfer(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id || 'system';
+      const transferId = req.params.id as string;
       const transfer = await warehouseTransferService.receiveTransfer(
-        req.params.id,
+        transferId,
         userId,
         req.body.receivedItems
       );
@@ -338,11 +348,8 @@ export class WarehouseController {
   async submitCycleCount(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id || 'system';
-      const count = await cycleCountService.submitCountResults(
-        req.params.id,
-        userId,
-        req.body.items
-      );
+      const countId = req.params.id as string;
+      const count = await cycleCountService.submitCountResults(countId, userId, req.body.items);
       res.json(count);
     } catch (err) {
       next(err);
@@ -352,7 +359,8 @@ export class WarehouseController {
   async approveCycleCount(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id || 'system';
-      const count = await cycleCountService.applyCountAdjustments(req.params.id, userId);
+      const countId = req.params.id as string;
+      const count = await cycleCountService.applyCountAdjustments(countId, userId);
       res.json(count);
     } catch (err) {
       next(err);
@@ -362,7 +370,8 @@ export class WarehouseController {
   // Analytics & AI
   async getAnalytics(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
-      const analytics = await warehouseAnalyticsService.getWarehouseAnalytics(req.params.id);
+      const warehouseId = req.params.id as string;
+      const analytics = await warehouseAnalyticsService.getWarehouseAnalytics(warehouseId);
       res.json(analytics);
     } catch (err) {
       next(err);
@@ -371,7 +380,8 @@ export class WarehouseController {
 
   async getAIInsights(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
-      const insights = await warehouseAIService.getWarehouseAIInsights(req.params.id);
+      const warehouseId = req.params.id as string;
+      const insights = await warehouseAIService.getWarehouseAIInsights(warehouseId);
       res.json(insights);
     } catch (err) {
       next(err);

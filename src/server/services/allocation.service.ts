@@ -144,7 +144,8 @@ export class AllocationService {
     if (orderType === 'OMNICHANNEL') {
       const order = await OmnichannelOrder.findById(orderId);
       if (order && order.fulfillmentStatus === 'UNFULFILLED') {
-        order.fulfillmentStatus = isFullyAllocated ? 'ALLOCATED' : 'PARTIALLY_FULFILLED';
+        order.fulfillmentStatus = 'PICKING';
+        order.status = isFullyAllocated ? 'READY_FOR_FULFILLMENT' : 'PARTIALLY_FULFILLED';
         await order.save();
       }
     }

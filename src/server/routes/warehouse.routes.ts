@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { warehouseController } from '../controllers/warehouse.controller.ts';
+import { warehouseController } from '../controllers/warehouse.controller.js';
 import { authenticate } from '../middleware/auth.js';
 import { rbac } from '../middleware/rbac.js';
 
