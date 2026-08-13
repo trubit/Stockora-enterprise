@@ -15,7 +15,8 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
-import { QrCodeScanner as CountIcon, CheckCircleOutline as ApproveIcon } from '@mui/icons-material';
+import CountIcon from '@mui/icons-material/QrCodeScanner';
+import ApproveIcon from '@mui/icons-material/CheckCircle';
 import { api } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 

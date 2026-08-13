@@ -18,7 +18,8 @@ import {
   TextField,
   MenuItem,
 } from '@mui/material';
-import { MoveToInbox as PutAwayIcon, CheckCircle as ConfirmIcon } from '@mui/icons-material';
+import PutAwayIcon from '@mui/icons-material/MoveToInbox';
+import ConfirmIcon from '@mui/icons-material/CheckCircle';
 import { api } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 

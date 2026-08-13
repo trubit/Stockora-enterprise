@@ -15,11 +15,9 @@ import {
   LinearProgress,
   MenuItem,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  LocationOn as LocationIcon,
-  Layers as ZoneIcon,
-} from '@mui/icons-material';
+import AddIcon from '@mui/icons-material/Add';
+import LocationIcon from '@mui/icons-material/LocationOn';
+import ZoneIcon from '@mui/icons-material/Layers';
 import { api } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 

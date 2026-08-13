@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Box, Typography, Grid, Button, TextField, Paper } from '@mui/material';
-import { LocalShippingOutlined as DispatchIcon } from '@mui/icons-material';
+import DispatchIcon from '@mui/icons-material/LocalShipping';
 import { api } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 

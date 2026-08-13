@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { Box, Typography, Grid, Button, TextField, MenuItem, Paper } from '@mui/material';
-import { Inventory as PackIcon } from '@mui/icons-material';
+import PackIcon from '@mui/icons-material/Inventory';
 import { api } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 
 export default function PackingStationConsole() {
   const [orderId, setOrderId] = useState('');
   const [orderNumber, setOrderNumber] = useState('');
-  const [warehouseId, setWarehouseId] = useState('');
   const [packagingType, setPackagingType] = useState('BOX_MED');
   const [weight, setWeight] = useState(1.5);
   const [length, setLength] = useState(30);
@@ -22,7 +21,7 @@ export default function PackingStationConsole() {
     }
     try {
       const res = await api.post('/warehouses/packing', {
-        warehouseId: warehouseId || 'default-wh',
+        warehouseId: 'default-wh',
         orderId,
         orderNumber,
         packagingType,

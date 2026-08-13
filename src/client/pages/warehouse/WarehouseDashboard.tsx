@@ -80,11 +80,21 @@ export default function WarehouseDashboard() {
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: '#6366f1', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              color: '#6366f1',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+            }}
+          >
             <WarehouseIcon fontSize="large" /> WMS Operations & Intelligence Center
           </Typography>
           <Typography variant="body2" sx={{ color: '#9ca3af' }}>
-            Real-time warehouse utilization, picking performance, put-away tasks, and AI slotting insights.
+            Real-time warehouse utilization, picking performance, put-away tasks, and AI slotting
+            insights.
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -102,7 +112,10 @@ export default function WarehouseDashboard() {
               {wh.name} ({wh.code})
             </Button>
           ))}
-          <IconButton onClick={() => selectedWarehouseId && fetchAnalytics(selectedWarehouseId)} sx={{ color: '#9ca3af' }}>
+          <IconButton
+            onClick={() => selectedWarehouseId && fetchAnalytics(selectedWarehouseId)}
+            sx={{ color: '#9ca3af' }}
+          >
             <RefreshIcon />
           </IconButton>
         </Box>
@@ -114,28 +127,52 @@ export default function WarehouseDashboard() {
         <Grid container spacing={3}>
           {/* Key KPI Metrics */}
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ background: 'rgba(30, 41, 59, 0.7)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.05)', color: '#fff' }}>
+            <Card
+              sx={{
+                background: 'rgba(30, 41, 59, 0.7)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.05)',
+                color: '#fff',
+              }}
+            >
               <CardContent>
-                <Typography variant="overline" sx={{ color: '#9ca3af' }}>Storage Capacity</Typography>
+                <Typography variant="overline" sx={{ color: '#9ca3af' }}>
+                  Storage Capacity
+                </Typography>
                 <Typography variant="h4" sx={{ fontWeight: 700, my: 1 }}>
                   {analytics?.capacity?.utilizationPercentage || 0}%
                 </Typography>
                 <LinearProgress
                   variant="determinate"
                   value={analytics?.capacity?.utilizationPercentage || 0}
-                  sx={{ height: 8, borderRadius: 4, bgcolor: '#334155', '& .MuiLinearProgress-bar': { bgcolor: '#6366f1' } }}
+                  sx={{
+                    height: 8,
+                    borderRadius: 4,
+                    bgcolor: '#334155',
+                    '& .MuiLinearProgress-bar': { bgcolor: '#6366f1' },
+                  }}
                 />
                 <Typography variant="caption" sx={{ color: '#9ca3af', display: 'block', mt: 1 }}>
-                  {analytics?.capacity?.usedUnits || 0} / {analytics?.capacity?.totalCapacityUnits || 0} units stored
+                  {analytics?.capacity?.usedUnits || 0} /{' '}
+                  {analytics?.capacity?.totalCapacityUnits || 0} units stored
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ background: 'rgba(30, 41, 59, 0.7)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.05)', color: '#fff' }}>
+            <Card
+              sx={{
+                background: 'rgba(30, 41, 59, 0.7)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.05)',
+                color: '#fff',
+              }}
+            >
               <CardContent>
-                <Typography variant="overline" sx={{ color: '#9ca3af' }}>Pick Accuracy Rate</Typography>
+                <Typography variant="overline" sx={{ color: '#9ca3af' }}>
+                  Pick Accuracy Rate
+                </Typography>
                 <Typography variant="h4" sx={{ fontWeight: 700, color: '#10b981', my: 1 }}>
                   {analytics?.fulfillment?.pickAccuracyPercentage || 100}%
                 </Typography>
@@ -147,43 +184,89 @@ export default function WarehouseDashboard() {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ background: 'rgba(30, 41, 59, 0.7)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.05)', color: '#fff' }}>
+            <Card
+              sx={{
+                background: 'rgba(30, 41, 59, 0.7)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.05)',
+                color: '#fff',
+              }}
+            >
               <CardContent>
-                <Typography variant="overline" sx={{ color: '#9ca3af' }}>Pending Put-away</Typography>
+                <Typography variant="overline" sx={{ color: '#9ca3af' }}>
+                  Pending Put-away
+                </Typography>
                 <Typography variant="h4" sx={{ fontWeight: 700, color: '#f59e0b', my: 1 }}>
                   {analytics?.logistics?.pendingPutawayTasks || 0}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#9ca3af' }}>Tasks waiting at receiving dock</Typography>
+                <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                  Tasks waiting at receiving dock
+                </Typography>
               </CardContent>
             </Card>
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ background: 'rgba(30, 41, 59, 0.7)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.05)', color: '#fff' }}>
+            <Card
+              sx={{
+                background: 'rgba(30, 41, 59, 0.7)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.05)',
+                color: '#fff',
+              }}
+            >
               <CardContent>
-                <Typography variant="overline" sx={{ color: '#9ca3af' }}>Dispatches Executed</Typography>
+                <Typography variant="overline" sx={{ color: '#9ca3af' }}>
+                  Dispatches Executed
+                </Typography>
                 <Typography variant="h4" sx={{ fontWeight: 700, color: '#ec4899', my: 1 }}>
                   {analytics?.fulfillment?.totalDispatchesExecuted || 0}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#9ca3af' }}>Carrier pickups completed</Typography>
+                <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                  Carrier pickups completed
+                </Typography>
               </CardContent>
             </Card>
           </Grid>
 
           {/* AI Intelligence Advisory Card */}
           <Grid item xs={12}>
-            <Paper sx={{ p: 3, background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15))', border: '1px solid rgba(99, 102, 241, 0.3)', borderRadius: 3 }}>
+            <Paper
+              sx={{
+                p: 3,
+                background:
+                  'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15))',
+                border: '1px solid rgba(99, 102, 241, 0.3)',
+                borderRadius: 3,
+              }}
+            >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <AIIcon sx={{ color: '#a855f7' }} />
-                <Typography variant="h6" sx={{ fontWeight: 700, color: '#fff' }}>AI Warehouse Advisory & Recommendations</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: '#fff' }}>
+                  AI Warehouse Advisory & Recommendations
+                </Typography>
               </Box>
               <Grid container spacing={2}>
                 {aiInsights.map((insight, idx) => (
                   <Grid item xs={12} md={6} key={idx}>
-                    <Box sx={{ p: 2, background: 'rgba(15, 23, 42, 0.6)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
-                      <Typography variant="subtitle2" sx={{ color: '#818cf8', fontWeight: 600 }}>{insight.insight}</Typography>
-                      <Typography variant="body2" sx={{ color: '#cbd5e1', my: 0.5 }}>{insight.reason}</Typography>
-                      <Typography variant="caption" sx={{ color: '#10b981', display: 'block', fontWeight: 600 }}>
+                    <Box
+                      sx={{
+                        p: 2,
+                        background: 'rgba(15, 23, 42, 0.6)',
+                        borderRadius: 2,
+                        border: '1px solid rgba(255,255,255,0.05)',
+                      }}
+                    >
+                      <Typography variant="subtitle2" sx={{ color: '#818cf8', fontWeight: 600 }}>
+                        {insight.insight}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#cbd5e1', my: 0.5 }}>
+                        {insight.reason}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: '#10b981', display: 'block', fontWeight: 600 }}
+                      >
                         Recommendation: {insight.recommendedAction}
                       </Typography>
                     </Box>
