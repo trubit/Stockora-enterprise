@@ -85,6 +85,13 @@ import GoodsReceivingConsole from './pages/procurement/GoodsReceivingConsole.tsx
 import SupplierReturnsManager from './pages/procurement/SupplierReturnsManager.tsx';
 import ThreeWayMatchingConsole from './pages/procurement/ThreeWayMatchingConsole.tsx';
 import ProcurementAnalyticsDashboard from './pages/procurement/ProcurementAnalyticsDashboard.tsx';
+import WarehouseDashboard from './pages/warehouse/WarehouseDashboard.tsx';
+import WarehouseLocationManager from './pages/warehouse/WarehouseLocationManager.tsx';
+import PutAwayConsole from './pages/warehouse/PutAwayConsole.tsx';
+import PickingConsole from './pages/warehouse/PickingConsole.tsx';
+import PackingStationConsole from './pages/warehouse/PackingStationConsole.tsx';
+import DispatchConsole from './pages/warehouse/DispatchConsole.tsx';
+import CycleCountConsole from './pages/warehouse/CycleCountConsole.tsx';
 import LandingPage from './pages/LandingPage.tsx';
 import { ProtectedRoute } from './routes/ProtectedRoute.tsx';
 
@@ -313,6 +320,15 @@ function App() {
           <Route path="procurement/returns" element={<SupplierReturnsManager />} />
           <Route path="procurement/three-way-matching" element={<ThreeWayMatchingConsole />} />
           <Route path="procurement/analytics" element={<ProcurementAnalyticsDashboard />} />
+
+          {/* Phase 34 — Advanced WMS Routes */}
+          <Route path="warehouse/dashboard" element={<WarehouseDashboard />} />
+          <Route path="warehouse/locations" element={<WarehouseLocationManager />} />
+          <Route path="warehouse/putaway" element={<PutAwayConsole />} />
+          <Route path="warehouse/picking" element={<PickingConsole />} />
+          <Route path="warehouse/packing" element={<PackingStationConsole />} />
+          <Route path="warehouse/dispatch" element={<DispatchConsole />} />
+          <Route path="warehouse/counting" element={<CycleCountConsole />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
