@@ -6,11 +6,14 @@ import { Customer } from '../models/Customer.js';
 
 describe('Product Catalog, Suppliers & Customers Integration', () => {
   beforeAll(async () => {
-    await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_catalog');
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_catalog');
+    }
     await Product.deleteMany({});
     await Supplier.deleteMany({});
     await Customer.deleteMany({});
   });
+
 
   afterAll(async () => {
     await Product.deleteMany({});

@@ -146,7 +146,7 @@ export class PurchaseOrderController {
       const grItems = [];
 
       for (const receiveItem of items) {
-        const poItem = po.items.find((i) => i.productId.toString() === receiveItem.productId);
+        const poItem = po.items.find((i: any) => i.productId.toString() === receiveItem.productId);
         if (!poItem) {
           return next(
             new ValidationError(

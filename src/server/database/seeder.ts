@@ -4,6 +4,9 @@ import { logger } from '../logger.js';
 
 export async function seedRolesIfEmpty(): Promise<void> {
   try {
+    const existingCount = await Role.countDocuments();
+    if (existingCount >= 6) return;
+
     const rolesToCreate = [
       {
         name: SYSTEM_ROLES.SUPER_ADMIN,
@@ -74,15 +77,19 @@ export async function seedRolesIfEmpty(): Promise<void> {
       },
     ];
 
-    for (const r of rolesToCreate) {
-      await Role.findOneAndUpdate(
-        { name: r.name },
-        { $set: { permissions: r.permissions, description: r.description, isSystem: r.isSystem } },
-        { upsert: true, new: true }
-      );
-    }
+    await Promise.all(
+      rolesToCreate.map((r) =>
+        Role.findOneAndUpdate(
+          { name: r.name },
+          {
+            $set: { permissions: r.permissions, description: r.description, isSystem: r.isSystem },
+          },
+          { upsert: true, new: true }
+        )
+      )
+    );
     logger.info(
-      `[Database Seeding] Successfully seeded and synced ${rolesToCreate.length} default workspace system roles.`
+      `[Database Seeding] Successfully seeded ${rolesToCreate.length} default system roles.`
     );
   } catch (err: unknown) {
     logger.error('Failed to seed system roles:', err);
@@ -161,7 +168,9 @@ export async function seedDefaultsIfEmpty(): Promise<void> {
     const { Supplier } = await import('../models/Supplier.js');
     const { Customer } = await import('../models/Customer.js');
 
-    // 1. Seed Company
+    const companyCount = await Company.countDocuments();
+    if (companyCount > 0) return;
+
     let company = await Company.findOne();
     if (!company) {
       company = await Company.create({
@@ -175,80 +184,62 @@ export async function seedDefaultsIfEmpty(): Promise<void> {
       logger.info('[Database Seeding] Seeded default company.');
     }
 
-    // 2. Seed Branch
     let branch = await Branch.findOne();
     if (!branch) {
       branch = await Branch.create({
         companyId: company._id,
-        name: 'Toronto Headquarters',
+        name: 'Main HQ Store',
         code: 'BR-HQ-01',
-        address: '100 Innovation Way, Toronto, ON',
+        address: '100 Innovation Way, Suite 100',
         phone: '416-555-0199',
-        isActive: true,
+        email: 'hq@stockora.com',
+        isMain: true,
       });
-      logger.info('[Database Seeding] Seeded default headquarters branch.');
+      logger.info('[Database Seeding] Seeded default branch.');
     }
 
-    // 3. Seed Warehouses
-    const warehouseCount = await Warehouse.countDocuments();
-    if (warehouseCount === 0) {
-      await Warehouse.create([
-        {
-          branchId: branch._id,
-          name: 'Main Distribution Center',
-          code: 'WH-CDC-01',
-          zones: ['A', 'B', 'C'],
-          capacity: 10000,
-          isActive: true,
-        },
-        {
-          branchId: branch._id,
-          name: 'Retail Storage Annex',
-          code: 'WH-ANNEX-02',
-          zones: ['Zone X', 'Zone Y'],
-          capacity: 2500,
-          isActive: true,
-        },
-      ]);
-      logger.info('[Database Seeding] Seeded default warehouses.');
+    let warehouse = await Warehouse.findOne();
+    if (!warehouse) {
+      warehouse = await Warehouse.create({
+        companyId: company._id,
+        branchId: branch._id,
+        name: 'Central Distribution Warehouse',
+        code: 'WH-MAIN-01',
+        type: 'DISTRIBUTION_CENTER',
+        capacity: 100000,
+        isDefault: true,
+      });
+      logger.info('[Database Seeding] Seeded default warehouse.');
     }
 
-    // 4. Seed Supplier
-    const supplierCount = await Supplier.countDocuments();
-    if (supplierCount === 0) {
+    const supplier = await Supplier.findOne();
+    if (!supplier) {
       await Supplier.create({
-        name: 'Apex Global Logistics',
-        code: 'SUP-APEX',
-        contactPerson: 'John Doe',
-        email: 'sales@apexlogistics.com',
-        phone: '555-0144',
-        address: '456 Industrial Pkwy, Chicago, IL',
+        name: 'Apex Industrial Supplies',
+        code: 'SUP-001',
+        contactPerson: 'Sarah Jenkins',
+        email: 'sjenkins@apexsupplies.com',
+        phone: '1-800-555-0199',
+        address: '500 Logistics Blvd, Chicago, IL',
         paymentTerms: 'NET 30',
-        creditLimit: 50000,
-        rating: 5,
+        status: 'ACTIVE',
         isActive: true,
       });
       logger.info('[Database Seeding] Seeded default supplier.');
     }
 
-    // 5. Seed Customer
-    const customerCount = await Customer.countDocuments();
-    if (customerCount === 0) {
+    const customer = await Customer.findOne();
+    if (!customer) {
       await Customer.create({
-        name: 'Acme Corporate Buyers',
-        code: 'CUST-ACME',
-        email: 'purchasing@acme.com',
-        phone: '555-0155',
-        group: 'VIP',
-        creditLimit: 25000,
+        name: 'Alice Johnson',
+        email: 'alice@example.com',
+        phone: '555-0199',
+        tier: 'GOLD',
         loyaltyPoints: 120,
-        billingAddress: '789 Corporate Way, New York, NY',
-        shippingAddress: '789 Corporate Way, New York, NY',
-        isActive: true,
       });
       logger.info('[Database Seeding] Seeded default customer.');
     }
   } catch (err: unknown) {
-    logger.error('Failed to seed default database properties:', err);
+    logger.error('Failed to seed default organizational entities:', err);
   }
 }

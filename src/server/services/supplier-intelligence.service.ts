@@ -41,7 +41,7 @@ export class SupplierIntelligenceService {
         let totalOrderedQty = 0;
 
         poList.forEach((po) => {
-          po.items.forEach((item) => {
+          po.items.forEach((item: any) => {
             totalOrderedQty += item.quantity;
             totalFulfilledQty += item.receivedQuantity || item.quantity;
           });

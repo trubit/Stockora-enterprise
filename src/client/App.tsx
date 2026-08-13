@@ -77,6 +77,14 @@ import BankReconciliationConsole from './pages/finance/BankReconciliationConsole
 import TaxManagementConsole from './pages/finance/TaxManagementConsole.tsx';
 import FiscalPeriodManager from './pages/finance/FiscalPeriodManager.tsx';
 import BudgetingConsole from './pages/finance/BudgetingConsole.tsx';
+import ProcurementDashboard from './pages/procurement/ProcurementDashboard.tsx';
+import SupplierManager from './pages/procurement/SupplierManager.tsx';
+import PurchaseRequestConsole from './pages/procurement/PurchaseRequestConsole.tsx';
+import PurchaseOrderConsole from './pages/procurement/PurchaseOrderConsole.tsx';
+import GoodsReceivingConsole from './pages/procurement/GoodsReceivingConsole.tsx';
+import SupplierReturnsManager from './pages/procurement/SupplierReturnsManager.tsx';
+import ThreeWayMatchingConsole from './pages/procurement/ThreeWayMatchingConsole.tsx';
+import ProcurementAnalyticsDashboard from './pages/procurement/ProcurementAnalyticsDashboard.tsx';
 import LandingPage from './pages/LandingPage.tsx';
 import { ProtectedRoute } from './routes/ProtectedRoute.tsx';
 
@@ -295,6 +303,16 @@ function App() {
           <Route element={<ProtectedRoute requiredPermission="automation:read" />}>
             <Route path="scheduler" element={<SchedulerMonitor />} />
           </Route>
+
+          {/* Phase 33 — Procurement & Supply Chain Routes */}
+          <Route path="procurement" element={<ProcurementDashboard />} />
+          <Route path="procurement/suppliers" element={<SupplierManager />} />
+          <Route path="procurement/requests" element={<PurchaseRequestConsole />} />
+          <Route path="procurement/purchase-orders" element={<PurchaseOrderConsole />} />
+          <Route path="procurement/receiving" element={<GoodsReceivingConsole />} />
+          <Route path="procurement/returns" element={<SupplierReturnsManager />} />
+          <Route path="procurement/three-way-matching" element={<ThreeWayMatchingConsole />} />
+          <Route path="procurement/analytics" element={<ProcurementAnalyticsDashboard />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

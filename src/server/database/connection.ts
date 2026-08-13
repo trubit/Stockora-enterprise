@@ -25,18 +25,19 @@ export class DBConnectionManager {
       mongoose.set('strictQuery', true);
 
       const options = {
-        maxPoolSize: 200,
-        minPoolSize: 20,
-        serverSelectionTimeoutMS: 10000,
+        maxPoolSize: 100,
+        minPoolSize: 5,
+        maxIdleTimeMS: 30000,
+        serverSelectionTimeoutMS: 5000,
         socketTimeoutMS: 45000,
       };
 
       await ResilientExecutor.execute(
         {
           name: 'MongoDB',
-          retryCount: 10,
-          baseDelayMs: 500,
-          maxDelayMs: 5000,
+          retryCount: 5,
+          baseDelayMs: 200,
+          maxDelayMs: 2000,
           backoffType: 'EXPONENTIAL',
           jitterType: 'FULL',
           isIdempotent: true,

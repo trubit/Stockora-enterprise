@@ -14,7 +14,9 @@ describe('Purchasing & Procurement Integration', () => {
   let userId: mongoose.Types.ObjectId;
 
   beforeAll(async () => {
-    await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_purchasing');
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_purchasing');
+    }
     await Product.deleteMany({});
     await Supplier.deleteMany({});
     await PurchaseRequisition.deleteMany({});

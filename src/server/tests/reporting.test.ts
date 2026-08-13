@@ -14,7 +14,9 @@ describe('Phase 23 Enterprise Reporting Integration tests', () => {
   let templateId: mongoose.Types.ObjectId;
 
   beforeAll(async () => {
-    await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_reports');
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_reports');
+    }
     await Promise.all([
       ReportTemplate.deleteMany({}),
       Product.deleteMany({}),

@@ -14,7 +14,9 @@ describe('Secure Payment Gateway & Resiliency tests', () => {
 
   beforeAll(async () => {
     // Connect to test database pool
-    await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_payments');
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_payments');
+    }
     await Product.deleteMany({});
     await Transaction.deleteMany({});
 

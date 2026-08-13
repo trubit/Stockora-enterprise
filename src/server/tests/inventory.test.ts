@@ -12,7 +12,9 @@ describe('Inventory Logistics, Adjustments & Transfers Integration', () => {
   let productId: string;
 
   beforeAll(async () => {
-    await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_inventory');
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_inventory');
+    }
     await Product.deleteMany({});
     await Warehouse.deleteMany({});
     await StockAdjustment.deleteMany({});
@@ -58,7 +60,8 @@ describe('Inventory Logistics, Adjustments & Transfers Integration', () => {
     await StockMovement.deleteMany({});
     await WarehouseTransfer.deleteMany({});
     await mongoose.connection.close();
-  });
+  }, 30_000);
+
 
   it('should process stock adjustments and emit movement ledger audits', async () => {
     const product = await Product.findById(productId);

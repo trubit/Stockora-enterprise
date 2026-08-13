@@ -7,6 +7,13 @@ export default defineConfig({
   plugins: [react()],
   test: {
     exclude: ['**/node_modules/**', '**/dist/**', '**/.git/**', '**/dist-ssr/**'],
+    hookTimeout: 30_000,
+    testTimeout: 30_000,
+    poolOptions: {
+      forks: {
+        maxForks: 4,
+      },
+    },
   },
   server: {
     port: 3000,

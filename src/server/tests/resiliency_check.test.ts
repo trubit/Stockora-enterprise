@@ -8,9 +8,12 @@ import type { Response } from 'express';
 
 describe('Resiliency, Proxy IP, and Reconnection Audits', () => {
   beforeAll(async () => {
-    await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_resiliency_audit');
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_resiliency_audit');
+    }
     await Session.deleteMany({});
   });
+
 
   afterAll(async () => {
     await Session.deleteMany({});
