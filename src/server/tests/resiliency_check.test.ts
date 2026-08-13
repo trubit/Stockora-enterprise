@@ -14,7 +14,6 @@ describe('Resiliency, Proxy IP, and Reconnection Audits', () => {
     await Session.deleteMany({});
   });
 
-
   afterAll(async () => {
     await Session.deleteMany({});
     await mongoose.connection.close();

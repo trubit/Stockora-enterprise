@@ -16,7 +16,6 @@ describe('Organization & Tenancy Records', () => {
     await MasterData.deleteMany({});
   });
 
-
   afterAll(async () => {
     await Company.deleteMany({});
     await Branch.deleteMany({});

@@ -14,7 +14,6 @@ describe('Product Catalog, Suppliers & Customers Integration', () => {
     await Customer.deleteMany({});
   });
 
-
   afterAll(async () => {
     await Product.deleteMany({});
     await Supplier.deleteMany({});

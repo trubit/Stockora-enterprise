@@ -62,7 +62,6 @@ describe('Inventory Logistics, Adjustments & Transfers Integration', () => {
     await mongoose.connection.close();
   }, 30_000);
 
-
   it('should process stock adjustments and emit movement ledger audits', async () => {
     const product = await Product.findById(productId);
     expect(product).toBeDefined();
