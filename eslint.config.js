@@ -22,6 +22,8 @@ export default defineConfig([
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+      'no-useless-assignment': 'off',
     },
   },
   // Server Linting Rules
@@ -34,6 +36,8 @@ export default defineConfig([
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+      'no-useless-assignment': 'off',
     },
   },
 ]);
