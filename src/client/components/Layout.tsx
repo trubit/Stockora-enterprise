@@ -228,6 +228,48 @@ export default function Layout() {
       permission: 'warehouses:read',
     },
     {
+      text: 'WMS Operations Center',
+      icon: <WarehouseIcon />,
+      path: '/warehouse/dashboard',
+      permission: 'warehouses:read',
+    },
+    {
+      text: 'WMS Hierarchy & Bins',
+      icon: <CategoryIcon />,
+      path: '/warehouse/locations',
+      permission: 'warehouses:read',
+    },
+    {
+      text: 'WMS Put-Away Console',
+      icon: <InventoryIcon />,
+      path: '/warehouse/putaway',
+      permission: 'warehouses:read',
+    },
+    {
+      text: 'WMS Barcode Pick Console',
+      icon: <AdjustIcon />,
+      path: '/warehouse/picking',
+      permission: 'warehouses:read',
+    },
+    {
+      text: 'WMS Packing Station',
+      icon: <InventoryIcon />,
+      path: '/warehouse/packing',
+      permission: 'warehouses:read',
+    },
+    {
+      text: 'WMS Carrier Dispatch',
+      icon: <LocalShippingIcon />,
+      path: '/warehouse/dispatch',
+      permission: 'warehouses:read',
+    },
+    {
+      text: 'WMS Cycle Count & Audits',
+      icon: <AdjustIcon />,
+      path: '/warehouse/counting',
+      permission: 'warehouses:read',
+    },
+    {
       text: 'Purchase Orders',
       icon: <ShoppingCartIcon />,
       path: '/purchase-orders',
