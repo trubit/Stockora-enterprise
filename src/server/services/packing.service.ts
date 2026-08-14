@@ -4,6 +4,7 @@ import { PickList } from '../models/PickList.js';
 import { OmnichannelOrder } from '../models/OmnichannelOrder.js';
 import { NotFoundError, ValidationError } from '../errors/AppError.js';
 import { eventBus } from '../events/eventBus.js';
+import { safeObjectId } from '../utils/safeObjectId.js';
 
 export interface CreatePackageParams {
   companyId: string;
@@ -34,8 +35,9 @@ export class PackingService {
     name: string;
     createdBy: string;
   }): Promise<IPackingStation> {
+    const whObjId = safeObjectId(params.warehouseId);
     const existing = await PackingStation.findOne({
-      warehouseId: params.warehouseId,
+      warehouseId: whObjId,
       stationCode: params.stationCode.toUpperCase(),
     });
     if (existing) {
@@ -43,12 +45,12 @@ export class PackingService {
     }
 
     return PackingStation.create({
-      companyId: params.companyId,
-      warehouseId: params.warehouseId,
+      companyId: safeObjectId(params.companyId),
+      warehouseId: whObjId,
       stationCode: params.stationCode.toUpperCase(),
       name: params.name,
       isActive: true,
-      createdBy: params.createdBy,
+      createdBy: safeObjectId(params.createdBy),
     });
   }
 
@@ -79,41 +81,43 @@ export class PackingService {
       if (existingPkg) return existingPkg;
     }
 
-    // Verify pick list is completed
-    const pickList = await PickList.findOne({
-      orderId,
-      status: { $in: ['PICKED', 'IN_PROGRESS'] },
-    });
-    if (pickList && pickList.status !== 'PICKED') {
-      console.warn(`[Packing] Order ${orderNumber} has partial pick state.`);
-    }
+    const orderObjId = safeObjectId(orderId);
+    const whObjId = safeObjectId(warehouseId);
+    const compObjId = safeObjectId(companyId);
+    const packerObjId = safeObjectId(packerId);
+
+    // Format package items with safeObjectIds
+    const formattedItems = (items || []).map((item) => ({
+      ...item,
+      productId: safeObjectId(item.productId as any),
+    }));
 
     const packageNumber = `PKG-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
 
     const pkg = await Package.create({
       packageNumber,
-      companyId,
-      warehouseId,
-      orderId,
-      orderNumber,
-      packingStationId,
-      packerId,
-      items,
+      companyId: compObjId,
+      warehouseId: whObjId,
+      orderId: orderObjId,
+      orderNumber: orderNumber || `STK-${Date.now().toString().slice(-6)}`,
+      packingStationId: packingStationId ? safeObjectId(packingStationId) : undefined,
+      packerId: packerObjId,
+      items: formattedItems,
       packagingType,
-      weight,
-      length,
-      width,
-      height,
-      carrier,
-      shippingMethod,
+      weight: weight || 1.5,
+      length: length || 30,
+      width: width || 20,
+      height: height || 15,
+      carrier: carrier || 'FedEx Express',
+      shippingMethod: shippingMethod || 'STANDARD',
       status: 'PACKED',
       packedAt: new Date(),
       idempotencyKey,
-      createdBy: packerId,
+      createdBy: packerObjId,
     });
 
-    // Update OmnichannelOrder state
-    const order = await OmnichannelOrder.findById(orderId);
+    // Update OmnichannelOrder state if found
+    const order = await OmnichannelOrder.findById(orderObjId);
     if (order) {
       order.fulfillmentStatus = 'PACKED';
       await order.save();
@@ -132,7 +136,10 @@ export class PackingService {
    * Get active packages for an order
    */
   async getPackagesByOrder(orderId: string): Promise<IPackage[]> {
-    return Package.find({ orderId }).sort({ createdAt: -1 }).lean() as unknown as IPackage[];
+    const orderObjId = safeObjectId(orderId);
+    return Package.find({ orderId: orderObjId })
+      .sort({ createdAt: -1 })
+      .lean() as unknown as IPackage[];
   }
 }
 

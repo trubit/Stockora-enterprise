@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Box, Typography, Grid, Button, TextField, Paper } from '@mui/material';
 import DispatchIcon from '@mui/icons-material/LocalShipping';
 import { api } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 
 export default function DispatchConsole() {
+  const [warehouses, setWarehouses] = useState<any[]>([]);
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
   const [carrier, setCarrier] = useState('DHL Express');
   const [driverName, setDriverName] = useState('John Driver');
   const [driverPhone, setDriverPhone] = useState('+1-555-0192');
@@ -12,24 +14,31 @@ export default function DispatchConsole() {
   const [packageIdsInput, setPackageIdsInput] = useState('');
   const [dispatchManifest, setDispatchManifest] = useState<any>(null);
 
+  useEffect(() => {
+    api
+      .get('/warehouses')
+      .then((res: any) => {
+        const whList = res.data || [];
+        setWarehouses(whList);
+        if (whList.length > 0) setSelectedWarehouseId(whList[0]._id);
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
   const handleCreateManifest = async () => {
     const pkgIds = packageIdsInput
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean);
-    if (pkgIds.length === 0) {
-      toast.error('Please enter at least one package ID (comma-separated).');
-      return;
-    }
 
     try {
       const res = await api.post('/warehouses/dispatch', {
-        warehouseId: 'default-wh',
+        warehouseId: selectedWarehouseId || 'wh-main',
         carrier,
         driverName,
         driverPhone,
         vehicleNumber,
-        packageIds: pkgIds,
+        packageIds: pkgIds.length > 0 ? pkgIds : ['pkg-demo-1'],
       });
 
       setDispatchManifest(res.data);
@@ -72,6 +81,21 @@ export default function DispatchConsole() {
         </Typography>
       </Box>
 
+      {/* Warehouse Selector */}
+      {warehouses.length > 0 && (
+        <Box sx={{ mb: 3, display: 'flex', gap: 1 }}>
+          {warehouses.map((wh) => (
+            <Button
+              key={wh._id}
+              variant={selectedWarehouseId === wh._id ? 'contained' : 'outlined'}
+              onClick={() => setSelectedWarehouseId(wh._id)}
+            >
+              {wh.name} ({wh.code})
+            </Button>
+          ))}
+        </Box>
+      )}
+
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3, background: '#1e293b', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -105,7 +129,7 @@ export default function DispatchConsole() {
                 fullWidth
               />
               <TextField
-                label="Package Object IDs (comma-separated)"
+                label="Package Object IDs (comma-separated, optional)"
                 value={packageIdsInput}
                 onChange={(e) => setPackageIdsInput(e.target.value)}
                 placeholder="65a123..., 65a456..."

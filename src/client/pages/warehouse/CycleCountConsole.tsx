@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -21,15 +21,28 @@ import { api } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 
 export default function CycleCountConsole() {
+  const [warehouses, setWarehouses] = useState<any[]>([]);
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
   const [countType, setCountType] = useState('SCHEDULED');
   const [isBlindCount, setIsBlindCount] = useState(true);
   const [activeCount, setActiveCount] = useState<any>(null);
   const [countInputs, setCountInputs] = useState<Record<string, number>>({});
 
+  useEffect(() => {
+    api
+      .get('/warehouses')
+      .then((res: any) => {
+        const whList = res.data || [];
+        setWarehouses(whList);
+        if (whList.length > 0) setSelectedWarehouseId(whList[0]._id);
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
   const handleCreateCount = async () => {
     try {
       const res = await api.post('/warehouses/cycle-count', {
-        warehouseId: 'default-wh',
+        warehouseId: selectedWarehouseId || 'wh-main',
         countType,
         isBlindCount,
       });
@@ -92,6 +105,21 @@ export default function CycleCountConsole() {
           adjustments.
         </Typography>
       </Box>
+
+      {/* Warehouse Selector */}
+      {warehouses.length > 0 && (
+        <Box sx={{ mb: 3, display: 'flex', gap: 1 }}>
+          {warehouses.map((wh) => (
+            <Button
+              key={wh._id}
+              variant={selectedWarehouseId === wh._id ? 'contained' : 'outlined'}
+              onClick={() => setSelectedWarehouseId(wh._id)}
+            >
+              {wh.name} ({wh.code})
+            </Button>
+          ))}
+        </Box>
+      )}
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
@@ -159,7 +187,7 @@ export default function CycleCountConsole() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {activeCount.items.map((item: any) => (
+                    {activeCount.items?.map((item: any) => (
                       <TableRow key={item._id} sx={{ '& td': { color: '#fff' } }}>
                         <TableCell sx={{ fontWeight: 600, color: '#818cf8' }}>
                           {item.locationCode}

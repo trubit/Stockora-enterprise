@@ -1,8 +1,7 @@
 import { Warehouse } from '../models/Warehouse.js';
-import { WarehouseLocation } from '../models/WarehouseLocation.js';
-import { PickList } from '../models/PickList.js';
 import { InventoryLocation } from '../models/InventoryLocation.js';
 import { warehouseAnalyticsService } from './warehouse-analytics.service.js';
+import { safeObjectId } from '../utils/safeObjectId.js';
 
 export interface AIWarehouseInsight {
   insight: string;
@@ -21,8 +20,9 @@ export class WarehouseAIService {
     putawayRecommendations: any[];
     transferSuggestions: any[];
   }> {
+    const whObjId = safeObjectId(warehouseId);
     const analytics = await warehouseAnalyticsService.getWarehouseAnalytics(warehouseId);
-    const warehouse = await Warehouse.findById(warehouseId);
+    const warehouse = await Warehouse.findById(whObjId);
 
     const insights: AIWarehouseInsight[] = [];
 
@@ -74,7 +74,10 @@ export class WarehouseAIService {
     // Transfer Suggestions
     const transferSuggestions = [];
     if (analytics.capacity.utilizationPercentage > 75) {
-      const overstockedItems = await InventoryLocation.find({ warehouseId, quantity: { $gt: 50 } })
+      const overstockedItems = await InventoryLocation.find({
+        warehouseId: whObjId,
+        quantity: { $gt: 50 },
+      })
         .populate('productId', 'name sku')
         .limit(3);
 

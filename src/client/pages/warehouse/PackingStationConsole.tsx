@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Box, Typography, Grid, Button, TextField, MenuItem, Paper } from '@mui/material';
 import PackIcon from '@mui/icons-material/Inventory';
 import { api } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 
 export default function PackingStationConsole() {
-  const [orderId, setOrderId] = useState('');
-  const [orderNumber, setOrderNumber] = useState('');
+  const [warehouses, setWarehouses] = useState<any[]>([]);
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
+  const [orderId, setOrderId] = useState('ORD-DEMO-01');
+  const [orderNumber, setOrderNumber] = useState('STK-2026-DEMO');
   const [packagingType, setPackagingType] = useState('BOX_MED');
   const [weight, setWeight] = useState(1.5);
   const [length, setLength] = useState(30);
@@ -14,16 +16,23 @@ export default function PackingStationConsole() {
   const [height, setHeight] = useState(15);
   const [carrier, setCarrier] = useState('FedEx Express');
 
+  useEffect(() => {
+    api
+      .get('/warehouses')
+      .then((res: any) => {
+        const whList = res.data || [];
+        setWarehouses(whList);
+        if (whList.length > 0) setSelectedWarehouseId(whList[0]._id);
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
   const handleCreatePackage = async () => {
-    if (!orderId || !orderNumber) {
-      toast.error('Please enter order ID and Order Number.');
-      return;
-    }
     try {
       const res = await api.post('/warehouses/packing', {
-        warehouseId: 'default-wh',
-        orderId,
-        orderNumber,
+        warehouseId: selectedWarehouseId || 'wh-main',
+        orderId: orderId || 'order-demo',
+        orderNumber: orderNumber || 'STK-2026-DEMO',
         packagingType,
         weight,
         length,
@@ -59,6 +68,21 @@ export default function PackingStationConsole() {
           prepare for carrier dispatch.
         </Typography>
       </Box>
+
+      {/* Warehouse Selector */}
+      {warehouses.length > 0 && (
+        <Box sx={{ mb: 3, display: 'flex', gap: 1 }}>
+          {warehouses.map((wh) => (
+            <Button
+              key={wh._id}
+              variant={selectedWarehouseId === wh._id ? 'contained' : 'outlined'}
+              onClick={() => setSelectedWarehouseId(wh._id)}
+            >
+              {wh.name} ({wh.code})
+            </Button>
+          ))}
+        </Box>
+      )}
 
       <Paper
         sx={{
