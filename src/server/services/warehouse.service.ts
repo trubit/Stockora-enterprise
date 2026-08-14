@@ -151,9 +151,9 @@ export class WarehouseService {
     const whObjId = safeObjectId(warehouseId);
     let warehouse = await Warehouse.findById(whObjId);
     if (!warehouse) {
-      const all = await this.getWarehouses();
-      warehouse = all[0] as unknown as IWarehouse;
+      warehouse = await Warehouse.findOne({ isActive: true });
     }
+    if (!warehouse) throw new NotFoundError('Warehouse not found');
     return warehouse;
   }
 

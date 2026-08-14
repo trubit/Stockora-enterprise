@@ -152,7 +152,7 @@ export class DispatchService {
 
     dispatch.status = 'DISPATCHED';
     dispatch.dispatchedAt = new Date();
-    dispatch.dispatchedBy = userObjId;
+    dispatch.verifiedBy = userObjId;
     await dispatch.save();
 
     eventBus.emit('warehouse.dispatch.executed', {

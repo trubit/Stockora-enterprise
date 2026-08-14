@@ -164,7 +164,7 @@ export class CycleCountService {
         item.countedQuantity = countedQty;
         item.variance = variance;
         item.varianceValue = varianceVal;
-        item.status = variance === 0 ? 'MATCHED' : 'VARIANCE';
+        item.status = variance === 0 ? 'COUNTED' : 'VERIFIED';
         item.notes = input.notes;
 
         if (variance !== 0) {
@@ -207,16 +207,16 @@ export class CycleCountService {
 
     for (const item of count.items) {
       if (item.variance && item.variance !== 0) {
-        const movementType = item.variance > 0 ? 'ADJUSTMENT_IN' : 'ADJUSTMENT_OUT';
+        const movementType = 'ADJUSTMENT';
         const qty = Math.abs(item.variance);
 
-        await inventoryLocationService.moveInventory({
-          fromWarehouseId: count.warehouseId.toString(),
-          toWarehouseId: count.warehouseId.toString(),
-          fromLocationId: item.locationId.toString(),
-          toLocationId: item.locationId.toString(),
+        await inventoryLocationService.moveStock({
+          companyId: count.companyId.toString(),
+          warehouseId: count.warehouseId.toString(),
           productId: item.productId.toString(),
           quantity: qty,
+          fromLocationId: item.locationId.toString(),
+          toLocationId: item.locationId.toString(),
           movementType,
           referenceId: count._id.toString(),
           userId: supervisorId,

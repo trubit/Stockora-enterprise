@@ -165,13 +165,13 @@ export class PutAwayService {
 
     const moveQty = confirmedQuantity || task.quantity;
 
-    await inventoryLocationService.moveInventory({
-      fromWarehouseId: task.warehouseId.toString(),
-      toWarehouseId: task.warehouseId.toString(),
-      fromLocationId: task.sourceLocationId.toString(),
-      toLocationId: confLocObjId.toString(),
+    await inventoryLocationService.moveStock({
+      companyId: task.companyId.toString(),
+      warehouseId: task.warehouseId.toString(),
       productId: task.productId.toString(),
       quantity: moveQty,
+      fromLocationId: task.sourceLocationId.toString(),
+      toLocationId: confLocObjId.toString(),
       movementType: 'PUT_AWAY',
       referenceId: task._id.toString(),
       userId,
@@ -180,7 +180,7 @@ export class PutAwayService {
     task.confirmedLocationId = confLocObjId;
     task.confirmedQuantity = moveQty;
     task.status = 'COMPLETED';
-    task.completedBy = safeObjectId(userId);
+    task.assignedUserId = safeObjectId(userId);
     task.completedAt = new Date();
     await task.save();
 

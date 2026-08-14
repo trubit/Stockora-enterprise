@@ -220,7 +220,7 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
       pickerId: userId,
     });
 
-    expect(result.status).toBe('PICKED');
+    expect(result.pickList.status).toBe('PICKED');
   });
 
   it('should pack order into shipping container and execute carrier dispatch', async () => {

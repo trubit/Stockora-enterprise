@@ -161,29 +161,29 @@ export class PickingService {
     let pickList = await PickList.findById(pickObjId);
 
     if (!pickList) {
-      pickList = await PickList.findOne({ status: 'PENDING' }).sort({ createdAt: -1 });
+      pickList = await PickList.findOne({
+        status: { $in: ['PENDING', 'IN_PROGRESS', 'PARTIAL'] },
+      }).sort({ createdAt: -1 });
     }
     if (!pickList) throw new NotFoundError('Pick List not found');
 
-    const itemIndex = pickList.items.findIndex(
-      (i) =>
-        (i as any)._id?.toString() === itemId ||
-        i.sku === scannedSku ||
-        i.sku === scannedSku.toUpperCase()
-    );
+    const itemIndex = pickList.items.findIndex((i) => (i as any)._id?.toString() === itemId);
 
     if (itemIndex === -1) {
       throw new ValidationError(
-        `WRONG PRODUCT SCANNED: SKU [${scannedSku}] is not in this pick list.`
+        `WRONG PRODUCT SCANNED: Item [${itemId}] is not in this pick list.`
       );
     }
 
     const item = pickList.items[itemIndex];
 
-    if (
-      item.locationCode !== scannedLocationCode.toUpperCase() &&
-      item.locationCode !== scannedLocationCode
-    ) {
+    if (item.sku.toUpperCase() !== scannedSku.toUpperCase()) {
+      throw new ValidationError(
+        `WRONG PRODUCT SCANNED: Expected SKU [${item.sku}], scanned [${scannedSku}].`
+      );
+    }
+
+    if (item.locationCode.toUpperCase() !== scannedLocationCode.toUpperCase()) {
       throw new ValidationError(
         `WRONG LOCATION SCANNED: Item is located at [${item.locationCode}], scanned [${scannedLocationCode}].`
       );
@@ -191,14 +191,14 @@ export class PickingService {
 
     const qtyToPick = quantityToPick || item.quantityRequired - item.quantityPicked;
 
-    // Execute atomic inventory move from bin location to PICKING / PACKING
-    await inventoryLocationService.moveInventory({
-      fromWarehouseId: pickList.warehouseId.toString(),
-      toWarehouseId: pickList.warehouseId.toString(),
-      fromLocationId: item.locationId.toString(),
-      toLocationId: item.locationId.toString(),
+    // Execute atomic stock move
+    await inventoryLocationService.moveStock({
+      companyId: pickList.companyId.toString(),
+      warehouseId: pickList.warehouseId.toString(),
       productId: item.productId.toString(),
       quantity: qtyToPick,
+      fromLocationId: item.locationId.toString(),
+      toLocationId: item.locationId.toString(),
       movementType: 'PICK',
       referenceId: pickList._id.toString(),
       userId: pickerId,
@@ -209,7 +209,7 @@ export class PickingService {
     if (item.quantityPicked >= item.quantityRequired) {
       item.status = 'PICKED';
     } else {
-      item.status = 'IN_PROGRESS';
+      item.status = 'PARTIAL';
     }
 
     pickList.totalPicked += qtyToPick;
@@ -260,7 +260,7 @@ export class PickingService {
     pickList.totalShort += shortQty;
 
     const allCompleted = pickList.items.every((i) => i.status === 'PICKED' || i.status === 'SHORT');
-    pickList.status = allCompleted ? 'PARTIALLY_PICKED' : 'IN_PROGRESS';
+    pickList.status = allCompleted ? 'PARTIAL' : 'IN_PROGRESS';
     await pickList.save();
 
     eventBus.emit('warehouse.pick.short', {
