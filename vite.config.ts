@@ -1,6 +1,6 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -9,10 +9,9 @@ export default defineConfig({
     exclude: ['**/node_modules/**', '**/dist/**', '**/.git/**', '**/dist-ssr/**'],
     hookTimeout: 30_000,
     testTimeout: 30_000,
-    poolOptions: {
-      forks: {
-        maxForks: 4,
-      },
+    pool: 'forks',
+    forks: {
+      maxForks: 4,
     },
   },
   server: {
@@ -32,4 +31,4 @@ export default defineConfig({
       },
     },
   },
-})
+});
