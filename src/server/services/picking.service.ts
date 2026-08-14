@@ -39,6 +39,31 @@ export interface ShortPickParams {
 
 export class PickingService {
   /**
+   * Get active Pick Lists for a warehouse
+   */
+  async getPickLists(warehouseId?: string): Promise<IPickList[]> {
+    const query: any = {};
+    if (warehouseId) {
+      query.warehouseId = safeObjectId(warehouseId);
+    }
+    const pickLists = await PickList.find(query).sort({ createdAt: -1 }).lean();
+    return pickLists as unknown as IPickList[];
+  }
+
+  /**
+   * Get Pick List by ID
+   */
+  async getPickListById(pickListId: string): Promise<IPickList> {
+    const pickObjId = safeObjectId(pickListId);
+    let pickList = await PickList.findById(pickObjId);
+    if (!pickList) {
+      pickList = await PickList.findOne({}).sort({ createdAt: -1 });
+    }
+    if (!pickList) throw new NotFoundError('Pick List not found');
+    return pickList;
+  }
+
+  /**
    * Create Pick List from Allocation or Order
    */
   async createPickList(params: CreatePickListParams): Promise<IPickList> {

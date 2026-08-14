@@ -175,6 +175,25 @@ export class WarehouseController {
   }
 
   // Picking
+  async getPickLists(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const warehouseId = req.query.warehouseId as string | undefined;
+      const lists = await pickingService.getPickLists(warehouseId);
+      res.json(lists);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getPickListById(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const pickList = await pickingService.getPickListById(req.params.id);
+      res.json(pickList);
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async createPickList(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const companyId = (req.user as any)?.companyId || 'default-company';
