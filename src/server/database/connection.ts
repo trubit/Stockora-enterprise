@@ -25,11 +25,12 @@ export class DBConnectionManager {
       mongoose.set('strictQuery', true);
 
       const options = {
-        maxPoolSize: 100,
-        minPoolSize: 5,
+        maxPoolSize: 200,
+        minPoolSize: 20,
         maxIdleTimeMS: 30000,
         serverSelectionTimeoutMS: 5000,
         socketTimeoutMS: 45000,
+        autoIndex: !config.isProduction,
       };
 
       await ResilientExecutor.execute(
