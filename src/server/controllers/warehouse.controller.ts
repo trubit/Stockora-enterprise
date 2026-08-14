@@ -188,7 +188,8 @@ export class WarehouseController {
 
   async getPickListById(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
-      const pickList = await pickingService.getPickListById(req.params.id);
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const pickList = await pickingService.getPickListById(id);
       res.json(pickList);
     } catch (err) {
       next(err);
