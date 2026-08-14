@@ -177,7 +177,8 @@ export class WarehouseController {
   // Picking
   async getPickLists(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
-      const warehouseId = req.query.warehouseId as string | undefined;
+      const warehouseId =
+        typeof req.query.warehouseId === 'string' ? req.query.warehouseId : undefined;
       const lists = await pickingService.getPickLists(warehouseId);
       res.json(lists);
     } catch (err) {
