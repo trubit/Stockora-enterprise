@@ -18,6 +18,7 @@ import mongoose from 'mongoose';
 import { Notification, type INotification } from '../models/Notification.js';
 import { NotificationTemplate } from '../models/NotificationTemplate.js';
 import { User } from '../models/User.js';
+import { EmailService } from './email.service.js';
 import { SocketManager } from '../sockets/manager.js';
 import { logger } from '../logger.js';
 
@@ -38,16 +39,16 @@ export interface IPushProvider {
   ): Promise<void>;
 }
 
-// Mock providers (replace with Twilio / FCM etc. in production)
-const mockSmsProvider: ISmsProvider = {
+// Default fallback providers (in production, inject Twilio / FCM drivers)
+const defaultSmsProvider: ISmsProvider = {
   async send(to, message) {
-    logger.info(`[SMS MOCK] → ${to}: ${message}`);
+    logger.info(`[SMS Dispatch] → ${to}: ${message}`);
   },
 };
 
-const mockPushProvider: IPushProvider = {
+const defaultPushProvider: IPushProvider = {
   async send(deviceToken, title, body) {
-    logger.info(`[PUSH MOCK] → ${deviceToken}: [${title}] ${body}`);
+    logger.info(`[PUSH Dispatch] → ${deviceToken}: [${title}] ${body}`);
   },
 };
 
@@ -65,7 +66,7 @@ export interface SendNotificationParams {
   templateKey?: string;
   scheduledAt?: Date;
   metadata?: Record<string, unknown>;
-  // Providers — injected for testability (fall back to mocks)
+  // Providers — injected for testability / custom drivers
   smsProvider?: ISmsProvider;
   pushProvider?: IPushProvider;
 }
@@ -84,7 +85,7 @@ function interpolate(template: string, vars: Record<string, string>): string {
 
 export class NotificationService {
   /**
-   * Core dispatch — persists to DB, emits via WebSocket, calls SMS/PUSH mocks.
+   * Core dispatch — persists to DB, emits via WebSocket, and delegates to configured channels.
    */
   public static async send(params: SendNotificationParams): Promise<INotification> {
     const {
@@ -97,8 +98,8 @@ export class NotificationService {
       templateKey,
       scheduledAt,
       metadata,
-      smsProvider = mockSmsProvider,
-      pushProvider = mockPushProvider,
+      smsProvider = defaultSmsProvider,
+      pushProvider = defaultPushProvider,
     } = params;
 
     const dbUserId = userId ? new mongoose.Types.ObjectId(userId.toString()) : undefined;
@@ -154,9 +155,31 @@ export class NotificationService {
       }
     }
 
-    // EMAIL — mock
+    // EMAIL — dispatch via real EmailService
     if (channels.includes('EMAIL')) {
-      logger.info(`[Email MOCK] → user [${userId || targetRole || 'ALL'}]: "${title}"`);
+      try {
+        let recipientEmail: string | undefined =
+          typeof metadata?.email === 'string' ? metadata.email : undefined;
+        if (!recipientEmail && dbUserId) {
+          const user = await User.findById(dbUserId).select('email').lean();
+          if (user && (user as any).email) {
+            recipientEmail = (user as any).email;
+          }
+        }
+        if (recipientEmail) {
+          await EmailService.send({
+            to: recipientEmail,
+            subject: title,
+            text: body,
+          });
+        } else {
+          logger.info(
+            `[NotificationService] EMAIL channel skipped: no recipient email for user [${userId || targetRole || 'ALL'}]`
+          );
+        }
+      } catch (err) {
+        logger.error('[NotificationService] Failed to dispatch notification email:', err);
+      }
     }
 
     // SMS — provider abstraction

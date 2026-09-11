@@ -22,8 +22,10 @@ import PageHeader from '../../components/PageHeader.tsx';
 import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
 import { apiClient } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
+import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 
 export default function ReturnsRefundsManager() {
+  const { formatAmount, currencySymbol } = useRegionalSettings();
   const [returns, setReturns] = useState<any[]>([]);
   const [returnModalOpen, setReturnModalOpen] = useState(false);
   const [orderNumber, setOrderNumber] = useState<string>('');
@@ -116,7 +118,7 @@ export default function ReturnsRefundsManager() {
                   <TableCell sx={{ fontWeight: 'bold' }}>{r.orderNumber}</TableCell>
                   <TableCell>{r.channel}</TableCell>
                   <TableCell>{r.customerName || 'Walk-in'}</TableCell>
-                  <TableCell>${r.grandTotal.toFixed(2)}</TableCell>
+                  <TableCell>{formatAmount(r.grandTotal)}</TableCell>
                   <TableCell>
                     <Chip label={r.paymentStatus} color="error" size="small" />
                   </TableCell>
@@ -148,7 +150,7 @@ export default function ReturnsRefundsManager() {
           />
 
           <TextField
-            label="Refund Amount ($)"
+            label={`Refund Amount (${currencySymbol})`}
             type="number"
             fullWidth
             value={refundAmount}

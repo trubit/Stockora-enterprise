@@ -28,6 +28,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AddIcon from '@mui/icons-material/Add';
 import GavelIcon from '@mui/icons-material/Gavel';
 import { toast } from 'react-hot-toast';
+import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 
 interface ReturnItem {
   productId: string;
@@ -98,6 +99,7 @@ interface ClientProduct {
 const textFieldStyle = {};
 
 export default function ReturnsLogistics() {
+  const { formatAmount, currencySymbol } = useRegionalSettings();
   const [activeTab, setActiveTab] = useState(0);
   const [openRmaDialog, setOpenRmaDialog] = useState(false);
   const [openWarrantyDialog, setOpenWarrantyDialog] = useState(false);
@@ -342,7 +344,7 @@ export default function ReturnsLogistics() {
                     <TableCell sx={{ fontWeight: 700 }}>{ret.returnNumber}</TableCell>
                     <TableCell>{ret.transactionNumber}</TableCell>
                     <TableCell sx={{ fontWeight: 700, color: 'success.light' }}>
-                      ${ret.refundAmount.toFixed(2)}
+                      {formatAmount(ret.refundAmount)}
                     </TableCell>
                     <TableCell>
                       <Chip
@@ -547,7 +549,7 @@ export default function ReturnsLogistics() {
             {refundType === 'PARTIAL' && (
               <Grid item xs={12} sm={6}>
                 <TextField
-                  label="Partial Refund Amount ($)"
+                  label={`Partial Refund Amount (${currencySymbol})`}
                   type="number"
                   fullWidth
                   value={partialRefundAmount}
@@ -592,7 +594,7 @@ export default function ReturnsLogistics() {
                 <Grid item xs={6} sm={2}>
                   <TextField
                     type="number"
-                    label="Price"
+                    label={`Price (${currencySymbol})`}
                     fullWidth
                     value={retPrice}
                     onChange={(e) => setRetPrice(Number(e.target.value))}
@@ -658,7 +660,7 @@ export default function ReturnsLogistics() {
                     }}
                   >
                     <Typography variant="body2">
-                      {it.productName} ({it.sku}) x{it.quantity} @ ${it.price.toFixed(2)} - [
+                      {it.productName} ({it.sku}) x{it.quantity} @ {formatAmount(it.price)} - [
                       {it.condition} / {it.action}]
                     </Typography>
                   </Box>

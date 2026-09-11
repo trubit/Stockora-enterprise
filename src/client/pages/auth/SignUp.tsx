@@ -14,17 +14,35 @@ import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from '../../api/client.ts';
-import { useAuthStore } from '../../store/auth.ts';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
-import type { AuthResponse } from '../../../shared/types.js';
 
-const signUpSchema = z.object({
-  username: z.string().min(3, 'Username must be at least 3 characters'),
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  roleName: z.string().min(1, 'Please select a role'),
-});
+const signUpSchema = z
+  .object({
+    username: z.string().min(3, 'Username must be at least 3 characters'),
+    email: z.string().email('Please enter a valid email address'),
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+      .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+      .regex(/[0-9]/, 'Password must contain at least one number')
+      .regex(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least one special character'),
+    roleName: z.string().min(1, 'Please select a role'),
+    companyName: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      data.roleName === 'Company Owner' &&
+      (!data.companyName || data.companyName.trim().length < 2)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Company Name is required for Company Owner',
+        path: ['companyName'],
+      });
+    }
+  });
 
 type SignUpInputs = z.infer<typeof signUpSchema>;
 
@@ -32,7 +50,6 @@ const textFieldStyle = {};
 
 export default function SignUp() {
   const navigate = useNavigate();
-  const setSession = useAuthStore((s) => s.setSession);
 
   const {
     register,
@@ -46,7 +63,8 @@ export default function SignUp() {
       username: '',
       email: '',
       password: '',
-      roleName: '',
+      roleName: 'Company Owner',
+      companyName: '',
     },
   });
 
@@ -54,18 +72,37 @@ export default function SignUp() {
 
   const mutation = useMutation({
     mutationFn: async (credentials: SignUpInputs) => {
-      const { data } = await apiClient.post<AuthResponse>('/auth/register', credentials);
+      const { data } = await apiClient.post<{
+        success: boolean;
+        message: string;
+        email: string;
+        requiresVerification?: boolean;
+      }>('/auth/register', credentials);
       return data;
     },
-    onSuccess: (data) => {
-      setSession(data.user, data.accessToken, data.refreshToken);
-      toast.success('Account registered successfully!');
-      navigate('/');
+    onSuccess: (data, variables) => {
+      toast.success(data.message || 'Verification code sent to your email!');
+      navigate('/verify-email', { state: { email: variables.email } });
+    },
+    onError: (err: any) => {
+      const message =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        (typeof err?.response?.data === 'string'
+          ? err.response.data
+          : 'Registration failed. Please try again.');
+      toast.error(message);
     },
   });
 
   const onSubmit = (data: SignUpInputs) => {
-    mutation.mutate(data);
+    mutation.mutate({
+      username: data.username.trim(),
+      email: data.email.trim().toLowerCase(),
+      password: data.password,
+      roleName: data.roleName,
+      companyName: data.companyName ? data.companyName.trim() : undefined,
+    });
   };
 
   return (
@@ -184,7 +221,9 @@ export default function SignUp() {
               style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
             >
               <TextField
+                id="username"
                 label="Username"
+                autoComplete="username"
                 fullWidth
                 {...register('username')}
                 error={!!errors.username}
@@ -193,7 +232,10 @@ export default function SignUp() {
                 InputLabelProps={{ shrink: true }}
               />
               <TextField
+                id="email"
                 label="Email Address"
+                type="email"
+                autoComplete="email"
                 fullWidth
                 {...register('email')}
                 error={!!errors.email}
@@ -202,8 +244,10 @@ export default function SignUp() {
                 InputLabelProps={{ shrink: true }}
               />
               <TextField
+                id="password"
                 label="Password"
                 type="password"
+                autoComplete="new-password"
                 fullWidth
                 {...register('password')}
                 error={!!errors.password}
@@ -228,6 +272,18 @@ export default function SignUp() {
                 <MenuItem value="Warehouse Manager">Warehouse Manager</MenuItem>
                 <MenuItem value="Cashier">Cashier</MenuItem>
               </TextField>
+
+              <TextField
+                id="companyName"
+                label={roleName === 'Company Owner' ? 'Company Name *' : 'Company Name (Optional)'}
+                placeholder="e.g. Truson Foods Limited"
+                fullWidth
+                {...register('companyName')}
+                error={!!errors.companyName}
+                helperText={errors.companyName?.message}
+                sx={textFieldStyle}
+                InputLabelProps={{ shrink: true }}
+              />
 
               <Button
                 variant="contained"

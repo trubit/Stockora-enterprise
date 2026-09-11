@@ -15,14 +15,15 @@ export class CopilotController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { sessionId, prompt } = req.body;
-      if (!sessionId || !prompt) {
-        return next(
-          new AppError('Session ID and prompt text are required', 400, 'VALIDATION_ERROR')
-        );
+      const prompt = req.body.prompt || req.body.message;
+      const sessionId = req.body.sessionId || 'procurement_session_default';
+      if (!prompt) {
+        return next(new AppError('Prompt text is required', 400, 'VALIDATION_ERROR'));
       }
 
-      const reply = await CopilotService.executeChat(sessionId, prompt);
+      const tenantId = req.tenantId || req.user?.tenantId?.toString() || 'default';
+      const userId = req.user?.id;
+      const reply = await CopilotService.executeChat(sessionId, prompt, tenantId, userId);
       res.status(200).json({ success: true, reply });
     } catch (err) {
       next(err);

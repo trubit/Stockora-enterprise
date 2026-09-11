@@ -2,12 +2,15 @@ import type { Response, NextFunction } from 'express';
 import type { AuthenticatedRequest } from './auth.js';
 import { Session } from '../models/Session.js';
 import { AuthenticationError } from '../errors/AppError.js';
+import { logger } from '../logger.js';
 
 /**
  * sessionGuard
  * Additional security validation middleware.
- * Detects if the current request session exists, is active,
- * matches the current IP and User Agent to prevent session hijacking.
+ * Verifies the current request session exists and is active.
+ * IP/UA changes are logged as risk signals but do NOT terminate the session,
+ * because legitimate network changes (WiFi handover, VPN, proxy, dev server)
+ * would otherwise cause repeated login failures.
  */
 export async function sessionGuard(
   req: AuthenticatedRequest,
@@ -19,7 +22,7 @@ export async function sessionGuard(
   }
 
   if (!req.sessionId) {
-    // If route doesn't have sessionToken inside JWT, bypass or throw depending on policy
+    // No session token bound to this JWT — allow through (register/public tokens)
     return next();
   }
 
@@ -29,7 +32,14 @@ export async function sessionGuard(
       return next(new AuthenticationError('Session is invalid or has been logged out.'));
     }
 
-    // IP or User Agent hijacking prevention check
+    if (session.expiresAt < new Date()) {
+      session.isActive = false;
+      await session.save();
+      return next(new AuthenticationError('Session expired. Please log in again.'));
+    }
+
+    // Risk-flag IP or User Agent changes without destroying the session.
+    // Legitimate reasons for changes: network switch, VPN, CDN proxy, dev reverse-proxy.
     const xForwardedFor = req.headers['x-forwarded-for'];
     const parsedForwardedIp =
       typeof xForwardedFor === 'string'
@@ -40,15 +50,14 @@ export async function sessionGuard(
     const currentIp = req.ipAddress || parsedForwardedIp || req.socket.remoteAddress || '';
     const currentUserAgent = req.headers['user-agent'] || '';
 
-    // If either IP or UA changes dramatically, reject & flag (basic risk detection)
-    if (session.ipAddress !== currentIp || session.userAgent !== currentUserAgent) {
-      // In production, we might want to flag risk instead of strict block, but strict block is secure!
-      session.isActive = false;
-      await session.save();
-      return next(
-        new AuthenticationError(
-          'Security violation: session properties changed. Please log in again.'
-        )
+    if (session.ipAddress !== currentIp) {
+      logger.warn(
+        `[SessionGuard] IP change detected for session ${session._id}: ${session.ipAddress} → ${currentIp}. Session maintained.`
+      );
+    }
+    if (session.userAgent !== currentUserAgent) {
+      logger.warn(
+        `[SessionGuard] UserAgent change detected for session ${session._id}. Session maintained.`
       );
     }
 

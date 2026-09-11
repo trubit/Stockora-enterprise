@@ -241,16 +241,37 @@ export class BranchSyncController {
       const product = await Product.findOne({ sku: String(sku).toUpperCase() });
       if (!product) return next(new NotFoundError('Product not found in system catalog.'));
 
+      const { InventoryLocation } = await import('../models/InventoryLocation.js');
       const warehouses = await Warehouse.find().populate('branchId', 'name code');
-      const stockLocations = warehouses.map((w) => ({
-        warehouseId: w._id,
-        warehouseName: w.name,
-        warehouseCode: w.code,
-        branchName: (w.branchId as unknown as { name: string })?.name || 'HQ Branch',
-        availableStock: Math.floor(
-          product.quantity * (w.capacityUnits ? w.capacityUnits / 10000 : 0.5)
-        ),
-      }));
+
+      // Aggregate real on-hand stock per warehouse from InventoryLocation ledger
+      const locationStocks = await InventoryLocation.find({ productId: product._id });
+      const warehouseStockMap = new Map<string, number>();
+      for (const loc of locationStocks) {
+        if (loc.warehouseId) {
+          const wId = loc.warehouseId.toString();
+          warehouseStockMap.set(
+            wId,
+            (warehouseStockMap.get(wId) || 0) + (loc.availableQuantity ?? loc.quantity ?? 0)
+          );
+        }
+      }
+
+      const stockLocations = warehouses.map((w) => {
+        const allocatedStock = warehouseStockMap.get(w._id.toString());
+        return {
+          warehouseId: w._id,
+          warehouseName: w.name,
+          warehouseCode: w.code,
+          branchName: (w.branchId as unknown as { name: string })?.name || 'HQ Branch',
+          availableStock:
+            allocatedStock !== undefined
+              ? allocatedStock
+              : warehouses.length === 1
+                ? product.quantity
+                : 0,
+        };
+      });
 
       res.json({
         sku: product.sku,

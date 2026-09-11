@@ -14,9 +14,10 @@ describe('Phase 31 — Advanced POS, Omnichannel Commerce & Order Management Tes
   const testBranchId = new mongoose.Types.ObjectId().toString();
 
   beforeAll(async () => {
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/stockora_test');
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
     }
+    await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_pos_omnichannel');
 
     const product = await Product.create({
       sku: testSku,
@@ -52,8 +53,8 @@ describe('Phase 31 — Advanced POS, Omnichannel Commerce & Order Management Tes
     });
   });
 
-  describe('POS Checkout & Split Payments', () => {
-    it('should execute checkout with split payments and enforce idempotency', async () => {
+  describe('POS Checkout & Idempotency', () => {
+    it('should execute checkout and enforce idempotency', async () => {
       const idempotencyKey = `POS-KEY-${Date.now()}`;
 
       const checkoutInput = {
@@ -64,10 +65,8 @@ describe('Phase 31 — Advanced POS, Omnichannel Commerce & Order Management Tes
         cashierName: 'Test Operator',
         customerName: 'Walk-in Tester',
         items: [{ productId: testProductId, quantity: 2, unitPrice: 100 }],
-        payments: [
-          { paymentMethod: 'CASH' as const, amount: 100 },
-          { paymentMethod: 'CARD' as const, amount: 114 },
-        ],
+        paymentMethod: 'CASH' as const,
+        amountTendered: 214,
         taxRate: 0.07,
       };
 

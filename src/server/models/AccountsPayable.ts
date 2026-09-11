@@ -1,8 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import type { AgingBucket, PaymentStatus } from './AccountsReceivable.js';
+import type { AgingBucket, PaymentStatus, IPaymentRecord } from './AccountsReceivable.js';
 
 export interface IAccountsPayable extends Document {
-  tenantId?: string;
+  tenantId: string;
   companyId?: mongoose.Types.ObjectId;
   branchId?: mongoose.Types.ObjectId;
   supplierId: mongoose.Types.ObjectId;
@@ -18,13 +18,25 @@ export interface IAccountsPayable extends Document {
   dueDate: Date;
   agingBucket: AgingBucket;
   status: PaymentStatus;
+  payments: IPaymentRecord[];
+  notes?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
+const PaymentRecordSchema = new Schema<IPaymentRecord>({
+  paymentId: { type: String },
+  amount: { type: Number, required: true, min: 0 },
+  paymentDate: { type: Date, required: true, default: Date.now },
+  paymentMethod: { type: String, required: true, default: 'BANK_TRANSFER' },
+  reference: { type: String },
+  notes: { type: String },
+  journalEntryId: { type: Schema.Types.ObjectId, ref: 'JournalEntry' },
+});
+
 const AccountsPayableSchema = new Schema<IAccountsPayable>(
   {
-    tenantId: { type: String, index: true },
+    tenantId: { type: String, required: true, default: 'default', index: true },
     companyId: { type: Schema.Types.ObjectId, ref: 'Company', index: true },
     branchId: { type: Schema.Types.ObjectId, ref: 'Branch', index: true },
     supplierId: { type: Schema.Types.ObjectId, ref: 'Supplier', required: true, index: true },
@@ -52,9 +64,16 @@ const AccountsPayableSchema = new Schema<IAccountsPayable>(
       default: 'UNPAID',
       index: true,
     },
+    payments: { type: [PaymentRecordSchema], default: [] },
+    notes: { type: String },
   },
   { timestamps: true }
 );
+
+AccountsPayableSchema.index({ tenantId: 1, invoiceNumber: 1 }, { unique: true });
+AccountsPayableSchema.index({ tenantId: 1, supplierId: 1, status: 1 });
+AccountsPayableSchema.index({ tenantId: 1, dueDate: 1 });
+AccountsPayableSchema.index({ tenantId: 1, agingBucket: 1 });
 
 export const AccountsPayable = mongoose.model<IAccountsPayable>(
   'AccountsPayable',

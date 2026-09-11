@@ -2,17 +2,18 @@ import mongoose, { Schema, type Document } from 'mongoose';
 
 export interface IPickItem {
   productId: mongoose.Types.ObjectId;
-  sku: string;
-  name: string;
-  locationId: mongoose.Types.ObjectId;
-  locationCode: string;
-  quantityRequired: number;
+  sku?: string;
+  name?: string;
+  locationId?: mongoose.Types.ObjectId;
+  locationCode?: string;
+  quantityRequired?: number;
+  requestedQuantity?: number;
   quantityPicked: number;
-  quantityShort: number;
+  quantityShort?: number;
   lotNumber?: string;
   expiryDate?: Date;
   serialNumber?: string;
-  status: 'PENDING' | 'PARTIAL' | 'PICKED' | 'SHORT' | 'SKIPPED';
+  status: 'PENDING' | 'PARTIAL' | 'PARTIALLY_PICKED' | 'PICKED' | 'SHORT' | 'SKIPPED';
   shortReason?: string;
   pickedAt?: Date;
   scannedSku?: string;
@@ -20,28 +21,40 @@ export interface IPickItem {
 }
 
 export interface IPickList extends Document {
-  pickListNumber: string;
-  companyId: mongoose.Types.ObjectId;
+  tenantId?: string;
+  companyId?: mongoose.Types.ObjectId;
   warehouseId: mongoose.Types.ObjectId;
-  orderId: mongoose.Types.ObjectId;
-  orderNumber: string;
+  pickListNumber: string;
+  orderId?: mongoose.Types.ObjectId;
+  orderNumber?: string;
   allocationId?: mongoose.Types.ObjectId;
   waveId?: mongoose.Types.ObjectId;
-  pickingStrategy: 'SINGLE_ORDER' | 'BATCH' | 'ZONE' | 'WAVE';
-  status: 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'PARTIAL' | 'PICKED' | 'CANCELLED';
+  strategy?: string;
+  pickingStrategy?: 'SINGLE_ORDER' | 'SINGLE' | 'BATCH' | 'ZONE' | 'WAVE';
+  status:
+    | 'PENDING'
+    | 'ASSIGNED'
+    | 'IN_PROGRESS'
+    | 'PARTIAL'
+    | 'PARTIALLY_PICKED'
+    | 'PICKED'
+    | 'COMPLETED'
+    | 'EXCEPTION'
+    | 'CANCELLED';
   priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  assignedTo?: mongoose.Types.ObjectId;
   assignedPickerId?: mongoose.Types.ObjectId;
   assignedPickerName?: string;
   items: IPickItem[];
-  totalItems: number;
-  totalPicked: number;
-  totalShort: number;
+  totalItems?: number;
+  totalPicked?: number;
+  totalShort?: number;
   assignedAt?: Date;
   startedAt?: Date;
   completedAt?: Date;
   idempotencyKey?: string;
   notes?: string;
-  createdBy: mongoose.Types.ObjectId;
+  createdBy?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -49,11 +62,12 @@ export interface IPickList extends Document {
 const PickItemSchema = new Schema<IPickItem>(
   {
     productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
-    sku: { type: String, required: true },
-    name: { type: String, required: true },
-    locationId: { type: Schema.Types.ObjectId, ref: 'WarehouseLocation', required: true },
-    locationCode: { type: String, required: true },
-    quantityRequired: { type: Number, required: true, min: 1 },
+    sku: { type: String },
+    name: { type: String },
+    locationId: { type: Schema.Types.ObjectId, ref: 'WarehouseLocation' },
+    locationCode: { type: String },
+    quantityRequired: { type: Number, min: 0 },
+    requestedQuantity: { type: Number, min: 0 },
     quantityPicked: { type: Number, default: 0, min: 0 },
     quantityShort: { type: Number, default: 0, min: 0 },
     lotNumber: { type: String },
@@ -61,7 +75,7 @@ const PickItemSchema = new Schema<IPickItem>(
     serialNumber: { type: String },
     status: {
       type: String,
-      enum: ['PENDING', 'PARTIAL', 'PICKED', 'SHORT', 'SKIPPED'],
+      enum: ['PENDING', 'PARTIAL', 'PARTIALLY_PICKED', 'PICKED', 'SHORT', 'SKIPPED'],
       default: 'PENDING',
     },
     shortReason: { type: String },
@@ -74,22 +88,34 @@ const PickItemSchema = new Schema<IPickItem>(
 
 const PickListSchema = new Schema<IPickList>(
   {
-    pickListNumber: { type: String, required: true, unique: true, index: true },
-    companyId: { type: Schema.Types.ObjectId, ref: 'Company', required: true, index: true },
+    tenantId: { type: String, index: true },
+    companyId: { type: Schema.Types.ObjectId, ref: 'Company', index: true },
     warehouseId: { type: Schema.Types.ObjectId, ref: 'Warehouse', required: true, index: true },
-    orderId: { type: Schema.Types.ObjectId, required: true, index: true },
-    orderNumber: { type: String, required: true, index: true },
+    pickListNumber: { type: String, required: true, unique: true, index: true },
+    orderId: { type: Schema.Types.ObjectId, index: true },
+    orderNumber: { type: String, index: true },
     allocationId: { type: Schema.Types.ObjectId, ref: 'InventoryAllocation' },
     waveId: { type: Schema.Types.ObjectId, ref: 'PickingWave' },
+    strategy: { type: String, default: 'SINGLE' },
     pickingStrategy: {
       type: String,
-      enum: ['SINGLE_ORDER', 'BATCH', 'ZONE', 'WAVE'],
-      default: 'SINGLE_ORDER',
+      enum: ['SINGLE_ORDER', 'SINGLE', 'BATCH', 'ZONE', 'WAVE'],
+      default: 'SINGLE',
     },
     status: {
       type: String,
-      enum: ['PENDING', 'ASSIGNED', 'IN_PROGRESS', 'PARTIAL', 'PICKED', 'CANCELLED'],
-      default: 'PENDING',
+      enum: [
+        'PENDING',
+        'ASSIGNED',
+        'IN_PROGRESS',
+        'PARTIAL',
+        'PARTIALLY_PICKED',
+        'PICKED',
+        'COMPLETED',
+        'EXCEPTION',
+        'CANCELLED',
+      ],
+      default: 'ASSIGNED',
       index: true,
     },
     priority: {
@@ -98,6 +124,7 @@ const PickListSchema = new Schema<IPickList>(
       default: 'NORMAL',
       index: true,
     },
+    assignedTo: { type: Schema.Types.ObjectId, ref: 'User', index: true },
     assignedPickerId: { type: Schema.Types.ObjectId, ref: 'User', index: true },
     assignedPickerName: { type: String },
     items: [PickItemSchema],
@@ -109,12 +136,10 @@ const PickListSchema = new Schema<IPickList>(
     completedAt: { type: Date },
     idempotencyKey: { type: String, index: true, sparse: true },
     notes: { type: String },
-    createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
 );
 
-PickListSchema.index({ warehouseId: 1, status: 1, priority: -1 });
-PickListSchema.index({ orderId: 1, status: 1 });
-
-export const PickList = mongoose.model<IPickList>('PickList', PickListSchema);
+export const PickList =
+  mongoose.models.PickList || mongoose.model<IPickList>('PickList', PickListSchema);

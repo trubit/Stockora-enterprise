@@ -5,7 +5,6 @@ import { apiClient } from '../api/client.ts';
 import {
   Grid,
   Card,
-  CardContent,
   Typography,
   Box,
   TextField,
@@ -24,26 +23,30 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  RadioGroup,
-  Radio,
-  FormControlLabel,
-  CircularProgress,
-  FormControl,
-  FormLabel,
+  Paper,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import DeleteIcon from '@mui/icons-material/Delete';
+import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import SearchIcon from '@mui/icons-material/Search';
 import ScanIcon from '@mui/icons-material/QrCodeScanner';
 import CheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
+import PaymentsIcon from '@mui/icons-material/Payments';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import type { Product, TransactionItem, Transaction, Branch, Receipt } from '../../shared/types.js';
 import { useAuthStore } from '../store/auth.ts';
 import { toast } from 'react-hot-toast';
 import ReceiptModal, { type ReceiptData } from '../components/ReceiptModal';
-import PrintIcon from '@mui/icons-material/Print';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import PrintIcon from '@mui/icons-material/Print';
 import PageHeader from '../components/PageHeader.tsx';
+import { useRegionalSettings } from '../hooks/useRegionalSettings.js';
+import { useTranslation } from '../hooks/useTranslation.js';
+import { CurrencySelector } from '../components/CurrencySelector.tsx';
+import { useTenantStore } from '../store/tenant.ts';
 import {
   queueOfflineTransaction,
   getPendingQueueCount,
@@ -51,7 +54,12 @@ import {
   on as onSyncEvent,
 } from '../offline/syncEngine.ts';
 
-type CartItem = TransactionItem;
+interface CartItem extends TransactionItem {
+  priceTier: 'RETAIL' | 'WHOLESALE';
+  retailPrice: number;
+  wholesalePrice: number;
+}
+type PosManualTender = 'CASH' | 'BANK_TRANSFER' | 'CARD';
 
 function generateOfflineId(): string {
   return `off-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
@@ -68,30 +76,26 @@ const fetchProducts = async (): Promise<Product[]> => {
 
 export default function POS() {
   const queryClient = useQueryClient();
+  const { activeTenant } = useTenantStore();
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
     queryFn: fetchProducts,
   });
 
+  const [activePricingTier, setActivePricingTier] = useState<'RETAIL' | 'WHOLESALE'>('RETAIL');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [barcodeInput, setBarcodeInput] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [discount, setDiscount] = useState<number>(0);
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'MOBILE' | 'SPLIT'>('CASH');
+  const [paymentMethod, setPaymentMethod] = useState<PosManualTender>('CASH');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [offlineCount, setOfflineCount] = useState(0);
 
-  // Resilient Payment Checkout states
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [customerEmail, setCustomerEmail] = useState('checkout-customer@stockora.com');
-  const [paymentProvider, setPaymentProvider] = useState<'PAYSTACK' | 'STRIPE'>('PAYSTACK');
-  const [checkoutReference, setCheckoutReference] = useState('');
-  const [checkoutStep, setCheckoutStep] = useState<'INITIAL' | 'AWAITING_VERIFY' | 'COMPLETED'>(
-    'INITIAL'
-  );
-  const [verifyingPayment, setVerifyingPayment] = useState(false);
-  const [initializingPayment, setInitializingPayment] = useState(false);
+  // Manual Tender POS Checkout Modal States
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
+  const [cashTendered, setCashTendered] = useState<number>(0);
+  const [manualReference, setManualReference] = useState<string>('');
 
   // Receipt Modal and Recent Transactions states
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
@@ -99,6 +103,9 @@ export default function POS() {
   const [recentSalesOpen, setRecentSalesOpen] = useState(false);
 
   const { user, accessToken } = useAuthStore();
+  const { t } = useTranslation();
+  const { baseCurrency, activeCurrency, currencySymbol, taxConfig, formatAmount, convertAmount } =
+    useRegionalSettings();
 
   const { data: branches = [] } = useQuery({
     queryKey: ['branches'],
@@ -112,25 +119,41 @@ export default function POS() {
     },
   });
 
-  const activeBranchName = user?.branchName || (branches as Branch[])[0]?.name || 'Primary Branch';
-  const activeCashierName = user?.username || 'POS Cashier';
+  const activeBranchName =
+    branches.find((b: Branch) => b.id === user?.branchId || b._id === user?.branchId)?.name ||
+    'Main Store';
+  const activeCashierName = user?.name || user?.email || 'Active Cashier';
 
-  const { data: receipts = [] } = useQuery({
-    queryKey: ['receipts'],
+  const { data: receipts = [] } = useQuery<Receipt[]>({
+    queryKey: ['recent-receipts'],
     queryFn: async () => {
-      try {
-        const { data } = await apiClient.get('/receipts');
-        return data as Receipt[];
-      } catch {
-        return [];
-      }
+      const { data } = await apiClient.get<Receipt[]>('/receipts?limit=15');
+      return data;
     },
   });
 
   const triggerPrintReceipt = (
-    tx: Omit<Partial<Transaction>, 'paymentMethod'> & {
+    tx: {
+      transactionNumber?: string;
+      createdAt?: string;
+      cashierName?: string;
+      branchName?: string;
+      customerEmail?: string;
+      subtotal?: number;
+      tax?: number;
+      discount?: number;
+      total?: number;
       items?: Array<TransactionItem | Record<string, unknown>>;
       paymentMethod?: string;
+      companyName?: string;
+      companyLegalName?: string;
+      companyLogoUrl?: string;
+      companyAddress?: string;
+      companyPhone?: string;
+      companyEmail?: string;
+      companyTaxId?: string;
+      receiptHeader?: string;
+      receiptFooter?: string;
     },
     customEmail?: string
   ) => {
@@ -142,21 +165,66 @@ export default function POS() {
       const quantity = Number(itemObj.quantity || 1);
       const price = Number(itemObj.price ?? itemObj.unitPrice ?? 0);
       const total = Number(itemObj.total ?? itemObj.lineTotal ?? quantity * price);
-      return { productName, sku, quantity, price, total };
+      const priceTier = (itemObj.priceTier as 'RETAIL' | 'WHOLESALE') || undefined;
+      return { productName, sku, quantity, price, total, priceTier };
     });
 
+    const txAny = tx as any;
     const data: ReceiptData = {
       transactionNumber: tx.transactionNumber || generateOfflineTransactionNumber(),
       createdAt: tx.createdAt || new Date().toISOString(),
       cashierName: tx.cashierName || activeCashierName,
       branchName: tx.branchName || activeBranchName,
-      customerEmail: customEmail || customerEmail,
+      customerEmail: customEmail || user?.email || 'customer@stockora.com',
       items,
       subtotal: tx.subtotal ?? items.reduce((acc, curr) => acc + curr.total, 0),
       tax: tx.tax ?? 0,
       discount: tx.discount ?? 0,
       total: tx.total ?? items.reduce((acc, curr) => acc + curr.total, 0),
       paymentMethod: String(tx.paymentMethod || paymentMethod),
+      pricingMode: txAny.pricingMode || activePricingTier,
+      currency: txAny.currency || activeCurrency || baseCurrency,
+      companyName:
+        txAny.companyName ||
+        activeTenant?.name ||
+        (user as any)?.tenantName ||
+        (user as any)?.companyName,
+      companyLegalName: txAny.companyLegalName || activeTenant?.legalName,
+      companyLogoUrl:
+        txAny.companyLogoUrl || activeTenant?.branding?.logoUrl || activeTenant?.logoUrl,
+      companyAddress: (() => {
+        const raw =
+          txAny.companyAddress ||
+          (activeTenant?.contact
+            ? [
+                activeTenant.contact.addressLine1,
+                activeTenant.contact.city,
+                activeTenant.contact.state,
+                activeTenant.contact.country &&
+                activeTenant.contact.country.trim().toUpperCase() !== 'US' &&
+                activeTenant.contact.country.trim().toUpperCase() !== 'USA'
+                  ? activeTenant.contact.country.trim()
+                  : undefined,
+              ]
+                .filter(Boolean)
+                .join(', ')
+            : undefined);
+        if (!raw) return undefined;
+        const upper = raw.trim().toUpperCase().replace(/[\.,]/g, '');
+        if (upper === 'US' || upper === 'USA' || upper === 'UNITED STATES') return undefined;
+        const cleaned = raw
+          .trim()
+          .replace(/,\s*(US|USA|United States)$/i, '')
+          .trim();
+        return cleaned.toUpperCase() === 'US' || cleaned.toUpperCase() === 'USA'
+          ? undefined
+          : cleaned || undefined;
+      })(),
+      companyPhone: txAny.companyPhone || activeTenant?.contact?.phone,
+      companyEmail: txAny.companyEmail || activeTenant?.contact?.email,
+      companyTaxId: txAny.companyTaxId || (activeTenant as any)?.taxConfig?.taxId,
+      receiptHeader: txAny.receiptHeader || activeTenant?.branding?.receiptHeader,
+      receiptFooter: txAny.receiptFooter || activeTenant?.branding?.receiptFooter,
     };
 
     setReceiptData(data);
@@ -190,25 +258,44 @@ export default function POS() {
       setIsOnline(true);
       syncOfflineTransactions();
     };
-    const handleOffline = () => {
-      setIsOnline(false);
-    };
+    const handleOffline = () => setIsOnline(false);
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    const unsub = onSyncEvent('pending:change', (payload) => {
+    const unsubComplete = onSyncEvent('sync:complete', (payload) => {
       if (payload.pendingCount !== undefined) {
         setOfflineCount(payload.pendingCount);
+      } else {
+        getPendingQueueCount().then(setOfflineCount);
+      }
+    });
+
+    const unsubPending = onSyncEvent('pending:change', (payload) => {
+      if (payload.pendingCount !== undefined) {
+        setOfflineCount(payload.pendingCount);
+      } else {
+        getPendingQueueCount().then(setOfflineCount);
       }
     });
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
-      unsub();
+      unsubComplete();
+      unsubPending();
     };
   }, [syncOfflineTransactions]);
+
+  // Clear only transient active-sale state without modifying auth/session/user state
+  const clearCompletedSaleState = useCallback(() => {
+    setCart([]);
+    setDiscount(0);
+    setManualReference('');
+    setCashTendered(0);
+    setBarcodeInput('');
+    setCheckoutModalOpen(false);
+  }, []);
 
   // Mutation to handle transaction checkout
   const checkoutMutation = useMutation({
@@ -217,7 +304,7 @@ export default function POS() {
       return data;
     },
     onSuccess: (data: Transaction) => {
-      toast.success('Transaction Completed Successfully!');
+      toast.success('Sale Completed & Recorded Successfully!');
       triggerPrintReceipt({
         ...data,
         items: cart,
@@ -225,15 +312,20 @@ export default function POS() {
         tax,
         discount,
         total,
+        paymentMethod,
       });
-      setCart([]);
-      setDiscount(0);
-      // Invalidate queries to fetch updated stock quantities
+      clearCompletedSaleState();
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['recent-receipts'] });
     },
-    onError: (err: Error) => {
-      toast.error(`Checkout failed: ${err.message || 'Error occurred'}`);
+    onError: (err: any) => {
+      const msg =
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        err.message ||
+        'Checkout failed';
+      toast.error(msg);
     },
   });
 
@@ -250,6 +342,41 @@ export default function POS() {
     return matchesSearch && matchesCategory && p.isActive;
   });
 
+  // Switch global pricing tier between Wholesale and Retail
+  const handleSwitchGlobalTier = (tier: 'RETAIL' | 'WHOLESALE') => {
+    setActivePricingTier(tier);
+    setCart((prevCart) =>
+      prevCart.map((item) => {
+        const newUnitPrice = tier === 'WHOLESALE' ? item.wholesalePrice : item.retailPrice;
+        return {
+          ...item,
+          priceTier: tier,
+          price: newUnitPrice,
+          total: (newUnitPrice - (item.discount || 0)) * item.quantity,
+        };
+      })
+    );
+  };
+
+  // Toggle individual cart item between Wholesale and Retail
+  const toggleItemTier = (productId: string, currentTier: 'RETAIL' | 'WHOLESALE') => {
+    const nextTier: 'RETAIL' | 'WHOLESALE' = currentTier === 'WHOLESALE' ? 'RETAIL' : 'WHOLESALE';
+    setCart((prevCart) =>
+      prevCart.map((item) => {
+        if (item.productId === productId && item.priceTier === currentTier) {
+          const newUnitPrice = nextTier === 'WHOLESALE' ? item.wholesalePrice : item.retailPrice;
+          return {
+            ...item,
+            priceTier: nextTier,
+            price: newUnitPrice,
+            total: (newUnitPrice - (item.discount || 0)) * item.quantity,
+          };
+        }
+        return item;
+      })
+    );
+  };
+
   // Handle adding product to cart
   const addToCart = (product: Product) => {
     if (product.quantity <= 0) {
@@ -257,15 +384,23 @@ export default function POS() {
       return;
     }
 
+    const retailPrice = Number(product.retailPrice ?? product.price ?? product.sellingPrice ?? 0);
+    const wholesalePrice =
+      product.wholesalePrice != null ? Number(product.wholesalePrice) : retailPrice;
+    const unitPrice = activePricingTier === 'WHOLESALE' ? wholesalePrice : retailPrice;
+
     setCart((prevCart) => {
-      const existing = prevCart.find((item) => item.productId === (product.id || product._id));
+      const existing = prevCart.find(
+        (item) =>
+          item.productId === (product.id || product._id) && item.priceTier === activePricingTier
+      );
       if (existing) {
         if (existing.quantity >= (product.quantity || 0)) {
           toast.error(`Cannot add more. Only ${product.quantity} units available.`);
           return prevCart;
         }
         return prevCart.map((item) =>
-          item.productId === (product.id || product._id)
+          item.productId === (product.id || product._id) && item.priceTier === activePricingTier
             ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.price }
             : item
         );
@@ -275,23 +410,26 @@ export default function POS() {
         productName: product.name,
         sku: product.sku,
         quantity: 1,
-        price: product.price || 0,
+        price: unitPrice,
         discount: 0,
-        total: product.price || 0,
+        total: unitPrice,
+        priceTier: activePricingTier,
+        retailPrice,
+        wholesalePrice,
       };
       return [...prevCart, newItem];
     });
   };
 
   // Adjust item quantity in cart
-  const adjustQuantity = (productId: string, amount: number) => {
-    const product = products.find((p: Product) => p.id === productId);
+  const adjustQuantity = (productId: string, priceTier: 'RETAIL' | 'WHOLESALE', amount: number) => {
+    const product = products.find((p) => (p.id || p._id) === productId);
     if (!product) return;
 
     setCart((prevCart) =>
       prevCart
         .map((item) => {
-          if (item.productId !== productId) return item;
+          if (item.productId !== productId || item.priceTier !== priceTier) return item;
           const newQty = item.quantity + amount;
           if (newQty > product.quantity) {
             toast.error(`Only ${product.quantity} units in inventory.`);
@@ -308,8 +446,10 @@ export default function POS() {
   };
 
   // Remove item from cart
-  const removeItem = (productId: string) => {
-    setCart((prevCart) => prevCart.filter((item) => item.productId !== productId));
+  const removeItem = (productId: string, priceTier: 'RETAIL' | 'WHOLESALE') => {
+    setCart((prevCart) =>
+      prevCart.filter((item) => !(item.productId === productId && item.priceTier === priceTier))
+    );
   };
 
   // Barcode simulation handler
@@ -332,172 +472,71 @@ export default function POS() {
 
   // Computations
   const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
-  const taxRate = 0.08; // 8% sales tax
-  const tax = subtotal * taxRate;
-  const total = Math.max(0, subtotal + tax - discount);
-
-  const handleOnlineCheckoutInit = async () => {
-    setInitializingPayment(true);
-    try {
-      const payload = {
-        email: customerEmail,
-        provider: paymentProvider,
-        paymentMethod: paymentMethod === 'MOBILE' ? 'MOBILE' : 'CARD',
-        items: cart.map((item) => ({
-          productId: item.productId,
-          productName: item.productName,
-          sku: item.sku,
-          quantity: item.quantity,
-          price: item.price,
-          discount: item.discount,
-          total: item.total,
-        })),
-        discount,
-        tax,
-        subtotal,
-        total,
-        currency: 'USD',
-      };
-
-      const { data } = await apiClient.post('/checkout/initialize', payload, { timeout: 30000 });
-      setCheckoutReference(data.reference);
-      setCheckoutStep('AWAITING_VERIFY');
-      toast.success('Payment initialized successfully!');
-
-      if (data.authorizationUrl) {
-        window.open(data.authorizationUrl, '_blank', 'noreferrer,noopener');
-      }
-    } catch (err: unknown) {
-      console.error(err);
-      const error = err as { response?: { data?: { message?: string } } };
-      toast.error(error.response?.data?.message || 'Failed to initialize payment.');
-    } finally {
-      setInitializingPayment(false);
+  const totalWholesaleSavings = cart.reduce((acc, i) => {
+    if (i.priceTier === 'WHOLESALE' && i.retailPrice > i.wholesalePrice) {
+      return acc + (i.retailPrice - i.wholesalePrice) * i.quantity;
     }
+    return acc;
+  }, 0);
+  const effectiveTaxRate = (taxConfig?.defaultTaxRate ?? 7.5) / 100;
+  const isTaxInclusive = taxConfig?.isTaxInclusive ?? false;
+  const tax = isTaxInclusive
+    ? Math.max(0, subtotal - subtotal / (1 + effectiveTaxRate))
+    : Math.max(0, (subtotal - discount) * effectiveTaxRate);
+  const total = isTaxInclusive
+    ? Math.max(0, subtotal - discount)
+    : Math.max(0, subtotal + tax - discount);
+
+  // Open Checkout Modal and initialize tender amount in active display currency
+  const handleOpenCheckoutModal = () => {
+    if (cart.length === 0) {
+      toast.error('Cart is empty.');
+      return;
+    }
+    const displayTotal = convertAmount(total, baseCurrency, activeCurrency);
+    setCashTendered(Number(displayTotal.toFixed(2)));
+    setManualReference('');
+    setCheckoutModalOpen(true);
   };
 
-  const handleOnlineCheckoutVerify = async () => {
-    setVerifyingPayment(true);
-    try {
-      const { data } = await apiClient.post(
-        '/checkout/verify',
-        {
-          provider: paymentProvider,
-          reference: checkoutReference,
-        },
-        { timeout: 20000 }
-      );
-
-      if (data.success && data.status === 'COMPLETED') {
-        toast.success('Payment Verified & Order Placed Successfully!');
-        triggerPrintReceipt(
-          {
-            transactionNumber: checkoutReference || generateOfflineTransactionNumber(),
-            items: cart,
-            subtotal,
-            tax,
-            discount,
-            total,
-            paymentMethod: `${paymentProvider} (${paymentMethod})`,
-          },
-          customerEmail
-        );
-        setCheckoutStep('COMPLETED');
-        setCart([]);
-        setDiscount(0);
-        setCheckoutOpen(false);
-        queryClient.invalidateQueries({ queryKey: ['products'] });
-        queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      } else if (data.status === 'PENDING') {
-        toast(data.message || 'Payment is still pending. Please wait a moment and try again.', {
-          icon: '⏳',
-        });
-      } else {
-        toast.error(data.message || 'Payment could not be verified. Please contact support.');
-      }
-    } catch (err: unknown) {
-      console.error(err);
-      const error = err as { response?: { data?: { message?: string } } };
-      toast.error(error.response?.data?.message || 'Verification failed.');
-    } finally {
-      setVerifyingPayment(false);
-    }
-  };
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const refParam = params.get('reference');
-    const providerParam = params.get('provider');
-
-    if (refParam && providerParam) {
-      // Clean the URL query params so they don't trigger verification on refresh
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
-
-      queueMicrotask(() => {
-        setCheckoutReference(refParam);
-        setPaymentProvider(providerParam.toUpperCase() as 'PAYSTACK' | 'STRIPE');
-        setCheckoutStep('AWAITING_VERIFY');
-        setCheckoutOpen(true);
-        setVerifyingPayment(true);
-      });
-      apiClient
-        .post(
-          '/checkout/verify',
-          {
-            provider: providerParam.toUpperCase(),
-            reference: refParam,
-          },
-          { timeout: 20000 }
-        )
-        .then(({ data }) => {
-          if (data.success && data.status === 'COMPLETED') {
-            toast.success('Payment Verified & Order Placed Successfully!');
-            setCheckoutStep('COMPLETED');
-            setCart([]);
-            setDiscount(0);
-            setCheckoutOpen(false);
-            queryClient.invalidateQueries({ queryKey: ['products'] });
-            queryClient.invalidateQueries({ queryKey: ['transactions'] });
-          } else if (data.status === 'PENDING') {
-            toast(
-              data.message || 'Payment is still pending. Please use the Verify button to retry.',
-              { icon: '⏳' }
-            );
-          } else {
-            toast.error(data.message || 'Payment could not be verified. Please contact support.');
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-          const error = err as { response?: { data?: { message?: string } } };
-          toast.error(error.response?.data?.message || 'Verification failed.');
-        })
-        .finally(() => {
-          setVerifyingPayment(false);
-        });
-    }
-  }, [queryClient]);
-
-  const handleCheckout = () => {
+  // Execute Cashier-Confirmed Payment
+  const handleConfirmManualPayment = () => {
     if (cart.length === 0) {
       toast.error('Cart is empty.');
       return;
     }
 
-    if (paymentMethod === 'CARD' || paymentMethod === 'MOBILE') {
-      setCheckoutStep('INITIAL');
-      setCheckoutOpen(true);
+    const displayTotal = convertAmount(total, baseCurrency, activeCurrency);
+    if (paymentMethod === 'CASH' && cashTendered < displayTotal) {
+      toast.error(
+        `Cash tendered cannot be less than total (${formatAmount(total, activeCurrency)}).`
+      );
       return;
     }
 
+    const amountTenderedInBase =
+      paymentMethod === 'CASH' ? convertAmount(cashTendered, activeCurrency, baseCurrency) : total;
+
     const payload = {
-      items: cart,
+      items: cart.map((item) => ({
+        productId: item.productId,
+        productName: item.productName,
+        sku: item.sku,
+        quantity: item.quantity,
+        price: item.price,
+        discount: item.discount || 0,
+        total: item.total,
+        priceTier: item.priceTier,
+      })),
+      pricingMode: activePricingTier,
       paymentMethod,
+      amountTendered: amountTenderedInBase,
+      referenceNumber: manualReference.trim() || undefined,
       discount,
       tax,
       subtotal,
       total,
+      currency: baseCurrency,
       cashierName: activeCashierName,
       branchName: activeBranchName,
     };
@@ -535,9 +574,8 @@ export default function POS() {
           total,
           paymentMethod: `${paymentMethod} (OFFLINE)`,
         });
-        setCart([]);
-        setDiscount(0);
-        toast.success('Offline checkout stored locally. Will sync automatically.');
+        clearCompletedSaleState();
+        toast.success('Offline sale recorded locally. Will sync automatically.');
       });
       return;
     }
@@ -545,13 +583,22 @@ export default function POS() {
     checkoutMutation.mutate(payload);
   };
 
+  const displayTotal = convertAmount(total, baseCurrency, activeCurrency);
+  const changeDue = Math.max(0, cashTendered - displayTotal);
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <PageHeader
-        title="POS Checkout Terminal"
-        subtitle="Search items, select categories, or scan product barcodes for high-speed counter checkout."
+        title={t('pos.terminal')}
+        subtitle={t('pos.subtitle')}
         category="Operations"
-        badgeText={isOnline ? 'ONLINE SYNC' : 'OFFLINE MODE'}
+        badgeText={
+          isOnline
+            ? t('pos.onlineSync')
+            : offlineCount > 0
+              ? `${t('pos.offlineMode')} (${offlineCount})`
+              : t('pos.offlineMode')
+        }
         badgeColor={isOnline ? 'secondary' : 'warning'}
         action={
           <Box
@@ -563,6 +610,8 @@ export default function POS() {
               flexWrap: 'wrap',
             }}
           >
+            <CurrencySelector size="small" />
+
             <Button
               variant="outlined"
               color="inherit"
@@ -576,7 +625,7 @@ export default function POS() {
                 whiteSpace: 'nowrap',
               }}
             >
-              Recent Receipts
+              {t('pos.recentReceipts')}
             </Button>
 
             <Box
@@ -586,260 +635,413 @@ export default function POS() {
             >
               <TextField
                 inputRef={barcodeInputRef}
-                label="Barcode Scanner"
-                variant="outlined"
                 size="small"
+                placeholder={t('pos.scanBarcode')}
                 value={barcodeInput}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setBarcodeInput(e.target.value)}
-                placeholder="Scan e.g. 40012011..."
+                onChange={(e) => setBarcodeInput(e.target.value)}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <ScanIcon fontSize="small" color="primary" />
+                      <ScanIcon fontSize="small" sx={{ color: 'text.secondary' }} />
                     </InputAdornment>
                   ),
                 }}
-                sx={{ flexGrow: 1, width: { xs: '100%', sm: 200 } }}
+                sx={{ width: { xs: '100%', sm: 220 } }}
               />
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                size="small"
-                sx={{ px: 2.5, fontWeight: 700, borderRadius: '8px' }}
-              >
-                Scan
-              </Button>
             </Box>
           </Box>
         }
       />
 
-      {!isOnline && (
-        <Box
-          sx={{
-            bgcolor: 'rgba(245, 158, 11, 0.1)',
-            color: '#fbbf24',
-            border: '1px solid rgba(245,158,11,0.2)',
-            p: 2,
-            mb: 3,
-            borderRadius: '12px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}
-          >
-            ⚠️ Operational status: Local Database Mode active. Local sales will sync when connection
-            restores.
-          </Typography>
-          {offlineCount > 0 && (
-            <Chip
-              label={`${offlineCount} transactions queued`}
-              color="warning"
-              size="small"
-              sx={{ fontWeight: 800, fontSize: '0.725rem' }}
-            />
-          )}
-        </Box>
-      )}
-
       <Grid container spacing={3}>
-        {/* Product Catalog Pane */}
-        <Grid item xs={12} lg={8}>
-          {/* Search and Category Tabs */}
-          <Card className="glass-panel" sx={{ mb: 3.5 }}>
-            <CardContent sx={{ p: '16px !important' }}>
-              <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} md={5}>
-                  <TextField
-                    fullWidth
-                    placeholder="Search catalog by name, SKU or barcode..."
-                    size="small"
-                    value={searchTerm}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon color="action" />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={7}>
-                  <Tabs
-                    value={selectedCategory}
-                    onChange={(_: SyntheticEvent, val: string) => setSelectedCategory(val)}
-                    variant="scrollable"
-                    scrollButtons="auto"
-                    textColor="primary"
-                    indicatorColor="primary"
-                    sx={{ minHeight: 40 }}
-                  >
-                    {categories.map((cat) => (
-                      <Tab
-                        key={cat}
-                        label={cat}
-                        value={cat}
-                        sx={{ fontWeight: 700, fontSize: '0.8rem', minHeight: 40 }}
-                      />
-                    ))}
-                  </Tabs>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
+        {/* Left Column: Product Catalog & Fast Search */}
+        <Grid item xs={12} md={7} lg={8}>
+          {/* Global Pricing Mode Selector */}
+          <Paper
+            sx={{
+              p: 1.5,
+              mb: 2,
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 1.5,
+              background:
+                activePricingTier === 'WHOLESALE'
+                  ? 'linear-gradient(135deg, rgba(147, 51, 234, 0.12) 0%, rgba(79, 70, 229, 0.08) 100%)'
+                  : 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(16, 185, 129, 0.08) 100%)',
+              border: '1.5px solid',
+              borderColor: activePricingTier === 'WHOLESALE' ? 'secondary.main' : 'primary.main',
+              borderRadius: '16px',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                Customer Sales Tier:
+              </Typography>
+              <Chip
+                label={
+                  activePricingTier === 'WHOLESALE' ? '📦 WHOLESALE ACTIVE' : '🏷️ RETAIL ACTIVE'
+                }
+                color={activePricingTier === 'WHOLESALE' ? 'secondary' : 'primary'}
+                size="small"
+                sx={{ fontWeight: 800, fontSize: '0.75rem' }}
+              />
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant={activePricingTier === 'RETAIL' ? 'contained' : 'outlined'}
+                color="primary"
+                size="small"
+                onClick={() => handleSwitchGlobalTier('RETAIL')}
+                sx={{ fontWeight: 700, px: 2, borderRadius: '8px', textTransform: 'none' }}
+              >
+                🏷️ Retail Customer
+              </Button>
+              <Button
+                variant={activePricingTier === 'WHOLESALE' ? 'contained' : 'outlined'}
+                color="secondary"
+                size="small"
+                onClick={() => handleSwitchGlobalTier('WHOLESALE')}
+                sx={{ fontWeight: 700, px: 2, borderRadius: '8px', textTransform: 'none' }}
+              >
+                📦 Wholesale Customer
+              </Button>
+            </Box>
+          </Paper>
 
-          {/* Products Grid */}
-          <Grid container spacing={2}>
-            {filteredProducts.length === 0 ? (
-              <Grid item xs={12}>
-                <Box
+          <Card
+            sx={{
+              mb: 3,
+              p: 2,
+              background: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              borderRadius: '16px',
+            }}
+          >
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder={t('pos.searchPlaceholder')}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ color: 'text.secondary' }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Tabs
+                  value={selectedCategory}
+                  onChange={(_: SyntheticEvent, val: string) => setSelectedCategory(val)}
+                  variant="scrollable"
+                  scrollButtons="auto"
                   sx={{
-                    py: 10,
-                    textAlign: 'center',
-                    bgcolor: 'rgba(255,255,255,0.01)',
-                    border: '1px dashed rgba(255,255,255,0.05)',
-                    borderRadius: '12px',
+                    minHeight: 40,
+                    '& .MuiTab-root': {
+                      minHeight: 40,
+                      py: 0.5,
+                      px: 2,
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      borderRadius: '8px',
+                      color: 'text.secondary',
+                      '&.Mui-selected': {
+                        color: 'primary.main',
+                        bgcolor: 'rgba(139, 92, 246, 0.1)',
+                      },
+                    },
                   }}
                 >
-                  <Typography variant="body2" color="text.secondary">
-                    No products found matching filters.
-                  </Typography>
-                </Box>
+                  {categories.map((cat: string) => (
+                    <Tab key={cat} label={cat} value={cat} />
+                  ))}
+                </Tabs>
               </Grid>
-            ) : (
-              filteredProducts.map((p: Product) => {
-                const qtyLow = p.quantity <= p.lowStockAlert;
-                return (
-                  <Grid item xs={6} sm={6} md={4} key={p.id || p._id}>
-                    <Card
-                      onClick={() => addToCart(p)}
-                      sx={{
-                        cursor: 'pointer',
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        '&:active': { transform: 'scale(0.97)' },
-                      }}
-                    >
-                      <CardContent
-                        sx={{ flexGrow: 1, p: 2.5, display: 'flex', flexDirection: 'column' }}
-                      >
-                        <Box
+            </Grid>
+          </Card>
+
+          {/* Product Grid Cards */}
+          <Grid container spacing={2}>
+            {filteredProducts.map((product: Product) => {
+              const retailAmt = Number(
+                product.retailPrice ?? product.price ?? product.sellingPrice ?? 0
+              );
+              const wholesaleAmt =
+                product.wholesalePrice != null ? Number(product.wholesalePrice) : retailAmt;
+              const activeAmt = activePricingTier === 'WHOLESALE' ? wholesaleAmt : retailAmt;
+
+              return (
+                <Grid item xs={12} sm={6} md={4} key={product.id || product._id}>
+                  <Card
+                    onClick={() => addToCart(product)}
+                    sx={{
+                      cursor: product.quantity > 0 ? 'pointer' : 'not-allowed',
+                      opacity: product.quantity > 0 ? 1 : 0.6,
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      p: 2,
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      border: '1px solid',
+                      borderColor:
+                        activePricingTier === 'WHOLESALE'
+                          ? 'rgba(147, 51, 234, 0.25)'
+                          : 'rgba(59, 130, 246, 0.25)',
+                      borderRadius: '16px',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover':
+                        product.quantity > 0
+                          ? {
+                              transform: 'translateY(-4px)',
+                              borderColor:
+                                activePricingTier === 'WHOLESALE'
+                                  ? 'secondary.main'
+                                  : 'primary.main',
+                              boxShadow: '0 8px 24px rgba(139, 92, 246, 0.15)',
+                            }
+                          : {},
+                    }}
+                  >
+                    <Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <Chip
+                          label={product.category}
+                          size="small"
                           sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            mb: 2,
-                            alignItems: 'center',
+                            height: 20,
+                            fontSize: '0.675rem',
+                            fontWeight: 700,
+                            bgcolor: 'rgba(255, 255, 255, 0.05)',
                           }}
-                        >
-                          <Chip
-                            label={p.category}
-                            size="small"
-                            sx={{
-                              fontSize: '0.65rem',
-                              fontWeight: 700,
-                              bgcolor: 'rgba(139, 92, 246, 0.08)',
-                              color: 'primary.light',
-                              border: '1px solid rgba(139, 92, 246, 0.15)',
-                            }}
-                          />
+                        />
+                        <Chip
+                          label={`${product.quantity} in stock`}
+                          size="small"
+                          color={
+                            product.quantity > 5
+                              ? 'success'
+                              : product.quantity > 0
+                                ? 'warning'
+                                : 'error'
+                          }
+                          sx={{ height: 20, fontSize: '0.675rem', fontWeight: 800 }}
+                        />
+                      </Box>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 0.5 }}>
+                        {product.name}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ fontFamily: 'monospace' }}
+                      >
+                        SKU: {product.sku}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ mt: 2 }}>
+                      {/* Dual-price display */}
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'baseline',
+                          mb: 1,
+                          p: 1,
+                          borderRadius: '8px',
+                          bgcolor: 'rgba(255, 255, 255, 0.03)',
+                        }}
+                      >
+                        <Box>
                           <Typography
                             variant="caption"
-                            color={qtyLow ? '#ef4444' : 'success.light'}
-                            sx={{ fontWeight: 800, fontSize: '0.725rem' }}
+                            sx={{
+                              color:
+                                activePricingTier === 'RETAIL' ? 'primary.main' : 'text.secondary',
+                              display: 'block',
+                              fontSize: '0.7rem',
+                              fontWeight: activePricingTier === 'RETAIL' ? 700 : 400,
+                            }}
                           >
-                            {p.quantity} left
+                            Retail {activePricingTier === 'RETAIL' ? '✓' : ''}
+                          </Typography>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{
+                              fontWeight: activePricingTier === 'RETAIL' ? 800 : 500,
+                              color:
+                                activePricingTier === 'RETAIL' ? 'primary.main' : 'text.secondary',
+                            }}
+                          >
+                            {formatAmount(retailAmt, activeCurrency)}
                           </Typography>
                         </Box>
-                        <Typography
-                          variant="subtitle2"
-                          sx={{ fontWeight: 700, mb: 0.5, lineHeight: 1.2, color: '#f3f4f6' }}
+                        <Box sx={{ textAlign: 'right' }}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color:
+                                activePricingTier === 'WHOLESALE'
+                                  ? 'secondary.main'
+                                  : 'text.secondary',
+                              display: 'block',
+                              fontSize: '0.7rem',
+                              fontWeight: activePricingTier === 'WHOLESALE' ? 700 : 400,
+                            }}
+                          >
+                            Wholesale {activePricingTier === 'WHOLESALE' ? '✓' : ''}
+                          </Typography>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{
+                              fontWeight: activePricingTier === 'WHOLESALE' ? 800 : 500,
+                              color:
+                                activePricingTier === 'WHOLESALE'
+                                  ? 'secondary.main'
+                                  : 'text.secondary',
+                            }}
+                          >
+                            {formatAmount(wholesaleAmt, activeCurrency)}
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Chip
+                          label={`+ Add ${activePricingTier === 'WHOLESALE' ? 'Wholesale' : 'Retail'} (${formatAmount(activeAmt, activeCurrency)})`}
+                          size="small"
+                          color={activePricingTier === 'WHOLESALE' ? 'secondary' : 'primary'}
+                          sx={{ fontSize: '0.7rem', height: '22px', fontWeight: 700 }}
+                        />
+                        <IconButton
+                          size="small"
+                          color={activePricingTier === 'WHOLESALE' ? 'secondary' : 'primary'}
+                          disabled={product.quantity <= 0}
+                          sx={{
+                            bgcolor:
+                              activePricingTier === 'WHOLESALE'
+                                ? 'rgba(147, 51, 234, 0.15)'
+                                : 'rgba(139, 92, 246, 0.1)',
+                            '&:hover': {
+                              bgcolor:
+                                activePricingTier === 'WHOLESALE'
+                                  ? 'secondary.main'
+                                  : 'primary.main',
+                              color: '#fff',
+                            },
+                          }}
                         >
-                          {p.name}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                          sx={{ mb: 2, fontSize: '0.7rem' }}
-                        >
-                          SKU: {p.sku}
-                        </Typography>
-                        <Typography
-                          variant="h6"
-                          color="#34d399"
-                          sx={{ fontWeight: 800, mt: 'auto', fontSize: '1.1rem' }}
-                        >
-                          ${p.price.toFixed(2)}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                );
-              })
-            )}
+                          <AddIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  </Card>
+                </Grid>
+              );
+            })}
           </Grid>
         </Grid>
 
-        {/* Checkout Cart Pane */}
-        <Grid item xs={12} lg={4}>
+        {/* Right Column: Register Cart & Instant Tender Checkout */}
+        <Grid item xs={12} md={5} lg={4}>
           <Card
-            className="glass-panel"
             sx={{
-              position: { xs: 'static', lg: 'sticky' },
-              top: 88,
+              position: 'sticky',
+              top: 24,
+              background: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              borderRadius: '20px',
+              overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
-              maxHeight: { xs: 'none', lg: 'calc(100vh - 120px)' },
-              borderRadius: '16px',
             }}
           >
             <Box
               sx={{
                 p: 2.5,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
+                bgcolor: 'rgba(255, 255, 255, 0.02)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
               }}
             >
-              <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.01em' }}>
-                Shopping Cart
-              </Typography>
-              <Chip
-                label={`${cart.reduce((sum, i) => sum + i.quantity, 0)} Items`}
-                size="small"
-                color="primary"
-                sx={{ fontWeight: 700, fontSize: '0.725rem' }}
-              />
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}
+                >
+                  <CheckoutIcon color="primary" /> {t('pos.cart')} (
+                  {cart.reduce((a, b) => a + b.quantity, 0)})
+                </Typography>
+                {cart.length > 0 && (
+                  <Button
+                    size="small"
+                    startIcon={<DeleteSweepIcon sx={{ fontSize: '1.05rem !important' }} />}
+                    onClick={clearCompletedSaleState}
+                    sx={{
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      fontSize: '0.8rem',
+                      px: 1.5,
+                      py: 0.4,
+                      borderRadius: '8px',
+                      color: '#f87171',
+                      bgcolor: 'rgba(239, 68, 68, 0.08)',
+                      border: '1px solid rgba(239, 68, 68, 0.22)',
+                      backdropFilter: 'blur(8px)',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        bgcolor: 'rgba(239, 68, 68, 0.18)',
+                        borderColor: '#ef4444',
+                        color: '#fca5a5',
+                        boxShadow: '0 2px 8px rgba(239, 68, 68, 0.25)',
+                        transform: 'translateY(-1px)',
+                      },
+                      '&:active': {
+                        transform: 'translateY(0)',
+                      },
+                    }}
+                  >
+                    {t('common.clear') || 'Clear'}
+                  </Button>
+                )}
+              </Box>
             </Box>
-            <Divider sx={{ borderColor: 'rgba(255,255,255,0.04)' }} />
 
-            {/* Cart List */}
-            <Box sx={{ flexGrow: 1, overflowY: 'auto', px: 2, py: 1, minHeight: 220 }}>
+            {/* Cart Items List */}
+            <Box sx={{ maxHeight: 320, overflowY: 'auto', p: 1.5 }}>
               {cart.length === 0 ? (
-                <Box sx={{ py: 10, textAlign: 'center' }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                    Cart is empty. Click catalog items or scan a barcode to add.
+                <Box sx={{ py: 6, textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('pos.emptyCart')}
                   </Typography>
                 </Box>
               ) : (
                 <List disablePadding>
                   {cart.map((item) => (
                     <ListItem
-                      key={item.productId}
+                      key={`${item.productId}-${item.priceTier}`}
                       secondaryAction={
                         <IconButton
                           edge="end"
                           color="error"
                           size="small"
-                          onClick={() => removeItem(item.productId)}
-                          sx={{ '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.08)' } }}
+                          onClick={() => removeItem(item.productId, item.priceTier)}
                         >
                           <DeleteIcon fontSize="small" />
                         </IconButton>
@@ -847,19 +1049,64 @@ export default function POS() {
                       sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.03)', py: 1.5, px: 1 }}
                     >
                       <ListItemText
-                        primary={item.productName}
-                        primaryTypographyProps={{ fontWeight: 700, fontSize: '0.85rem' }}
-                        secondaryTypographyProps={{ component: 'div' }}
-                        secondary={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                            <Typography variant="caption" color="text.secondary">
-                              ${item.price.toFixed(2)} ea
+                        disableTypography
+                        primary={
+                          <Box
+                            sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}
+                          >
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: 700, fontSize: '0.85rem' }}
+                            >
+                              {item.productName}
                             </Typography>
+                            <Chip
+                              label={item.priceTier === 'WHOLESALE' ? '📦 WHOLESALE' : '🏷️ RETAIL'}
+                              size="small"
+                              color={item.priceTier === 'WHOLESALE' ? 'secondary' : 'primary'}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleItemTier(item.productId, item.priceTier);
+                              }}
+                              clickable
+                              title="Click to switch price tier for this item"
+                              sx={{
+                                fontSize: '0.65rem',
+                                height: '20px',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                              }}
+                            />
+                          </Box>
+                        }
+                        secondary={
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                              mt: 0.5,
+                              flexWrap: 'wrap',
+                            }}
+                          >
+                            <Typography variant="caption" color="text.secondary">
+                              {formatAmount(item.price, activeCurrency)} ea
+                            </Typography>
+                            {item.priceTier === 'WHOLESALE' &&
+                              item.retailPrice > item.wholesalePrice && (
+                                <Chip
+                                  label={`Saved ${formatAmount((item.retailPrice - item.wholesalePrice) * item.quantity, activeCurrency)}`}
+                                  size="small"
+                                  color="success"
+                                  variant="outlined"
+                                  sx={{ height: '18px', fontSize: '0.65rem', fontWeight: 700 }}
+                                />
+                              )}
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 1 }}>
                               <IconButton
                                 size="small"
                                 sx={{ p: 0.2, border: '1px solid rgba(255,255,255,0.06)' }}
-                                onClick={() => adjustQuantity(item.productId, -1)}
+                                onClick={() => adjustQuantity(item.productId, item.priceTier, -1)}
                               >
                                 <RemoveIcon fontSize="inherit" sx={{ fontSize: '0.75rem' }} />
                               </IconButton>
@@ -872,7 +1119,7 @@ export default function POS() {
                               <IconButton
                                 size="small"
                                 sx={{ p: 0.2, border: '1px solid rgba(255,255,255,0.06)' }}
-                                onClick={() => adjustQuantity(item.productId, 1)}
+                                onClick={() => adjustQuantity(item.productId, item.priceTier, 1)}
                               >
                                 <AddIcon fontSize="inherit" sx={{ fontSize: '0.75rem' }} />
                               </IconButton>
@@ -884,7 +1131,7 @@ export default function POS() {
                         variant="subtitle2"
                         sx={{ mr: 2, fontWeight: 800, color: 'text.primary', fontSize: '0.85rem' }}
                       >
-                        ${item.total.toFixed(2)}
+                        {formatAmount(item.total, activeCurrency)}
                       </Typography>
                     </ListItem>
                   ))}
@@ -894,12 +1141,12 @@ export default function POS() {
 
             <Divider sx={{ borderColor: 'rgba(255,255,255,0.04)' }} />
 
-            {/* Calculations & Checkout */}
+            {/* Calculations & Quick Tender Selection */}
             <Box sx={{ p: 2.5, bgcolor: 'rgba(0, 0, 0, 0.1)' }}>
-              <Grid container spacing={2} sx={{ mb: 2.5 }}>
+              <Grid container spacing={2} sx={{ mb: 2 }}>
                 <Grid item xs={6}>
                   <TextField
-                    label="Discount ($)"
+                    label={`${t('pos.discount')} (${currencySymbol})`}
                     type="number"
                     size="small"
                     value={discount || ''}
@@ -912,48 +1159,66 @@ export default function POS() {
                 <Grid item xs={6}>
                   <TextField
                     select
-                    label="Payment Method"
+                    label="Payment Tender"
                     size="small"
                     value={paymentMethod}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                      setPaymentMethod(e.target.value as 'CASH' | 'CARD' | 'MOBILE' | 'SPLIT')
+                      setPaymentMethod(e.target.value as PosManualTender)
                     }
                     fullWidth
                   >
-                    <MenuItem value="CASH">Cash</MenuItem>
-                    <MenuItem value="CARD">Credit/Debit Card</MenuItem>
-                    <MenuItem value="MOBILE">Mobile Money</MenuItem>
-                    <MenuItem value="SPLIT">Split Payment</MenuItem>
+                    <MenuItem value="CASH">💵 Cash (Manual)</MenuItem>
+                    <MenuItem value="BANK_TRANSFER">🏦 Bank / Mobile Transfer</MenuItem>
+                    <MenuItem value="CARD">💳 Card Terminal (POS)</MenuItem>
                   </TextField>
                 </Grid>
               </Grid>
 
+              {totalWholesaleSavings > 0 && (
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: '#34d399', fontSize: '0.8rem', fontWeight: 700 }}
+                  >
+                    Wholesale Savings
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 700, color: '#34d399', fontSize: '0.8rem' }}
+                  >
+                    -{formatAmount(totalWholesaleSavings, activeCurrency)}
+                  </Typography>
+                </Box>
+              )}
+
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
-                  Subtotal
+                  {t('pos.subtotal')}
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.8rem' }}>
-                  ${subtotal.toFixed(2)}
+                  {formatAmount(subtotal, activeCurrency)}
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
-                  Sales Tax (8%)
+                  {taxConfig?.taxRegistrationName || taxConfig?.taxType || t('pos.tax')} (
+                  {taxConfig?.defaultTaxRate ?? 7.5}%)
+                  {isTaxInclusive ? ' [Incl]' : ''}
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.8rem' }}>
-                  ${tax.toFixed(2)}
+                  {formatAmount(tax, activeCurrency)}
                 </Typography>
               </Box>
               {discount > 0 && (
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography variant="body2" color="error" sx={{ fontSize: '0.8rem' }}>
-                    Discount
+                    {t('pos.discount')}
                   </Typography>
                   <Typography
                     variant="body2"
                     sx={{ fontWeight: 600, color: 'error.light', fontSize: '0.8rem' }}
                   >
-                    -${discount.toFixed(2)}
+                    -{formatAmount(discount, activeCurrency)}
                   </Typography>
                 </Box>
               )}
@@ -967,14 +1232,14 @@ export default function POS() {
                 }}
               >
                 <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                  Total
+                  {t('pos.total')}
                 </Typography>
                 <Typography
                   variant="h5"
                   color="#34d399"
                   sx={{ fontWeight: 800, letterSpacing: '-0.01em' }}
                 >
-                  ${total.toFixed(2)}
+                  {formatAmount(total, activeCurrency)}
                 </Typography>
               </Box>
 
@@ -984,7 +1249,7 @@ export default function POS() {
                 fullWidth
                 size="large"
                 startIcon={<CheckoutIcon />}
-                onClick={handleCheckout}
+                onClick={handleOpenCheckoutModal}
                 disabled={cart.length === 0 || checkoutMutation.isPending}
                 sx={{
                   py: 1.5,
@@ -994,156 +1259,309 @@ export default function POS() {
                   background: 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
                 }}
               >
-                {checkoutMutation.isPending ? 'Processing...' : 'Complete Checkout'}
+                {checkoutMutation.isPending ? t('pos.processing') : 'Complete & Record Sale'}
               </Button>
             </Box>
           </Card>
         </Grid>
       </Grid>
-      {/* Resilient Payment Gateway Checkout Modal */}
+
+      {/* Manual Tender POS Checkout Modal */}
       <Dialog
-        open={checkoutOpen}
-        onClose={() => !verifyingPayment && !initializingPayment && setCheckoutOpen(false)}
-        maxWidth="xs"
+        open={checkoutModalOpen}
+        onClose={() => !checkoutMutation.isPending && setCheckoutModalOpen(false)}
+        maxWidth="sm"
         fullWidth
         PaperProps={{
           sx: {
+            maxWidth: '520px !important',
+            width: '100%',
             bgcolor: '#0f131f',
             backgroundImage: 'none',
             border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '16px',
+            borderRadius: '20px',
             color: '#f3f4f6',
-            p: 1.5,
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+            p: { xs: 1.5, sm: 2 },
+            m: { xs: 1.5, sm: 3 },
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 800, fontSize: '1.25rem', pb: 1 }}>
-          Secure Online Payment
+        <DialogTitle sx={{ fontWeight: 800, fontSize: '1.3rem', pb: 1, textAlign: 'center' }}>
+          Tender Confirmation & Receipt
         </DialogTitle>
         <DialogContent sx={{ pb: 2 }}>
-          {checkoutStep === 'INITIAL' ? (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1.5 }}>
-              <Typography variant="body2" color="text.secondary">
-                Select your payment provider and enter customer details to initialize verification
-                checks.
-              </Typography>
-              <TextField
-                label="Customer Email"
-                variant="outlined"
-                fullWidth
-                size="small"
-                value={customerEmail}
-                onChange={(e) => setCustomerEmail(e.target.value)}
+          <Box sx={{ textAlign: 'center', my: 1.5 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
+              <Chip
+                label={
+                  activePricingTier === 'WHOLESALE'
+                    ? '📦 WHOLESALE TRANSACTION'
+                    : '🏷️ RETAIL TRANSACTION'
+                }
+                color={activePricingTier === 'WHOLESALE' ? 'secondary' : 'primary'}
+                sx={{ fontWeight: 800, fontSize: '0.8rem' }}
               />
-              <FormControl component="fieldset">
-                <FormLabel
-                  component="legend"
-                  sx={{ color: 'text.secondary', fontSize: '0.8rem', fontWeight: 700, mb: 1 }}
-                >
-                  PAYMENT GATEWAY PROVIDER
-                </FormLabel>
-                <RadioGroup
-                  value={paymentProvider}
-                  onChange={(e) => setPaymentProvider(e.target.value as 'PAYSTACK' | 'STRIPE')}
-                >
-                  <FormControlLabel
-                    value="PAYSTACK"
-                    control={<Radio color="primary" />}
-                    label="Paystack API (Cards & Mobile Money)"
-                  />
-                  <FormControlLabel
-                    value="STRIPE"
-                    control={<Radio color="primary" />}
-                    label="Stripe API (International Cards)"
-                  />
-                </RadioGroup>
-              </FormControl>
-              <Box
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+              TOTAL AMOUNT DUE
+            </Typography>
+            <Typography variant="h3" sx={{ fontWeight: 900, color: '#34d399', my: 0.5 }}>
+              {formatAmount(total, activeCurrency)}
+            </Typography>
+          </Box>
+
+          <Divider sx={{ my: 2, borderColor: 'rgba(255,255,255,0.08)' }} />
+
+          {/* Tender Type Selector Cards */}
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: 800, color: 'text.secondary', display: 'block', mb: 1 }}
+          >
+            SELECT TENDER METHOD
+          </Typography>
+          <Grid container spacing={1.5} sx={{ mb: 2.5 }}>
+            <Grid item xs={4}>
+              <Paper
+                onClick={() => setPaymentMethod('CASH')}
                 sx={{
+                  p: 1.5,
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  borderRadius: '12px',
+                  border:
+                    paymentMethod === 'CASH'
+                      ? '2px solid #10b981'
+                      : '1px solid rgba(255,255,255,0.1)',
+                  bgcolor:
+                    paymentMethod === 'CASH'
+                      ? 'rgba(16, 185, 129, 0.12)'
+                      : 'rgba(255,255,255,0.02)',
+                  color: paymentMethod === 'CASH' ? '#34d399' : 'inherit',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <PaymentsIcon sx={{ fontSize: 28, mb: 0.5 }} />
+                <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                  Cash
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={4}>
+              <Paper
+                onClick={() => setPaymentMethod('BANK_TRANSFER')}
+                sx={{
+                  p: 1.5,
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  borderRadius: '12px',
+                  border:
+                    paymentMethod === 'BANK_TRANSFER'
+                      ? '2px solid #8b5cf6'
+                      : '1px solid rgba(255,255,255,0.1)',
+                  bgcolor:
+                    paymentMethod === 'BANK_TRANSFER'
+                      ? 'rgba(139, 92, 246, 0.12)'
+                      : 'rgba(255,255,255,0.02)',
+                  color: paymentMethod === 'BANK_TRANSFER' ? '#a78bfa' : 'inherit',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <AccountBalanceIcon sx={{ fontSize: 28, mb: 0.5 }} />
+                <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                  Transfer
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={4}>
+              <Paper
+                onClick={() => setPaymentMethod('CARD')}
+                sx={{
+                  p: 1.5,
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  borderRadius: '12px',
+                  border:
+                    paymentMethod === 'CARD'
+                      ? '2px solid #3b82f6'
+                      : '1px solid rgba(255,255,255,0.1)',
+                  bgcolor:
+                    paymentMethod === 'CARD'
+                      ? 'rgba(59, 130, 246, 0.12)'
+                      : 'rgba(255,255,255,0.02)',
+                  color: paymentMethod === 'CARD' ? '#60a5fa' : 'inherit',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <CreditCardIcon sx={{ fontSize: 28, mb: 0.5 }} />
+                <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                  Card POS
+                </Typography>
+              </Paper>
+            </Grid>
+          </Grid>
+
+          {/* Tender-Specific Inputs */}
+          {paymentMethod === 'CASH' && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField
+                label="Cash Amount Received"
+                type="number"
+                fullWidth
+                value={cashTendered || ''}
+                onChange={(e) => setCashTendered(Number(e.target.value))}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">{currencySymbol}</InputAdornment>
+                  ),
+                }}
+                sx={{ input: { fontSize: '1.2rem', fontWeight: 800 } }}
+              />
+
+              {/* Quick Cash Buttons */}
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => setCashTendered(Number(displayTotal.toFixed(2)))}
+                  sx={{ textTransform: 'none', fontWeight: 700 }}
+                >
+                  Exact ({formatAmount(total, activeCurrency)})
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => setCashTendered(Math.ceil(displayTotal / 1000) * 1000)}
+                  sx={{ textTransform: 'none', fontWeight: 700 }}
+                >
+                  Round Up 1k
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() =>
+                    setCashTendered(Math.ceil(displayTotal / 5000) * 5000 || displayTotal + 5000)
+                  }
+                  sx={{ textTransform: 'none', fontWeight: 700 }}
+                >
+                  Round Up 5k
+                </Button>
+              </Box>
+
+              <Paper
+                sx={{
+                  p: 2,
+                  bgcolor: changeDue >= 0 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+                  border:
+                    changeDue >= 0
+                      ? '1px solid rgba(16, 185, 129, 0.3)'
+                      : '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: '12px',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  mt: 1,
                 }}
               >
-                <Typography variant="caption" color="text.secondary">
-                  EXPECTED TOTAL:
-                </Typography>
-                <Typography variant="h6" color="success.light" sx={{ fontWeight: 800 }}>
-                  ${total.toFixed(2)}
-                </Typography>
-              </Box>
-            </Box>
-          ) : (
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2.5,
-                mt: 1.5,
-                textAlign: 'center',
-                py: 2,
-              }}
-            >
-              <CircularProgress size={40} color="secondary" sx={{ mx: 'auto' }} />
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                Awaiting Payment Verification...
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Please complete your checkout in the verification tab. Once successful, click the
-                button below to retrieve gateway logs.
-              </Typography>
-              <Box
-                sx={{
-                  p: 1.5,
-                  bgcolor: 'rgba(255,255,255,0.02)',
-                  border: '1px solid rgba(255,255,255,0.05)',
-                  borderRadius: '8px',
-                }}
-              >
-                <Typography variant="caption" color="text.secondary" display="block">
-                  TRANSACTION REFERENCE
+                <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.secondary' }}>
+                  CHANGE TO RETURN:
                 </Typography>
                 <Typography
-                  variant="body2"
-                  sx={{ fontFamily: 'monospace', fontWeight: 700, color: 'primary.light' }}
+                  variant="h6"
+                  sx={{
+                    fontWeight: 900,
+                    color: changeDue >= 0 ? '#34d399' : '#f87171',
+                  }}
                 >
-                  {checkoutReference}
+                  {formatAmount(changeDue, { currency: activeCurrency, convert: false })}
                 </Typography>
-              </Box>
+              </Paper>
+            </Box>
+          )}
+
+          {paymentMethod === 'BANK_TRANSFER' && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Paper
+                sx={{
+                  p: 2,
+                  bgcolor: 'rgba(139, 92, 246, 0.08)',
+                  border: '1px solid rgba(139, 92, 246, 0.2)',
+                  borderRadius: '12px',
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 600, color: '#c4b5fd' }}>
+                  ℹ️ <strong>Cashier Verification:</strong> Please verify that the incoming transfer
+                  alert of <strong>{formatAmount(total, activeCurrency)}</strong> has settled in the
+                  company bank account before confirming.
+                </Typography>
+              </Paper>
+
+              <TextField
+                label="Transfer Reference / Sender Name"
+                fullWidth
+                size="small"
+                placeholder="e.g. TRF-98234 or John Doe"
+                value={manualReference}
+                onChange={(e) => setManualReference(e.target.value)}
+              />
+            </Box>
+          )}
+
+          {paymentMethod === 'CARD' && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Paper
+                sx={{
+                  p: 2,
+                  bgcolor: 'rgba(59, 130, 246, 0.08)',
+                  border: '1px solid rgba(59, 130, 246, 0.2)',
+                  borderRadius: '12px',
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 600, color: '#93c5fd' }}>
+                  💳 <strong>Physical POS Machine:</strong> Process{' '}
+                  <strong>{formatAmount(total, activeCurrency)}</strong> on your countertop POS card
+                  terminal. Confirm once the terminal prints "APPROVED".
+                </Typography>
+              </Paper>
+
+              <TextField
+                label="Card Terminal RRN / Auth Slip #"
+                fullWidth
+                size="small"
+                placeholder="e.g. RRN-104928 or Slip 402"
+                value={manualReference}
+                onChange={(e) => setManualReference(e.target.value)}
+              />
             </Box>
           )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5 }}>
           <Button
-            onClick={() => setCheckoutOpen(false)}
-            disabled={initializingPayment || verifyingPayment}
+            onClick={() => setCheckoutModalOpen(false)}
+            disabled={checkoutMutation.isPending}
             color="inherit"
             sx={{ fontWeight: 700 }}
           >
             Cancel
           </Button>
-          {checkoutStep === 'INITIAL' ? (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleOnlineCheckoutInit}
-              disabled={initializingPayment || !customerEmail.includes('@')}
-              sx={{ fontWeight: 700, borderRadius: '8px' }}
-            >
-              {initializingPayment ? 'Initializing...' : 'Proceed to Gateway'}
-            </Button>
-          ) : (
-            <Button
-              variant="contained"
-              color="success"
-              onClick={handleOnlineCheckoutVerify}
-              disabled={verifyingPayment}
-              sx={{ fontWeight: 700, borderRadius: '8px' }}
-            >
-              {verifyingPayment ? 'Verifying...' : 'Verify Payment Status'}
-            </Button>
-          )}
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleConfirmManualPayment}
+            disabled={
+              checkoutMutation.isPending ||
+              (paymentMethod === 'CASH' && cashTendered < displayTotal)
+            }
+            startIcon={<CheckCircleIcon />}
+            sx={{
+              fontWeight: 800,
+              borderRadius: '10px',
+              px: 3,
+              py: 1,
+              background: 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
+            }}
+          >
+            {checkoutMutation.isPending ? 'Recording...' : 'Confirm & Print Receipt'}
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -1183,17 +1601,17 @@ export default function POS() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <ReceiptLongIcon color="secondary" />
             <Typography variant="h6" sx={{ fontWeight: 800 }}>
-              Recent Sales & Printable Invoice Receipts
+              {t('pos.recentSales')}
             </Typography>
           </Box>
           <Button onClick={() => setRecentSalesOpen(false)} color="inherit" size="small">
-            Close
+            {t('common.cancel')}
           </Button>
         </DialogTitle>
         <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.08)' }}>
           {receipts.length === 0 ? (
             <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
-              No recent receipts recorded.
+              {t('pos.noProducts')}
             </Typography>
           ) : (
             <List disablePadding>
@@ -1233,7 +1651,7 @@ export default function POS() {
                           variant="subtitle2"
                           sx={{ fontWeight: 900, color: 'success.light' }}
                         >
-                          ${(receipt.data.total || 0).toFixed(2)}
+                          {formatAmount(receipt.data.total || 0, activeCurrency)}
                         </Typography>
                         <Chip
                           label={receipt.data.paymentMethod || 'CASH'}
@@ -1247,24 +1665,34 @@ export default function POS() {
                         size="small"
                         startIcon={<PrintIcon />}
                         onClick={() => {
+                          const rData = (receipt.data || {}) as any;
                           triggerPrintReceipt({
                             transactionNumber: receipt.transactionNumber,
-                            createdAt: receipt.data.createdAt,
-                            cashierName: receipt.data.cashierName,
-                            branchName: receipt.data.branchName,
-                            customerEmail: receipt.data.customerEmail,
-                            items: receipt.data.items,
-                            subtotal: receipt.data.subtotal,
-                            tax: receipt.data.tax,
-                            discount: receipt.data.discount,
-                            total: receipt.data.total,
-                            paymentMethod: receipt.data.paymentMethod,
+                            createdAt: rData.createdAt,
+                            cashierName: rData.cashierName,
+                            branchName: rData.branchName,
+                            customerEmail: rData.customerEmail,
+                            companyName: rData.companyName,
+                            companyLegalName: rData.companyLegalName,
+                            companyLogoUrl: rData.companyLogoUrl,
+                            companyAddress: rData.companyAddress,
+                            companyPhone: rData.companyPhone,
+                            companyEmail: rData.companyEmail,
+                            companyTaxId: rData.companyTaxId,
+                            receiptHeader: rData.receiptHeader,
+                            receiptFooter: rData.receiptFooter,
+                            items: rData.items,
+                            subtotal: rData.subtotal,
+                            tax: rData.tax,
+                            discount: rData.discount,
+                            total: rData.total,
+                            paymentMethod: rData.paymentMethod,
                           });
                           setRecentSalesOpen(false);
                         }}
                         sx={{ fontWeight: 700, borderRadius: '6px' }}
                       >
-                        Reopen Receipt
+                        {t('pos.reopenReceipt')}
                       </Button>
                     </Box>
                   </ListItem>

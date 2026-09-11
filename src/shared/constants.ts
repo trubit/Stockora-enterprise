@@ -45,6 +45,7 @@ export const SYSTEM_PERMISSIONS = {
   ROLES_WRITE: 'roles:write',
   COMPANIES_READ: 'companies:read',
   COMPANIES_WRITE: 'companies:write',
+  PLATFORM_COMPANIES_VIEW: 'platform:companies:view',
   BRANCHES_READ: 'branches:read',
   BRANCHES_WRITE: 'branches:write',
   WAREHOUSES_READ: 'warehouses:read',
@@ -53,6 +54,7 @@ export const SYSTEM_PERMISSIONS = {
   MASTER_DATA_WRITE: 'master_data:write',
   PRODUCTS_READ: 'products:read',
   PRODUCTS_WRITE: 'products:write',
+  INVENTORY_ADJUST: 'inventory:adjust',
   TRANSACTIONS_READ: 'transactions:read',
   TRANSACTIONS_WRITE: 'transactions:write',
   SUPPLIERS_READ: 'suppliers:read',
@@ -81,6 +83,14 @@ export const SYSTEM_PERMISSIONS = {
   REPORTS_WRITE: 'reports:write',
   WORKFLOWS_READ: 'workflows:read',
   WORKFLOWS_WRITE: 'workflows:write',
+  // AI Intelligence permissions
+  AI_VIEW: 'ai:view',
+  AI_ANALYZE: 'ai:analyze',
+  AI_INVENTORY: 'ai:inventory',
+  AI_SALES: 'ai:sales',
+  AI_FORECASTING: 'ai:forecasting',
+  AI_RECOMMENDATIONS: 'ai:recommendations',
+  AI_REPORTS: 'ai:reports',
 } as const;
 
 export type SystemPermission = (typeof SYSTEM_PERMISSIONS)[keyof typeof SYSTEM_PERMISSIONS];

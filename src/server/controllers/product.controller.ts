@@ -12,24 +12,34 @@ export class ProductController {
     next: NextFunction
   ): Promise<void> {
     try {
+      const tenantId = (req as any).tenantId || req.user?.tenantId;
+      if (!tenantId) {
+        res.json([]);
+        return;
+      }
       const search = req.query.search as string;
+
       if (search && search.trim() !== '') {
         const regex = new RegExp(search.trim(), 'i');
-        const products = await Product.find({
+        const filter: Record<string, unknown> = {
+          tenantId,
           $or: [{ name: regex }, { sku: regex }, { category: regex }, { barcode: regex }],
-        }).lean();
+        };
+
+        const products = await Product.find(filter).lean();
         res.json(products);
         return;
       }
 
-      const cached = await redis.get('products:all');
+      const cacheKey = `tenant:${tenantId}:products:all`;
+      const cached = await redis.get(cacheKey);
       if (cached) {
         res.json(JSON.parse(cached));
         return;
       }
 
-      const products = await Product.find().lean();
-      await redis.setex('products:all', 300, JSON.stringify(products));
+      const products = await Product.find({ tenantId }).lean();
+      await redis.setex(cacheKey, 300, JSON.stringify(products));
       res.json(products);
     } catch (err: unknown) {
       next(err);
@@ -43,9 +53,13 @@ export class ProductController {
   ): Promise<void> {
     const { id } = req.params;
     try {
-      const product = await Product.findById(id).lean();
+      const tenantId = req.user?.tenantId;
+      const query: Record<string, unknown> = { _id: id };
+      if (tenantId) query.tenantId = tenantId;
+
+      const product = await Product.findOne(query).lean();
       if (!product) {
-        return next(new NotFoundError('Product not found.'));
+        return next(new NotFoundError('Product not found or access denied.'));
       }
       res.json(product);
     } catch (err: unknown) {
@@ -73,6 +87,8 @@ export class ProductController {
     }
 
     try {
+      const tenantId = (req as any).tenantId || req.user?.tenantId;
+
       let finalSku = sku;
       if (!finalSku) {
         const cleanName = name
@@ -86,14 +102,23 @@ export class ProductController {
         finalSku = `PRD-${cleanCat}-${cleanName}-${Math.round(Math.random() * 1e5)}`;
       }
 
-      const existingSku = await Product.findOne({ sku: finalSku });
+      const skuQuery: Record<string, unknown> = { sku: finalSku };
+      if (tenantId) skuQuery.tenantId = tenantId;
+
+      const existingSku = await Product.findOne(skuQuery);
       if (existingSku) {
         return next(new ValidationError(`Product SKU [${finalSku}] already exists.`));
       }
 
-      const finalBarcode = barcode || `BAR-${Math.round(Math.random() * 1e12)}`;
+      const initialQuantity = Number(rest.quantity || 0);
+      const initialAlert = Number(rest.lowStockAlert !== undefined ? rest.lowStockAlert : 10);
+      const initialStatus =
+        initialQuantity > 0 ? rest.status || 'ACTIVE' : rest.status || 'OUT_OF_STOCK';
+      const finalBarcode =
+        barcode && String(barcode).trim() !== '' ? String(barcode).trim() : undefined;
 
       const product = await Product.create({
+        tenantId,
         name,
         category,
         costPrice: finalCostPrice,
@@ -102,13 +127,21 @@ export class ProductController {
         cost: finalCostPrice,
         sku: finalSku,
         barcode: finalBarcode,
+        quantity: initialQuantity,
+        lowStockAlert: initialAlert,
+        status: initialStatus,
         ...rest,
       });
 
-      await redis.del('products:all');
+      if (tenantId) {
+        await redis.del([`tenant:${tenantId}:products:all`, 'products:all']);
+      } else {
+        await redis.del('products:all');
+      }
 
       await AuditLog.create({
         userId: req.user?.id,
+        tenantId,
         action: 'CREATE',
         targetModel: 'Product',
         targetId: product._id.toString(),
@@ -128,28 +161,40 @@ export class ProductController {
   ): Promise<void> {
     const { id } = req.params;
     try {
-      const product = await Product.findById(id);
+      const tenantId = req.user?.tenantId;
+      const query: Record<string, unknown> = { _id: id };
+      if (tenantId) query.tenantId = tenantId;
+
+      const product = await Product.findOne(query);
       if (!product) {
-        return next(new NotFoundError('Product not found.'));
+        return next(new NotFoundError('Product not found or access denied.'));
       }
 
       const oldValues = product.toObject();
 
-      const { sku, costPrice, sellingPrice, cost, price } = req.body;
+      const { sku, costPrice, sellingPrice, cost, price, addQuantity, quantity, lowStockAlert } =
+        req.body;
       const updatableData = { ...req.body };
       delete updatableData.sku;
       delete updatableData.costPrice;
       delete updatableData.sellingPrice;
       delete updatableData.cost;
       delete updatableData.price;
+      delete updatableData.addQuantity;
+      delete updatableData.quantity;
+      delete updatableData.lowStockAlert;
       delete updatableData._id;
       delete updatableData.id;
+      delete updatableData.tenantId;
       delete updatableData.createdAt;
       delete updatableData.updatedAt;
       delete updatableData.__v;
 
       if (sku && sku !== product.sku) {
-        const existingSku = await Product.findOne({ sku });
+        const skuQuery: Record<string, unknown> = { sku };
+        if (tenantId) skuQuery.tenantId = tenantId;
+
+        const existingSku = await Product.findOne(skuQuery);
         if (existingSku) {
           return next(new ValidationError(`SKU [${sku}] is already assigned to another product.`));
         }
@@ -172,13 +217,38 @@ export class ProductController {
         product.price = Number(price);
       }
 
+      // Handle stock adjustments & restocking
+      if (addQuantity !== undefined && Number(addQuantity) !== 0) {
+        const addQty = Number(addQuantity);
+        product.quantity = Math.max(0, (product.quantity || 0) + addQty);
+        if (product.quantity > 0 && product.status === 'OUT_OF_STOCK') {
+          product.status = 'ACTIVE';
+        }
+      } else if (quantity !== undefined) {
+        product.quantity = Math.max(0, Number(quantity));
+        if (product.quantity > 0 && product.status === 'OUT_OF_STOCK') {
+          product.status = 'ACTIVE';
+        } else if (product.quantity === 0 && product.status === 'ACTIVE') {
+          product.status = 'OUT_OF_STOCK';
+        }
+      }
+
+      if (lowStockAlert !== undefined) {
+        product.lowStockAlert = Math.max(0, Number(lowStockAlert));
+      }
+
       Object.assign(product, updatableData);
       await product.save();
 
-      await redis.del('products:all');
+      if (tenantId) {
+        await redis.del([`tenant:${tenantId}:products:all`, 'products:all']);
+      } else {
+        await redis.del('products:all');
+      }
 
       await AuditLog.create({
         userId: req.user?.id,
+        tenantId,
         action: 'UPDATE',
         targetModel: 'Product',
         targetId: product._id.toString(),
@@ -199,9 +269,13 @@ export class ProductController {
   ): Promise<void> {
     const { id } = req.params;
     try {
-      const product = await Product.findById(id);
+      const tenantId = req.user?.tenantId;
+      const query: Record<string, unknown> = { _id: id };
+      if (tenantId) query.tenantId = tenantId;
+
+      const product = await Product.findOne(query);
       if (!product) {
-        return next(new NotFoundError('Product not found.'));
+        return next(new NotFoundError('Product not found or access denied.'));
       }
 
       const oldValues = product.toObject();
@@ -209,10 +283,15 @@ export class ProductController {
       product.status = 'INACTIVE';
       await product.save();
 
-      await redis.del('products:all');
+      if (tenantId) {
+        await redis.del([`tenant:${tenantId}:products:all`, 'products:all']);
+      } else {
+        await redis.del('products:all');
+      }
 
       await AuditLog.create({
         userId: req.user?.id,
+        tenantId,
         action: 'DELETE',
         targetModel: 'Product',
         targetId: product._id.toString(),
@@ -221,6 +300,76 @@ export class ProductController {
       });
 
       res.json({ message: 'Product deactivated successfully.', product });
+    } catch (err: unknown) {
+      next(err);
+    }
+  }
+
+  public static async restockProduct(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    const { id } = req.params;
+    const { quantity, addQuantity, costPrice, reason } = req.body;
+
+    if (!id || id === 'undefined') {
+      return next(new ValidationError('Valid product ID is required.'));
+    }
+
+    const qtyToAdd = Number(
+      addQuantity !== undefined ? addQuantity : quantity !== undefined ? quantity : 0
+    );
+    if (qtyToAdd <= 0) {
+      return next(new ValidationError('Restock quantity must be greater than 0.'));
+    }
+
+    try {
+      const tenantId = req.user?.tenantId;
+      const query: Record<string, unknown> = { _id: id };
+      if (tenantId) query.tenantId = tenantId;
+
+      const product = await Product.findOne(query);
+      if (!product) {
+        return next(new NotFoundError('Product not found or access denied.'));
+      }
+
+      const oldValues = product.toObject();
+      product.quantity = (product.quantity || 0) + qtyToAdd;
+      if (product.quantity > 0 && product.status === 'OUT_OF_STOCK') {
+        product.status = 'ACTIVE';
+      }
+      if (costPrice !== undefined && Number(costPrice) > 0) {
+        product.costPrice = Number(costPrice);
+        product.cost = Number(costPrice);
+      }
+
+      await product.save();
+
+      if (tenantId) {
+        await redis.del([`tenant:${tenantId}:products:all`, 'products:all']);
+      } else {
+        await redis.del('products:all');
+      }
+
+      await AuditLog.create({
+        userId: req.user?.id,
+        tenantId,
+        action: 'RESTOCK',
+        targetModel: 'Product',
+        targetId: product._id.toString(),
+        priorValues: oldValues,
+        newValues: {
+          ...product.toObject(),
+          restockReason: reason || 'Quick Restock',
+          addedQuantity: qtyToAdd,
+        },
+      });
+
+      res.json({
+        message: 'Product restocked successfully.',
+        product,
+      });
     } catch (err: unknown) {
       next(err);
     }

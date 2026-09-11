@@ -3,16 +3,20 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../api/client.ts';
 import { useAuthStore } from '../../store/auth.ts';
+import { useTenantStore } from '../../store/tenant.ts';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import type { AuthResponse } from '../../../shared/types.js';
 
 const signInSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z
+    .string({ required_error: 'Email address is required' })
+    .transform((val) => val.trim().toLowerCase())
+    .pipe(z.string().email('Please enter a valid email address')),
+  password: z.string({ required_error: 'Password is required' }).min(1, 'Password is required'),
 });
 
 type SignInInputs = z.infer<typeof signInSchema>;
@@ -21,6 +25,7 @@ const textFieldStyle = {};
 
 export default function SignIn() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const setSession = useAuthStore((s) => s.setSession);
 
   const {
@@ -33,13 +38,36 @@ export default function SignIn() {
 
   const mutation = useMutation({
     mutationFn: async (credentials: SignInInputs) => {
-      const { data } = await apiClient.post<AuthResponse>('/auth/login', credentials);
+      const { data } = await apiClient.post<AuthResponse>('/auth/login', {
+        email: credentials.email.trim().toLowerCase(),
+        password: credentials.password,
+      });
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setSession(data.user, data.accessToken, data.refreshToken);
-      toast.success('Logged in successfully!');
+
+      // Synchronize active tenant and invalidate queries for immediate UI hydration
+      await Promise.allSettled([
+        useTenantStore.getState().fetchCurrentTenant(),
+        useTenantStore.getState().fetchUserTenants(),
+        queryClient.invalidateQueries({ queryKey: ['tenants'] }),
+        queryClient.invalidateQueries({ queryKey: ['current-tenant'] }),
+        queryClient.invalidateQueries({ queryKey: ['user-tenants'] }),
+        queryClient.invalidateQueries({ queryKey: ['auth'] }),
+      ]);
+
+      toast.success(`Logged in as ${data.user.username} (${data.user.roleName})!`);
       navigate('/');
+    },
+    onError: (err: any) => {
+      const message =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        (typeof err?.response?.data === 'string'
+          ? err.response.data
+          : 'Sign in failed. Please check your credentials.');
+      toast.error(message);
     },
   });
 
@@ -162,22 +190,37 @@ export default function SignIn() {
               style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
             >
               <TextField
+                id="email"
                 label="Email Address"
+                type="email"
+                autoComplete="email"
                 fullWidth
                 {...register('email')}
                 error={!!errors.email}
                 helperText={errors.email?.message}
                 sx={textFieldStyle}
+                inputProps={{
+                  autoCapitalize: 'none',
+                  autoCorrect: 'off',
+                  spellCheck: 'false',
+                }}
                 InputLabelProps={{ shrink: true }}
               />
               <TextField
+                id="password"
                 label="Password"
                 type="password"
+                autoComplete="current-password"
                 fullWidth
                 {...register('password')}
                 error={!!errors.password}
                 helperText={errors.password?.message}
                 sx={textFieldStyle}
+                inputProps={{
+                  autoCapitalize: 'none',
+                  autoCorrect: 'off',
+                  spellCheck: 'false',
+                }}
                 InputLabelProps={{ shrink: true }}
               />
               <Button

@@ -27,8 +27,10 @@ import SmartToyIcon from '@mui/icons-material/SmartToy';
 import PageHeader from '../../components/PageHeader.tsx';
 import StatCard from '../../components/StatCard.tsx';
 import { toast } from 'react-hot-toast';
+import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 
 export default function CRMDashboard() {
+  const { formatAmount } = useRegionalSettings();
   const [copilotPrompt, setCopilotPrompt] = useState('');
   const [copilotReply, setCopilotReply] = useState('');
   const [isCopilotLoading, setIsCopilotLoading] = useState(false);
@@ -201,10 +203,10 @@ export default function CRMDashboard() {
                       </Typography>
                     </TableCell>
                     <TableCell align="right">{c.totalOrders || 0}</TableCell>
-                    <TableCell align="right">${c.totalSpending || 0}</TableCell>
+                    <TableCell align="right">{formatAmount(c.totalSpending || 0)}</TableCell>
                     <TableCell align="right">
                       <Typography fontWeight={600} color="primary.main">
-                        ${c.clvScore || 0}
+                        {formatAmount(c.clvScore || 0)}
                       </Typography>
                     </TableCell>
                     <TableCell>

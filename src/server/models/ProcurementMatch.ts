@@ -2,6 +2,7 @@ import mongoose, { Schema, type Document } from 'mongoose';
 
 export interface IProcurementMatch extends Document {
   tenantId?: string;
+  companyId?: mongoose.Types.ObjectId;
   invoiceId: mongoose.Types.ObjectId;
   poId: mongoose.Types.ObjectId;
   grnId?: mongoose.Types.ObjectId;
@@ -10,8 +11,15 @@ export interface IProcurementMatch extends Document {
   taxVariance: number;
   deliveryVarianceDays: number;
   overallStatus:
-    'MATCHED' | 'PRICE_VARIANCE' | 'QUANTITY_VARIANCE' | 'TAX_VARIANCE' | 'MANUAL_REVIEW';
+    | 'MATCHED'
+    | 'PRICE_VARIANCE'
+    | 'QUANTITY_VARIANCE'
+    | 'TAX_VARIANCE'
+    | 'MISSING_RECEIPT'
+    | 'MANUAL_REVIEW';
   isApprovedForPayment: boolean;
+  approvedBy?: mongoose.Types.ObjectId;
+  approvedByName?: string;
   matchedBy?: mongoose.Types.ObjectId;
   matchedAt: Date;
   notes?: string;
@@ -22,9 +30,10 @@ export interface IProcurementMatch extends Document {
 const ProcurementMatchSchema = new Schema<IProcurementMatch>(
   {
     tenantId: { type: String, index: true },
+    companyId: { type: Schema.Types.ObjectId, ref: 'Company', index: true },
     invoiceId: {
       type: Schema.Types.ObjectId,
-      ref: 'ProcurementInvoice',
+      ref: 'SupplierInvoice',
       required: true,
       index: true,
     },
@@ -36,11 +45,20 @@ const ProcurementMatchSchema = new Schema<IProcurementMatch>(
     deliveryVarianceDays: { type: Number, default: 0 },
     overallStatus: {
       type: String,
-      enum: ['MATCHED', 'PRICE_VARIANCE', 'QUANTITY_VARIANCE', 'TAX_VARIANCE', 'MANUAL_REVIEW'],
+      enum: [
+        'MATCHED',
+        'PRICE_VARIANCE',
+        'QUANTITY_VARIANCE',
+        'TAX_VARIANCE',
+        'MISSING_RECEIPT',
+        'MANUAL_REVIEW',
+      ],
       required: true,
       index: true,
     },
     isApprovedForPayment: { type: Boolean, default: false, index: true },
+    approvedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    approvedByName: { type: String },
     matchedBy: { type: Schema.Types.ObjectId, ref: 'User' },
     matchedAt: { type: Date, default: Date.now },
     notes: { type: String },

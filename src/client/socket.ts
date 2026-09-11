@@ -1,8 +1,9 @@
 import { io } from 'socket.io-client';
+import { getSocketBaseUrl } from './utils/url.ts';
 
-export const socket = io(window.location.origin, {
+export const socket = io(getSocketBaseUrl(), {
   autoConnect: true,
-  transports: ['websocket', 'polling'],
+  transports: ['polling', 'websocket'],
   reconnectionAttempts: 10,
   reconnectionDelay: 2000,
   timeout: 10000,

@@ -44,7 +44,11 @@ class RedisManager {
       });
 
       this.client.on('error', (err: Error) => {
-        logger.error('Redis client error:', err);
+        if (err.message?.includes('Connection is closed')) {
+          logger.warn(`Redis connection status notice: ${err.message}`);
+        } else {
+          logger.error('Redis client error:', err);
+        }
       });
     }
 
@@ -53,9 +57,25 @@ class RedisManager {
 
   public async disconnect(): Promise<void> {
     if (this.client) {
-      await this.client.quit();
-      logger.info('Redis client disconnected cleanly.');
-      this.client = null;
+      try {
+        if (this.client.status === 'ready' || this.client.status === 'connect') {
+          await this.client.quit();
+        } else {
+          this.client.disconnect();
+        }
+        logger.info('Redis client disconnected cleanly.');
+      } catch (err: any) {
+        try {
+          this.client?.disconnect();
+        } catch {
+          // ignore
+        }
+        if (!err?.message?.includes('Connection is closed')) {
+          logger.error('Error disconnecting Redis client:', err);
+        }
+      } finally {
+        this.client = null;
+      }
     }
   }
 }

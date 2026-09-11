@@ -1,7 +1,7 @@
 import { Product } from '../../models/Product.js';
 import { Transaction } from '../../models/Transaction.js';
-import { AIService } from './ai.service.js';
 import { logger } from '../../logger.js';
+import { geminiService } from './gemini/gemini.service.js';
 
 export interface ForecastingReport {
   totalSalesRevenue: number;
@@ -35,12 +35,15 @@ export interface ForecastingReport {
 
 export class ForecastingEngine {
   /**
-   * Run heuristics analysis over the live MongoDB databases.
+   * Run heuristics analysis over the live MongoDB databases scoped to the authorized tenant.
    */
-  public static async generateReport(): Promise<ForecastingReport> {
+  public static async generateReport(tenantId?: string): Promise<ForecastingReport> {
     try {
-      const products = await Product.find({});
-      const transactions = await Transaction.find({});
+      if (!tenantId) {
+        throw new Error('Tenant ID is required for generating forecasting reports.');
+      }
+      const products = await Product.find({ tenantId, isActive: true });
+      const transactions = await Transaction.find({ tenantId, type: 'SALE', status: 'COMPLETED' });
 
       // 1. Calculations
       const totalInventoryValue = products.reduce(
@@ -97,7 +100,7 @@ export class ForecastingEngine {
         .map((p) => {
           const pId = (p._id || p.id).toString();
           const sales = productSalesMap[pId] || { quantitySold: 0, revenue: 0 };
-          // Calculate mock inventory age in days based on createdAt or update timestamp
+          // Calculate inventory age in days based on createdAt or update timestamp
           const updatedDate = p.updatedAt ? new Date(p.updatedAt) : new Date();
           const ageInDays = Math.round(
             (Date.now() - updatedDate.getTime()) / (1000 * 60 * 60 * 24)
@@ -161,12 +164,11 @@ export class ForecastingEngine {
   }
 
   /**
-   * Generates natural language AI forecasts and strategies.
+   * Generates natural language AI forecasts and strategies scoped to the tenant.
    */
-  public static async getAIForecasts(): Promise<string> {
+  public static async getAIForecasts(tenantId?: string): Promise<string> {
     try {
-      const stats = await this.generateReport();
-      const aiService = AIService.getInstance();
+      const stats = await this.generateReport(tenantId);
 
       const systemInstruction = `
         You are a Principal Business Intelligence Analyst at Stockora.
@@ -190,7 +192,14 @@ export class ForecastingEngine {
         Please provide a detailed executive summary, inventory forecast, and reorder strategies.
       `;
 
-      return await aiService.executePrompt(prompt, systemInstruction);
+      const res = await geminiService.generateContent({
+        tenantId: tenantId || 'default',
+        action: 'bi_forecasting',
+        systemInstruction,
+        prompt,
+        responseMimeType: 'text/plain',
+      });
+      return res.content;
     } catch (err) {
       logger.error('[AI Forecasting Engine] AI analytics failed:', err);
       return 'AI Business Intelligence forecast unavailable at this time due to system offline status.';

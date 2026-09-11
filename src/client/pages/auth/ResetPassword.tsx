@@ -1,15 +1,35 @@
-import { Box, Card, CardContent, Typography, TextField, Button } from '@mui/material';
+import { useState } from 'react';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  TextField,
+  Button,
+  Link,
+  CircularProgress,
+} from '@mui/material';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import { apiClient } from '../../api/client.ts';
+import LockResetOutlinedIcon from '@mui/icons-material/LockResetOutlined';
 
 const schema = z
   .object({
-    password: z.string().min(6, 'Password must be at least 6 characters'),
-    confirmPassword: z.string().min(6, 'Confirm password must match'),
+    password: z
+      .string({ required_error: 'Password is required' })
+      .min(8, 'Password must be at least 8 characters')
+      .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+      .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+      .regex(/[0-9]/, 'Password must contain at least one number')
+      .regex(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least one special character'),
+    confirmPassword: z
+      .string({ required_error: 'Confirm password is required' })
+      .min(1, 'Confirm password is required'),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords must match',
@@ -18,10 +38,12 @@ const schema = z
 
 type ResetInputs = z.infer<typeof schema>;
 
-const textFieldStyle = {};
-
 export default function ResetPassword() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const resetToken = searchParams.get('token') || '';
+  const [loading, setLoading] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -30,9 +52,33 @@ export default function ResetPassword() {
     resolver: zodResolver(schema),
   });
 
-  const onSubmit = () => {
-    toast.success('Password updated successfully! Please log in.');
-    navigate('/login');
+  const onSubmit = async (data: ResetInputs) => {
+    if (!resetToken) {
+      toast.error(
+        'Missing password reset authorization token. Please use the Forgot Password flow.'
+      );
+      navigate('/forgot-password');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await apiClient.post('/auth/reset-password', {
+        resetToken,
+        newPassword: data.password,
+      });
+      toast.success('Password updated successfully! Please log in.');
+      navigate('/login');
+    } catch (err: any) {
+      const errorMsg =
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        err.message ||
+        'Password reset failed. The authorization link may have expired.';
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -46,6 +92,7 @@ export default function ResetPassword() {
         position: 'relative',
         overflow: 'hidden',
         px: 2,
+        py: 4,
         '&::before': {
           content: '""',
           position: 'absolute',
@@ -65,11 +112,10 @@ export default function ResetPassword() {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        style={{ zIndex: 1 }}
+        style={{ zIndex: 1, width: '100%', maxWidth: 440 }}
       >
         <Card
           sx={{
-            width: 420,
             boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4), 0 0 40px rgba(139, 92, 246, 0.08)',
             border: '1px solid rgba(139, 92, 246, 0.15)',
             background:
@@ -90,8 +136,25 @@ export default function ResetPassword() {
           }}
         >
           <CardContent
-            sx={{ p: { xs: 4, md: 5 }, display: 'flex', flexDirection: 'column', gap: 3.5 }}
+            sx={{ p: { xs: 3.5, md: 5 }, display: 'flex', flexDirection: 'column', gap: 3.5 }}
           >
+            <Box
+              sx={{
+                width: 56,
+                height: 56,
+                borderRadius: '50%',
+                background: 'rgba(139, 92, 246, 0.12)',
+                border: '1px solid rgba(139, 92, 246, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#a78bfa',
+                mx: 'auto',
+              }}
+            >
+              <LockResetOutlinedIcon sx={{ fontSize: 28 }} />
+            </Box>
+
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
               <Typography
                 variant="h4"
@@ -116,7 +179,7 @@ export default function ResetPassword() {
 
             <form
               onSubmit={handleSubmit(onSubmit)}
-              style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
+              style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
             >
               <TextField
                 label="New Password"
@@ -125,7 +188,6 @@ export default function ResetPassword() {
                 {...register('password')}
                 error={!!errors.password}
                 helperText={errors.password?.message}
-                sx={textFieldStyle}
                 InputLabelProps={{ shrink: true }}
               />
               <TextField
@@ -135,7 +197,6 @@ export default function ResetPassword() {
                 {...register('confirmPassword')}
                 error={!!errors.confirmPassword}
                 helperText={errors.confirmPassword?.message}
-                sx={textFieldStyle}
                 InputLabelProps={{ shrink: true }}
               />
 
@@ -143,6 +204,7 @@ export default function ResetPassword() {
                 variant="contained"
                 type="submit"
                 fullWidth
+                disabled={loading}
                 sx={{
                   py: 1.6,
                   fontWeight: 800,
@@ -151,17 +213,35 @@ export default function ResetPassword() {
                   fontSize: '0.975rem',
                   background: 'linear-gradient(90deg, #8b5cf6 0%, #3b82f6 100%)',
                   boxShadow: '0 4px 20px rgba(139, 92, 246, 0.3)',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    background: 'linear-gradient(90deg, #7c3aed 0%, #2563eb 100%)',
-                    boxShadow: '0 6px 24px rgba(139, 92, 246, 0.45)',
-                    transform: 'translateY(-1px)',
-                  },
                 }}
               >
-                Reset Password
+                {loading ? <CircularProgress size={20} color="inherit" /> : 'Reset Password'}
               </Button>
             </form>
+
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                borderTop: '1px solid rgba(255,255,255,0.05)',
+                pt: 2.5,
+              }}
+            >
+              <Link
+                onClick={() => navigate('/login')}
+                sx={{
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  color: 'primary.light',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  transition: 'color 0.2s',
+                  '&:hover': { color: 'primary.main' },
+                }}
+              >
+                Back to Sign In
+              </Link>
+            </Box>
           </CardContent>
         </Card>
       </motion.div>

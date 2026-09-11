@@ -17,8 +17,8 @@ const SessionSchema = new Schema<ISession>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     sessionToken: { type: String, required: true, unique: true, index: true },
-    ipAddress: { type: String, required: true },
-    userAgent: { type: String, required: true },
+    ipAddress: { type: String, default: '127.0.0.1' },
+    userAgent: { type: String, default: 'Unknown' },
     deviceFingerprint: { type: String },
     isActive: { type: Boolean, default: true, index: true },
     lastSeenAt: { type: Date, default: Date.now },

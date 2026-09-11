@@ -50,7 +50,15 @@ export type TaskType =
   | 'INVENTORY_INTELLIGENCE_SCAN'
   | 'CRM_SEGMENTATION_EVAL'
   | 'CRM_CHURN_SCAN'
-  | 'EXPIRE_INVENTORY_RESERVATION';
+  | 'EXPIRE_INVENTORY_RESERVATION'
+  | 'BUSINESS_INTELLIGENCE_SCAN'
+  | 'GENERATE_DAILY_BRIEFING'
+  | 'FINANCIAL_RECONCILIATION_SCAN'
+  | 'BUDGET_OVERRUN_CHECK'
+  | 'LOYALTY_POINT_EXPIRATION_SCAN'
+  | 'BILLING_USAGE_RECONCILIATION'
+  | 'SUBSCRIPTION_EXPIRATION_SCAN'
+  | 'BILLING_PAST_DUE_GRACE_CHECK';
 
 // ---------------------------------------------------------------------------
 // Job processors
@@ -82,7 +90,13 @@ async function processInventoryIntelligenceScan(): Promise<void> {
 }
 
 async function processLowStockCheck(): Promise<void> {
-  const products = await Product.find({ quantity: { $lte: 5 }, isActive: true }).limit(20);
+  // Query products that are at or below their own configured lowStockAlert threshold
+  const products = await Product.find(
+    { $expr: { $lte: ['$quantity', '$lowStockAlert'] }, isActive: true },
+    { name: 1, quantity: 1, lowStockAlert: 1 }
+  )
+    .limit(50)
+    .lean();
   if (products.length === 0) return;
   await NotificationService.send({
     type: 'WARNING',
@@ -94,7 +108,7 @@ async function processLowStockCheck(): Promise<void> {
     channels: ['IN_APP'],
     targetRole: 'admin',
   });
-  logger.info(`[Job] CHECK_LOW_STOCK: ${products.length} items below threshold.`);
+  logger.info(`[Job] CHECK_LOW_STOCK: ${products.length} items below their stock alert threshold.`);
 }
 
 async function processLogRotation(): Promise<void> {
@@ -143,18 +157,45 @@ async function processReorderSuggestions(): Promise<void> {
 }
 
 async function processLoyaltyTierRecalc(): Promise<void> {
-  const customers = await Customer.find({ isActive: true });
+  // Use cursor-based streaming + batched bulkWrite to avoid loading all customers into memory (OOM prevention)
+  const BATCH_SIZE = 200;
+  const cursor = Customer.find({ isActive: true })
+    .select('_id loyaltyPoints loyaltyTier')
+    .lean()
+    .cursor();
+
+  let batch: Parameters<typeof Customer.bulkWrite>[0] = [];
   let updated = 0;
-  for (const customer of customers) {
-    const pts = customer.loyaltyPoints ?? 0;
+
+  for await (const customer of cursor) {
+    const pts = (customer as any).loyaltyPoints ?? 0;
     const tier = pts >= 5000 ? 'PLATINUM' : pts >= 2000 ? 'GOLD' : pts >= 500 ? 'SILVER' : 'BRONZE';
-    if (customer.loyaltyTier !== tier) {
-      customer.loyaltyTier = tier as 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
-      await customer.save();
+
+    if ((customer as any).loyaltyTier !== tier) {
+      batch.push({
+        updateOne: {
+          filter: { _id: (customer as any)._id },
+          update: { $set: { loyaltyTier: tier } },
+        },
+      });
       updated++;
     }
+
+    // Flush batch when it reaches BATCH_SIZE to keep memory usage bounded
+    if (batch.length >= BATCH_SIZE) {
+      await Customer.bulkWrite(batch, { ordered: false });
+      batch = [];
+    }
   }
-  logger.info(`[Job] LOYALTY_TIER_RECALC: ${updated} customer tiers updated.`);
+
+  // Flush remaining operations
+  if (batch.length > 0) {
+    await Customer.bulkWrite(batch, { ordered: false });
+  }
+
+  logger.info(
+    `[Job] LOYALTY_TIER_RECALC: ${updated} customer tier(s) updated (cursor streaming + bulkWrite).`
+  );
 }
 
 async function processFlushScheduledNotifs(): Promise<void> {
@@ -228,12 +269,127 @@ async function processScheduledReports(): Promise<void> {
   }
 }
 
+async function processBusinessIntelligenceScan(): Promise<void> {
+  const { BusinessAlertService } = await import('../services/businessAlert.service.js');
+  await BusinessAlertService.scanAndGenerateAlerts();
+  logger.info('[Job] BUSINESS_INTELLIGENCE_SCAN: Completed enterprise anomaly scan.');
+}
+
+async function processDailyBriefingGeneration(): Promise<void> {
+  const { DecisionIntelligenceService } =
+    await import('../services/ai/decisionIntelligence.service.js');
+  await DecisionIntelligenceService.generateDailyBriefing();
+  logger.info('[Job] GENERATE_DAILY_BRIEFING: Daily morning executive briefing refreshed.');
+}
+
+async function processFinancialReconciliationScan(): Promise<void> {
+  const { AccountsReceivableService } = await import('../services/accountsReceivable.service.js');
+  const { AccountsPayableService } = await import('../services/accountsPayable.service.js');
+  await AccountsReceivableService.getAgingReport();
+  await AccountsPayableService.getAgingReport();
+  logger.info('[Job] FINANCIAL_RECONCILIATION_SCAN: Refreshed AR/AP aging indices.');
+}
+
+async function processBudgetOverrunCheck(): Promise<void> {
+  const { FinancialBudget } = await import('../models/FinancialBudget.js');
+  const budgets = await FinancialBudget.find({ status: 'ACTIVE' });
+  for (const b of budgets) {
+    if (b.allocatedAmount > 0) {
+      const pct = (b.spentAmount / b.allocatedAmount) * 100;
+      if (pct >= b.thresholdAlertPct && !b.isAlertTriggered) {
+        b.isAlertTriggered = true;
+        if (pct > 100) b.status = 'EXCEEDED';
+        await b.save();
+        logger.warn(
+          `[Budget Alert] Budget '${b.name}' has reached ${pct.toFixed(1)}% of allocation.`
+        );
+      }
+    }
+  }
+}
+
+async function processLoyaltyPointExpirationScan(): Promise<void> {
+  const { LoyaltyAdvancedService } = await import('../services/loyaltyAdvanced.service.js');
+  const count = await LoyaltyAdvancedService.scanAndExpirePoints();
+  logger.info(
+    `[Job] LOYALTY_POINT_EXPIRATION_SCAN: Expired points for ${count} inactive customer(s).`
+  );
+}
+
+async function processBillingUsageReconciliation(): Promise<void> {
+  const { Tenant } = await import('../models/Tenant.js');
+  const { UsageMeteringService } = await import('../services/usageMetering.service.js');
+  const tenants = await Tenant.find({ status: 'ACTIVE' }).select('_id').lean();
+  for (const t of tenants) {
+    const tenantId = (t as any)._id?.toString();
+    if (!tenantId) continue;
+    try {
+      await UsageMeteringService.reconcileTenantUsage(tenantId);
+    } catch (err) {
+      logger.error(`[Job] Failed reconciling usage for tenant ${tenantId}:`, err);
+    }
+  }
+
+  logger.info(
+    `[Job] BILLING_USAGE_RECONCILIATION: Reconciled usage for ${tenants.length} tenants.`
+  );
+}
+
+async function processSubscriptionExpirationScan(): Promise<void> {
+  const { Subscription } = await import('../models/Subscription.js');
+  const now = new Date();
+  // Check trials that expired
+  const expiredTrials = await Subscription.find({
+    status: 'TRIALING',
+    trialEndDate: { $lt: now },
+  });
+
+  for (const sub of expiredTrials) {
+    sub.status = 'EXPIRED';
+    await sub.save();
+    logger.info(`[Job] Subscription ${sub._id} for tenant ${sub.tenantId} expired after trial.`);
+  }
+
+  // Check renewals past due
+  const pastDueSubs = await Subscription.find({
+    status: 'ACTIVE',
+    currentPeriodEnd: { $lt: now },
+  });
+
+  for (const sub of pastDueSubs) {
+    if (sub.cancelAtPeriodEnd) {
+      sub.status = 'CANCELLED';
+      sub.endedAt = now;
+    } else {
+      sub.status = 'PAST_DUE';
+    }
+    await sub.save();
+    logger.info(`[Job] Subscription ${sub._id} updated to ${sub.status}.`);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Direct dispatcher (used by both BullMQ wrapper and fallback scheduler)
 // ---------------------------------------------------------------------------
 
 export async function directDispatch(task: TaskType): Promise<void> {
   switch (task) {
+    case 'BILLING_USAGE_RECONCILIATION':
+      return processBillingUsageReconciliation();
+    case 'SUBSCRIPTION_EXPIRATION_SCAN':
+    case 'BILLING_PAST_DUE_GRACE_CHECK':
+      return processSubscriptionExpirationScan();
+    case 'LOYALTY_POINT_EXPIRATION_SCAN':
+      return processLoyaltyPointExpirationScan();
+
+    case 'FINANCIAL_RECONCILIATION_SCAN':
+      return processFinancialReconciliationScan();
+    case 'BUDGET_OVERRUN_CHECK':
+      return processBudgetOverrunCheck();
+    case 'BUSINESS_INTELLIGENCE_SCAN':
+      return processBusinessIntelligenceScan();
+    case 'GENERATE_DAILY_BRIEFING':
+      return processDailyBriefingGeneration();
     case 'CRM_SEGMENTATION_EVAL':
     case 'CRM_CHURN_SCAN':
       return processCrmScan();
@@ -275,7 +431,13 @@ export async function directDispatch(task: TaskType): Promise<void> {
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 async function dispatchTask(job: Job<any>): Promise<void> {
   const task: TaskType = job.data?.task ?? job.name;
-  return directDispatch(task);
+  try {
+    return await directDispatch(task);
+  } catch (err) {
+    // Re-throw so BullMQ can record the failure and apply retry policy
+    logger.error(`[BullMQ] Job [${task}] threw an unhandled error:`, err);
+    throw err;
+  }
 }
 
 // ---------------------------------------------------------------------------

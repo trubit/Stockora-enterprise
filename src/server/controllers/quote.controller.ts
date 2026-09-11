@@ -93,7 +93,11 @@ export class QuoteController {
         return next(new NotFoundError('Sales Quote not found.'));
       }
 
-      if (quote.status !== 'PENDING') {
+      if (
+        quote.status === 'CONVERTED' ||
+        quote.status === 'EXPIRED' ||
+        quote.status === 'REJECTED'
+      ) {
         return next(new ValidationError(`Quote cannot be accepted from state: ${quote.status}`));
       }
 

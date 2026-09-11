@@ -2,22 +2,29 @@ import mongoose, { Schema, type Document } from 'mongoose';
 
 export type WarehouseType =
   | 'MAIN'
+  | 'RETAIL'
+  | 'DISTRIBUTION'
+  | 'FULFILLMENT'
+  | 'COLD_STORAGE'
+  | 'TRANSIT'
+  | 'RETURN'
+  | 'QUARANTINE'
   | 'DISTRIBUTION_CENTER'
   | 'RETAIL_STORE'
   | 'FULFILLMENT_CENTER'
-  | 'RETURNS_CENTER'
-  | 'TRANSIT';
+  | 'RETURNS_CENTER';
 
 export interface IOperatingHours {
-  dayOfWeek: number; // 0=Sun … 6=Sat
-  openTime: string; // 'HH:MM'
+  dayOfWeek: number;
+  openTime: string;
   closeTime: string;
   isClosed: boolean;
 }
 
 export interface IWarehouse extends Document {
-  companyId: mongoose.Types.ObjectId;
-  branchId: mongoose.Types.ObjectId;
+  tenantId?: string;
+  companyId?: mongoose.Types.ObjectId;
+  branchId?: mongoose.Types.ObjectId;
   name: string;
   code: string;
   warehouseType: WarehouseType;
@@ -31,8 +38,20 @@ export interface IWarehouse extends Document {
   timezone: string;
   operatingHours: IOperatingHours[];
   capacityUnits?: number;
-  capacityWeight?: number; // kg
-  capacityVolume?: number; // m³
+  capacityWeight?: number;
+  capacityVolume?: number;
+  currentUnitsUsed?: number;
+  currentWeightUsed?: number;
+  currentVolumeUsed?: number;
+  receivingSettings?: {
+    overReceivingTolerancePercent?: number;
+    autoPutawayEnabled?: boolean;
+  };
+  pickingSettings?: {
+    defaultStrategy?: 'SINGLE' | 'BATCH' | 'WAVE' | 'ZONE';
+    fefoEnabled?: boolean;
+    fifoEnabled?: boolean;
+  };
   isActive: boolean;
   notes?: string;
   createdAt: Date;
@@ -51,19 +70,26 @@ const OperatingHoursSchema = new Schema<IOperatingHours>(
 
 const WarehouseSchema = new Schema<IWarehouse>(
   {
-    companyId: { type: Schema.Types.ObjectId, ref: 'Company', required: true, index: true },
-    branchId: { type: Schema.Types.ObjectId, ref: 'Branch', required: true, index: true },
+    tenantId: { type: String, index: true },
+    companyId: { type: Schema.Types.ObjectId, ref: 'Company', index: true },
+    branchId: { type: Schema.Types.ObjectId, ref: 'Branch', index: true },
     name: { type: String, required: true, trim: true },
-    code: { type: String, required: true, unique: true, uppercase: true, trim: true, index: true },
+    code: { type: String, required: true, uppercase: true, trim: true, index: true },
     warehouseType: {
       type: String,
       enum: [
         'MAIN',
+        'RETAIL',
+        'DISTRIBUTION',
+        'FULFILLMENT',
+        'COLD_STORAGE',
+        'TRANSIT',
+        'RETURN',
+        'QUARANTINE',
         'DISTRIBUTION_CENTER',
         'RETAIL_STORE',
         'FULFILLMENT_CENTER',
         'RETURNS_CENTER',
-        'TRANSIT',
       ],
       default: 'MAIN',
     },
@@ -76,15 +102,30 @@ const WarehouseSchema = new Schema<IWarehouse>(
     managerId: { type: Schema.Types.ObjectId, ref: 'User' },
     timezone: { type: String, default: 'UTC' },
     operatingHours: { type: [OperatingHoursSchema], default: [] },
-    capacityUnits: { type: Number, min: 0 },
-    capacityWeight: { type: Number, min: 0 },
-    capacityVolume: { type: Number, min: 0 },
+    capacityUnits: { type: Number, min: 0, default: 10000 },
+    capacityWeight: { type: Number, min: 0, default: 50000 },
+    capacityVolume: { type: Number, min: 0, default: 5000 },
+    currentUnitsUsed: { type: Number, min: 0, default: 0 },
+    currentWeightUsed: { type: Number, min: 0, default: 0 },
+    currentVolumeUsed: { type: Number, min: 0, default: 0 },
+    receivingSettings: {
+      overReceivingTolerancePercent: { type: Number, default: 5 },
+      autoPutawayEnabled: { type: Boolean, default: true },
+    },
+    pickingSettings: {
+      defaultStrategy: {
+        type: String,
+        enum: ['SINGLE', 'BATCH', 'WAVE', 'ZONE'],
+        default: 'SINGLE',
+      },
+      fefoEnabled: { type: Boolean, default: true },
+      fifoEnabled: { type: Boolean, default: true },
+    },
     isActive: { type: Boolean, default: true, index: true },
     notes: { type: String },
   },
   { timestamps: true }
 );
 
-WarehouseSchema.index({ companyId: 1, code: 1 }, { unique: true });
-
-export const Warehouse = mongoose.model<IWarehouse>('Warehouse', WarehouseSchema);
+export const Warehouse =
+  mongoose.models.Warehouse || mongoose.model<IWarehouse>('Warehouse', WarehouseSchema);

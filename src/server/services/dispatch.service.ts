@@ -44,32 +44,14 @@ export class DispatchService {
     const userObjId = safeObjectId(userId);
 
     const safePkgObjIds = (packageIds || []).map((id) => safeObjectId(id));
-    let packages = await Package.find({
+    const packages = await Package.find({
       $or: [{ _id: { $in: safePkgObjIds } }, { warehouseId: whObjId }],
     });
 
     if (!packages || packages.length === 0) {
-      // Auto-create a default package for testing/initial manifest creation
-      const dummyOrderObjId = safeObjectId('order-demo');
-      const defaultPkg = await Package.create({
-        packageNumber: `PKG-${Date.now().toString().slice(-6)}`,
-        companyId: compObjId,
-        warehouseId: whObjId,
-        orderId: dummyOrderObjId,
-        orderNumber: 'STK-2026-DEMO',
-        packerId: userObjId,
-        items: [],
-        packagingType: 'BOX_MED',
-        weight: 2.5,
-        length: 30,
-        width: 20,
-        height: 15,
-        carrier: carrier || 'DHL Express',
-        status: 'PACKED',
-        packedAt: new Date(),
-        createdBy: userObjId,
-      });
-      packages = [defaultPkg];
+      throw new ValidationError(
+        'No packages found to dispatch. Please pack orders before creating a dispatch manifest.'
+      );
     }
 
     const packageRefs: IDispatchPackageRef[] = [];

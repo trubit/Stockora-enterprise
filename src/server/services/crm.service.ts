@@ -3,35 +3,60 @@ import { Customer, ICustomer, ChurnRiskLevel } from '../models/Customer.js';
 import { CustomerTimeline, CustomerEventType } from '../models/CustomerTimeline.js';
 import { CustomerSegment } from '../models/CustomerSegment.js';
 import { Transaction } from '../models/Transaction.js';
+import { CustomerRetentionService } from './customerRetention.service.js';
 import { ResilientExecutor } from '../utils/resiliency/index.js';
 import { logger } from '../logger.js';
 
 export class CRMService {
   /**
-   * Retrieves complete Customer 360 Profile with Timeline
+   * Retrieves complete Customer 360 Profile with Timeline & Metrics
    */
-  public static async getCustomer360(customerId: string) {
+  public static async getCustomer360(customerId: string, tenantId: string = 'default') {
     return await ResilientExecutor.execute({ name: `customer360:${customerId}` }, async () => {
-      const customer = await Customer.findById(customerId);
+      const query: any = { _id: customerId };
+      if (tenantId && tenantId !== 'default') {
+        query.tenantId = tenantId;
+      }
+      const customer = await Customer.findOne(query);
+
       if (!customer) {
         throw new Error(`Customer not found: ${customerId}`);
       }
 
-      const timeline = await CustomerTimeline.find({
-        customerId: new mongoose.Types.ObjectId(customerId),
-      })
+      const timelineFilter: any = {
+        $or: [
+          { customerId: customer._id },
+          ...(mongoose.isValidObjectId(customerId)
+            ? [{ customerId: new mongoose.Types.ObjectId(customerId) }]
+            : []),
+        ],
+      };
+
+      const timeline = await CustomerTimeline.find(timelineFilter)
         .sort({ createdAt: -1 })
         .limit(50);
+
+      const recentOrders = await Transaction.find({
+        $or: [
+          ...(customer.email ? [{ customerEmail: customer.email }] : []),
+          { customerId: customer._id },
+          { customerId: customerId },
+        ],
+        status: 'COMPLETED',
+      })
+        .sort({ createdAt: -1 })
+        .limit(10);
 
       return {
         customer,
         timeline,
+        recentOrders,
       };
     });
   }
 
   /**
-   * Records a Customer Timeline activity event
+   * Records a Customer Timeline activity event with tenant scoping
    */
   public static async recordTimelineEvent(
     customerId: string,
@@ -40,17 +65,25 @@ export class CRMService {
     description?: string,
     metadata?: Record<string, unknown>,
     authorId?: string,
-    authorName?: string
+    authorName?: string,
+    tenantId: string = 'default'
   ) {
+    const validCustId = mongoose.isValidObjectId(customerId)
+      ? new mongoose.Types.ObjectId(customerId)
+      : customerId;
+
     return await CustomerTimeline.create({
-      tenantId: 'default',
+      tenantId,
       companyId: 'default',
-      customerId: new mongoose.Types.ObjectId(customerId),
+      customerId: validCustId,
       eventType,
       title,
       description,
       metadata,
-      authorId: authorId ? new mongoose.Types.ObjectId(authorId) : undefined,
+      authorId:
+        authorId && mongoose.isValidObjectId(authorId)
+          ? new mongoose.Types.ObjectId(authorId)
+          : undefined,
       authorName,
     });
   }
@@ -58,15 +91,29 @@ export class CRMService {
   /**
    * Recalculates customer analytics (CLV, AOV, Churn Risk) from transaction history
    */
-  public static async recalculateCustomerMetrics(customerId: string): Promise<ICustomer> {
+  public static async recalculateCustomerMetrics(
+    customerId: string,
+    tenantId: string = 'default'
+  ): Promise<ICustomer> {
     return await ResilientExecutor.execute({ name: `crm-metrics:${customerId}` }, async () => {
-      const customer = await Customer.findById(customerId);
+      const customer =
+        (await Customer.findOne({
+          _id: customerId,
+          ...(tenantId
+            ? { $or: [{ tenantId }, { tenantId: 'default' }, { tenantId: { $exists: false } }] }
+            : {}),
+        })) || (await Customer.findById(customerId));
+
       if (!customer) {
         throw new Error(`Customer not found: ${customerId}`);
       }
 
       const txList = await Transaction.find({
-        $or: [{ customerEmail: customer.email }, { customerId: customer._id }],
+        $or: [
+          ...(customer.email ? [{ customerEmail: customer.email }] : []),
+          { customerId: customer._id },
+          { customerId: customerId },
+        ],
         status: 'COMPLETED',
       }).sort({ createdAt: 1 });
 
@@ -83,89 +130,141 @@ export class CRMService {
 
       const avgOrderValue = totalOrders > 0 ? Number((totalSpending / totalOrders).toFixed(2)) : 0;
 
-      // Days since last purchase
-      const daysSinceLastPurchase = lastPurchaseDate
-        ? Math.floor((Date.now() - new Date(lastPurchaseDate).getTime()) / (1000 * 60 * 60 * 24))
-        : 365;
-
-      // Churn Risk Score calculation
-      let churnRiskScore = 10;
-      if (daysSinceLastPurchase > 90) churnRiskScore += 40;
-      else if (daysSinceLastPurchase > 45) churnRiskScore += 20;
-
-      if (totalOrders === 1) churnRiskScore += 15;
-
-      churnRiskScore = Math.min(99, Math.max(5, churnRiskScore));
-
-      let churnRiskLevel: ChurnRiskLevel = 'LOW';
-      if (churnRiskScore >= 75) churnRiskLevel = 'CRITICAL';
-      else if (churnRiskScore >= 50) churnRiskLevel = 'HIGH';
-      else if (churnRiskScore >= 30) churnRiskLevel = 'MEDIUM';
-
-      // Customer Lifetime Value (CLV) = AOV * annual purchase frequency * estimated lifespan (3 years)
-      const lifespanYears = 3;
-      const purchaseFrequencyPerYear =
-        totalOrders > 0 ? (totalOrders / (daysSinceLastPurchase || 1)) * 365 : 1;
-      const clvScore = Math.round(
-        avgOrderValue * Math.min(24, purchaseFrequencyPerYear) * lifespanYears
-      );
-
       customer.totalOrders = totalOrders;
       customer.totalSpending = totalSpending;
       customer.avgOrderValue = avgOrderValue;
       customer.firstPurchaseDate = firstPurchaseDate;
       customer.lastPurchaseDate = lastPurchaseDate;
-      customer.clvScore = clvScore;
-      customer.churnRiskScore = churnRiskScore;
-      customer.churnRiskLevel = churnRiskLevel;
-
       await customer.save();
-      logger.info(
-        `[CRM Service] Recalculated metrics for ${customer.name}: CLV=$${clvScore}, ChurnRisk=${churnRiskLevel}`
+
+      // Recalculate RFM & CLV retention profile
+      return await CustomerRetentionService.evaluateCustomerRetentionProfile(
+        customer._id.toString(),
+        tenantId
       );
-      return customer;
     });
   }
 
   /**
-   * Evaluates dynamic segments for all customers
+   * Detect duplicate customer accounts by email or phone
    */
-  public static async evaluateSegments() {
-    const segments = await CustomerSegment.find({ isActive: true });
-    const customers = await Customer.find({ isActive: true });
+  public static async findDuplicateCustomers(tenantId: string = 'default'): Promise<
+    Array<{
+      matchKey: string;
+      customers: Array<{
+        _id: string;
+        name: string;
+        email: string;
+        phone?: string;
+        totalSpending: number;
+      }>;
+    }>
+  > {
+    const duplicates: any[] = [];
 
-    for (const segment of segments) {
-      let count = 0;
-      for (const customer of customers) {
-        let matches = true;
-        for (const rule of segment.rules) {
-          const custVal = (customer as any)[rule.field];
-          if (rule.operator === 'GREATER_THAN' && Number(custVal || 0) <= Number(rule.value)) {
-            matches = false;
-          } else if (rule.operator === 'LESS_THAN' && Number(custVal || 0) >= Number(rule.value)) {
-            matches = false;
-          } else if (rule.operator === 'EQUALS' && String(custVal) !== String(rule.value)) {
-            matches = false;
-          }
-        }
-        if (matches) count++;
-      }
-      segment.memberCount = count;
-      await segment.save();
+    // Group by email duplicates
+    const emailDups = await Customer.aggregate([
+      { $match: { tenantId } },
+      {
+        $group: {
+          _id: '$email',
+          count: { $sum: 1 },
+          docs: {
+            $push: {
+              _id: '$_id',
+              name: '$name',
+              email: '$email',
+              phone: '$phone',
+              totalSpending: '$totalSpending',
+            },
+          },
+        },
+      },
+      { $match: { count: { $gt: 1 } } },
+    ]);
+
+    for (const d of emailDups) {
+      duplicates.push({ matchKey: `Email: ${d._id}`, customers: d.docs });
     }
 
-    logger.info(`[CRM Service] Dynamic customer segments evaluated (${segments.length} segments)`);
+    return duplicates;
+  }
+
+  /**
+   * Merge secondary customer record into primary customer with full audit trail
+   */
+  public static async mergeCustomers(
+    primaryId: string,
+    secondaryId: string,
+    tenantId: string = 'default'
+  ): Promise<ICustomer> {
+    return await ResilientExecutor.execute(
+      { name: `merge-customers:${primaryId}:${secondaryId}` },
+      async () => {
+        const [primary, secondary] = await Promise.all([
+          Customer.findOne({ _id: primaryId, tenantId }),
+          Customer.findOne({ _id: secondaryId, tenantId }),
+        ]);
+
+        if (!primary || !secondary) {
+          throw new Error('Both primary and secondary customer accounts must exist for merging.');
+        }
+
+        // Merge loyalty points and spending
+        primary.loyaltyPoints += secondary.loyaltyPoints;
+        primary.totalSpending += secondary.totalSpending;
+        primary.totalOrders += secondary.totalOrders;
+
+        // Merge tags
+        for (const t of secondary.tags) {
+          if (!primary.tags.includes(t)) primary.tags.push(t);
+        }
+
+        // Deactivate secondary account
+        secondary.isActive = false;
+        secondary.notes = `Merged into primary customer ${primary.code} (${primary._id}) on ${new Date().toISOString()}`;
+        await secondary.save();
+
+        await primary.save();
+
+        await this.recordTimelineEvent(
+          primary._id.toString(),
+          'CUSTOMER_UPDATED',
+          `Merged Account: ${secondary.name} (${secondary.email})`,
+          `Consolidated loyalty points (+${secondary.loyaltyPoints} pts) and order spending.`,
+          { mergedCustomerId: secondary._id },
+          undefined,
+          undefined,
+          tenantId
+        );
+
+        logger.info(`[CRM] Merged customer ${secondary.code} into ${primary.code}`);
+        return primary;
+      }
+    );
+  }
+
+  /**
+   * Evaluates all dynamic customer segments for a tenant
+   */
+  public static async evaluateSegments(tenantId: string = 'default'): Promise<void> {
+    const segments = await CustomerSegment.find({ tenantId, isActive: true, isDynamic: true });
+    for (const segment of segments) {
+      const { SegmentationService } = await import('./segmentation.service.js');
+      await SegmentationService.evaluateSegment(segment._id.toString(), tenantId);
+    }
   }
 
   /**
    * Export customer data for privacy compliance (GDPR/CCPA)
    */
-  public static async exportCustomerData(customerId: string) {
-    const { customer, timeline } = await this.getCustomer360(customerId);
+  public static async exportCustomerData(customerId: string, tenantId: string = 'default') {
+    const { customer, timeline, recentOrders } = await this.getCustomer360(customerId, tenantId);
     return {
       exportTimestamp: new Date().toISOString(),
       customer,
       timeline,
+      recentOrders,
     };
   }
 }

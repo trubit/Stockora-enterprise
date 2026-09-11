@@ -4,6 +4,7 @@ import { User } from '../models/User.js';
 import { Role } from '../models/Role.js';
 import { NotFoundError, ValidationError } from '../errors/AppError.js';
 import { UploadService } from '../services/upload.service.js';
+import { getEffectivePermissions } from '../../shared/permissions.js';
 
 export class UserController {
   public static async getProfile(
@@ -16,9 +17,13 @@ export class UserController {
       if (!user) {
         return next(new NotFoundError('User not found.'));
       }
-      const role = await Role.findOne({ name: user.roleName });
+      const role = await Role.findOne({ name: user.roleName }).select('permissions').lean();
       const userObj = user.toObject() as unknown as Record<string, unknown>;
-      userObj.permissions = role ? role.permissions : [];
+      userObj.permissions = getEffectivePermissions({
+        roleName: user.roleName,
+        isPlatformAdmin: user.isPlatformAdmin,
+        permissions: role ? (role.permissions as string[]) : [],
+      });
       res.json(userObj);
     } catch (err: unknown) {
       next(err);
@@ -63,7 +68,8 @@ export class UserController {
         return next(new NotFoundError('User not found.'));
       }
 
-      const avatarUrl = await UploadService.processAndSaveImage(req.file);
+      const tenantId = req.tenantId || (user.tenantId ? user.tenantId.toString() : undefined);
+      const avatarUrl = await UploadService.processAndSaveImage(req.file, tenantId);
       user.avatarUrl = avatarUrl;
       await user.save();
 
@@ -74,12 +80,16 @@ export class UserController {
   }
 
   public static async listUsers(
-    _req: AuthenticatedRequest,
+    req: AuthenticatedRequest,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
-      const users = await User.find();
+      const query: Record<string, unknown> = {};
+      if (!req.user?.isPlatformAdmin && req.tenantId) {
+        query.tenantId = req.tenantId;
+      }
+      const users = await User.find(query).select('-password');
       res.json(users);
     } catch (err: unknown) {
       next(err);

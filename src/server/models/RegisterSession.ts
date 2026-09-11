@@ -9,6 +9,7 @@ export interface ICashMovement {
 }
 
 export interface IRegisterSession extends Document {
+  tenantId?: string;
   registerId: string;
   registerName: string;
   branchId: mongoose.Types.ObjectId;
@@ -41,6 +42,7 @@ const CashMovementSchema = new Schema<ICashMovement>({
 
 const RegisterSessionSchema = new Schema<IRegisterSession>(
   {
+    tenantId: { type: String, required: false, index: true },
     registerId: { type: String, required: true, index: true },
     registerName: { type: String, required: true },
     branchId: { type: Schema.Types.ObjectId, ref: 'Branch', required: true, index: true },

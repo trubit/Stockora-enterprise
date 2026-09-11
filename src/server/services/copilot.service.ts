@@ -1,23 +1,32 @@
-import { AIService } from './ai/ai.service.js';
+import { geminiService } from './ai/gemini/gemini.service.js';
 import { AICopilotMessage } from '../models/AICopilotMessage.js';
 import { KnowledgeDocument } from '../models/KnowledgeDocument.js';
-import { ResilientExecutor } from '../utils/resiliency/index.js';
 import { logger } from '../logger.js';
 
 export class CopilotService {
   /**
-   * Interact with the AI Copilot using RAG context injection
+   * Interact with the AI Copilot using RAG context injection and authoritative Gemini service
    */
-  public static async executeChat(sessionId: string, userPrompt: string): Promise<string> {
+  public static async executeChat(
+    sessionId: string,
+    userPrompt: string,
+    tenantId = 'default',
+    userId?: string
+  ): Promise<string> {
     // 1. Core keyword search to implement provider-agnostic baseline RAG
     const keywords = userPrompt.split(/\s+/).filter((w) => w.length > 4);
     const regexQueries = keywords.map((k) => new RegExp(k, 'i'));
 
     let contextText = '';
     if (regexQueries.length > 0) {
-      const docs = await KnowledgeDocument.find({
+      const query: Record<string, any> = {
         $or: [{ title: { $in: regexQueries } }, { content: { $in: regexQueries } }],
-      }).limit(3);
+      };
+      if (tenantId && tenantId !== 'default') {
+        query.tenantId = tenantId;
+      }
+
+      const docs = await KnowledgeDocument.find(query).limit(3);
 
       if (docs.length > 0) {
         contextText = docs.map((d) => `[Doc: ${d.title}] ${d.content}`).join('\n');
@@ -25,10 +34,9 @@ export class CopilotService {
     }
 
     const systemInstruction = contextText
-      ? `You are Stockora Enterprise AI Copilot. Answer using this business intelligence context:\n${contextText}`
+      ? `You are Stockora Enterprise AI Copilot. Answer concisely using this business intelligence context:\n${contextText}`
       : 'You are Stockora Enterprise AI Copilot. Assist the employee with operational business inventory and sales advice.';
 
-    // Estimate input token cost (standard rule of thumb: ~4 characters per token)
     const inputTokens = Math.round(userPrompt.length / 4);
 
     // Save User message
@@ -42,16 +50,21 @@ export class CopilotService {
 
     let aiReply: string;
     try {
-      // Outbound inference call wrapped in exponential backoff resiliency limits
-      aiReply = await ResilientExecutor.execute({ name: `copilot-chat:${sessionId}` }, async () => {
-        const aiService = AIService.getInstance();
-        return await aiService.executePrompt(userPrompt, systemInstruction);
+      const response = await geminiService.generateContent({
+        tenantId,
+        userId,
+        action: 'copilot_chat',
+        systemInstruction,
+        prompt: userPrompt,
+        responseMimeType: 'text/plain',
+        temperature: 0.2,
       });
+      aiReply = response.content;
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
       logger.error(`[Copilot Service] Inference failed: ${errMsg}`);
       aiReply =
-        'The AI provider is currently unavailable, so I am returning a local fallback response. Please try again shortly.';
+        'The AI service is currently unavailable. Please verify your Gemini API key or try again in a few moments.';
     }
 
     // Save Assistant reply

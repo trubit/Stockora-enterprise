@@ -25,6 +25,7 @@ import { apiClient } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 import type { MasterData } from '../../../shared/types.js';
 import { motion } from 'framer-motion';
+import { Can } from '../../components/auth/Can.tsx';
 
 const textFieldStyle = {};
 
@@ -81,29 +82,31 @@ export default function MasterDataList() {
           >
             Master Data Registries
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setOpen(true)}
-            sx={{
-              fontWeight: 700,
-              px: 3,
-              py: 1.2,
-              borderRadius: 2.5,
-              textTransform: 'none',
-              fontSize: '0.9rem',
-              background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
-              boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
-                boxShadow: '0 6px 20px rgba(139, 92, 246, 0.45)',
-                transform: 'translateY(-1px)',
-              },
-            }}
-          >
-            Add Master Record
-          </Button>
+          <Can permission="master_data:write">
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setOpen(true)}
+              sx={{
+                fontWeight: 700,
+                px: 3,
+                py: 1.2,
+                borderRadius: 2.5,
+                textTransform: 'none',
+                fontSize: '0.9rem',
+                background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
+                  boxShadow: '0 6px 20px rgba(139, 92, 246, 0.45)',
+                  transform: 'translateY(-1px)',
+                },
+              }}
+            >
+              Add Master Record
+            </Button>
+          </Can>
         </Box>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 4, fontWeight: 500 }}>
           Manage static configurations, tax rates, standard categories, and default units of

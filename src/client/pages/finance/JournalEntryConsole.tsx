@@ -20,8 +20,10 @@ import SendIcon from '@mui/icons-material/Send';
 import PageHeader from '../../components/PageHeader';
 import { apiClient } from '../../api/client';
 import { toast } from 'react-hot-toast';
+import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 
 export default function JournalEntryConsole() {
+  const { formatAmount, currencySymbol } = useRegionalSettings();
   const [description, setDescription] = useState('');
   const [source, setSource] = useState('MANUAL');
   const [lines, setLines] = useState([
@@ -109,8 +111,8 @@ export default function JournalEntryConsole() {
             <TableHead>
               <TableRow>
                 <TableCell>Account Code</TableCell>
-                <TableCell>Debit ($)</TableCell>
-                <TableCell>Credit ($)</TableCell>
+                <TableCell>Debit ({currencySymbol})</TableCell>
+                <TableCell>Credit ({currencySymbol})</TableCell>
                 <TableCell>Line Memo</TableCell>
                 <TableCell align="center">Action</TableCell>
               </TableRow>
@@ -169,8 +171,8 @@ export default function JournalEntryConsole() {
 
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
               <Typography variant="subtitle2">
-                Total Debits: <strong>${totalDebit.toFixed(2)}</strong> | Total Credits:{' '}
-                <strong>${totalCredit.toFixed(2)}</strong>
+                Total Debits: <strong>{formatAmount(totalDebit)}</strong> | Total Credits:{' '}
+                <strong>{formatAmount(totalCredit)}</strong>
               </Typography>
               <Chip
                 label={isBalanced ? 'BALANCED' : 'UNBALANCED'}

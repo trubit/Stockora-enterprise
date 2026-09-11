@@ -23,7 +23,7 @@ import {
 // ---- Config ----------------------------------------------------------------
 
 const MAX_RETRIES = 3;
-const SYNC_ENDPOINT = '/api/branch-sync/sync';
+const SYNC_ENDPOINT = '/api/v1/branch-sync/sync';
 
 // ---- Event emitter (lightweight, no npm dep) --------------------------------
 

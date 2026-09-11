@@ -13,14 +13,20 @@ export class RegisterSessionService {
     branchId: string,
     cashierId: string,
     cashierName: string,
-    openingFloat: number
+    openingFloat: number,
+    tenantId?: string
   ): Promise<IRegisterSession> {
-    const existing = await RegisterSession.findOne({ registerId, status: 'OPEN' });
+    const existing = await RegisterSession.findOne({
+      ...(tenantId ? { tenantId } : {}),
+      registerId,
+      status: 'OPEN',
+    });
     if (existing) {
       throw new Error(`Register ${registerName} (${registerId}) is already open.`);
     }
 
     const session = await RegisterSession.create({
+      tenantId,
       registerId,
       registerName,
       branchId: new mongoose.Types.ObjectId(branchId),
@@ -80,11 +86,15 @@ export class RegisterSessionService {
     }
 
     // Query transactions executed during this register session shift window
-    const transactions = await Transaction.find({
+    const txQuery: Record<string, unknown> = {
       cashierId: session.cashierId,
       createdAt: { $gte: session.openedAt },
       status: 'COMPLETED',
-    });
+    };
+    if (session.tenantId) {
+      txQuery.tenantId = session.tenantId;
+    }
+    const transactions = await Transaction.find(txQuery);
 
     let totalCashSales = 0;
     let totalCardSales = 0;

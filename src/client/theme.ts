@@ -1,6 +1,6 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme, responsiveFontSizes } from '@mui/material/styles';
 
-export const theme = createTheme({
+const baseTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
@@ -141,11 +141,13 @@ export const theme = createTheme({
       },
       styleOverrides: {
         paper: {
-          background: 'linear-gradient(135deg, #0f1322 0%, #07090e 100%) !important',
-          border: '1px solid rgba(139, 92, 246, 0.2) !important',
-          borderRadius: '16px !important',
-          boxShadow: '0 24px 64px rgba(0, 0, 0, 0.7) !important',
-          padding: '12px !important',
+          background: 'linear-gradient(135deg, #0f1322 0%, #07090e 100%)',
+          border: '1px solid rgba(139, 92, 246, 0.2)',
+          borderRadius: '16px',
+          boxShadow: '0 24px 64px rgba(0, 0, 0, 0.7)',
+          padding: '12px',
+          margin: '16px',
+          boxSizing: 'border-box',
         },
       },
     },
@@ -283,7 +285,11 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           borderBottom: '1px solid rgba(255, 255, 255, 0.03) !important',
-          padding: '16px 20px',
+          padding: '12px 14px',
+          '@media (max-width: 600px)': {
+            padding: '8px 10px',
+            fontSize: '0.78rem',
+          },
         },
         head: {
           fontWeight: 700,
@@ -293,10 +299,15 @@ export const theme = createTheme({
           textTransform: 'uppercase',
           fontSize: '0.75rem',
           letterSpacing: '0.06em',
+          '@media (max-width: 600px)': {
+            padding: '10px 10px',
+            fontSize: '0.7rem',
+          },
         },
       },
     },
   },
 });
 
+export const theme = responsiveFontSizes(baseTheme);
 export default theme;

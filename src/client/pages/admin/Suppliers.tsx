@@ -28,13 +28,16 @@ import StarIcon from '@mui/icons-material/Star';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { apiClient } from '../../api/client.ts';
-import { toast } from 'react-hot-toast';
+import { notify } from '../../utils/notify.ts';
+import { useConfirm } from '../../context/ConfirmDialogContext.tsx';
 import type { Supplier } from '../../../shared/types.js';
 import { motion } from 'framer-motion';
+import { Can } from '../../components/auth/Can.tsx';
 
 const textFieldStyle = {};
 
 export default function Suppliers() {
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -69,7 +72,7 @@ export default function Suppliers() {
       return await apiClient.post('/suppliers', newSupplier);
     },
     onSuccess: () => {
-      toast.success('Supplier registered successfully!');
+      notify.success('Supplier created successfully!');
       setOpen(false);
       reset();
       refetch();
@@ -84,7 +87,7 @@ export default function Suppliers() {
       );
     },
     onSuccess: () => {
-      toast.success('Supplier updated successfully!');
+      notify.success('Supplier updated successfully!');
       setOpen(false);
       setEditingSupplier(null);
       reset();
@@ -97,7 +100,7 @@ export default function Suppliers() {
       return await apiClient.delete(`/suppliers/${id}`);
     },
     onSuccess: () => {
-      toast.success('Supplier deactivated successfully.');
+      notify.success('Supplier deactivated successfully.');
       refetch();
     },
   });
@@ -166,26 +169,28 @@ export default function Suppliers() {
           >
             Supplier Directory
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleOpenCreate}
-            sx={{
-              fontWeight: 700,
-              px: 3,
-              py: 1.2,
-              borderRadius: 2.5,
-              textTransform: 'none',
-              background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
-              boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
-              '&:hover': {
-                background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
-                boxShadow: '0 6px 20px rgba(139, 92, 246, 0.45)',
-              },
-            }}
-          >
-            Register Supplier
-          </Button>
+          <Can permission="suppliers:write">
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleOpenCreate}
+              sx={{
+                fontWeight: 700,
+                px: 3,
+                py: 1.2,
+                borderRadius: 2.5,
+                textTransform: 'none',
+                background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
+                  boxShadow: '0 6px 20px rgba(139, 92, 246, 0.45)',
+                },
+              }}
+            >
+              Register Supplier
+            </Button>
+          </Can>
         </Box>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
           Manage wholesale suppliers, operational accounts, and pricing parameters.
@@ -323,24 +328,37 @@ export default function Suppliers() {
                     <TableCell
                       sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', textAlign: 'right' }}
                     >
-                      <Tooltip title="Edit Supplier">
-                        <IconButton
-                          onClick={() => handleOpenEdit(s)}
-                          sx={{ color: 'primary.light' }}
-                          size="small"
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Deactivate">
-                        <IconButton
-                          onClick={() => s._id && deleteMutation.mutate(s._id)}
-                          sx={{ color: 'error.light', ml: 1 }}
-                          size="small"
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+                      <Can permission="suppliers:write">
+                        <Tooltip title="Edit Supplier">
+                          <IconButton
+                            onClick={() => handleOpenEdit(s)}
+                            sx={{ color: 'primary.light' }}
+                            size="small"
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Deactivate">
+                          <IconButton
+                            onClick={async () => {
+                              if (!s._id) return;
+                              const confirmed = await confirm({
+                                title: 'Deactivate Supplier',
+                                message: `Are you sure you want to deactivate supplier "${s.name}" (${s.code})? Purchase orders and procurement links with this vendor will be archived.`,
+                                confirmText: 'Deactivate',
+                                severity: 'error',
+                              });
+                              if (confirmed) {
+                                deleteMutation.mutate(s._id);
+                              }
+                            }}
+                            sx={{ color: 'error.light', ml: 1 }}
+                            size="small"
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Can>
                     </TableCell>
                   </TableRow>
                 ))

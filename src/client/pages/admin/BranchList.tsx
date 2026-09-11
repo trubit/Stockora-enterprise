@@ -20,6 +20,7 @@ import { apiClient } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 import type { Branch } from '../../../shared/types.js';
 import { motion } from 'framer-motion';
+import { Can } from '../../components/auth/Can.tsx';
 
 const textFieldStyle = {};
 
@@ -78,29 +79,31 @@ export default function BranchList() {
           >
             Branches Manager
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setOpen(true)}
-            sx={{
-              fontWeight: 700,
-              px: 3,
-              py: 1.2,
-              borderRadius: 2.5,
-              textTransform: 'none',
-              fontSize: '0.9rem',
-              background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
-              boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
-                boxShadow: '0 6px 20px rgba(139, 92, 246, 0.45)',
-                transform: 'translateY(-1px)',
-              },
-            }}
-          >
-            Add Branch
-          </Button>
+          <Can permission="branches:write">
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setOpen(true)}
+              sx={{
+                fontWeight: 700,
+                px: 3,
+                py: 1.2,
+                borderRadius: 2.5,
+                textTransform: 'none',
+                fontSize: '0.9rem',
+                background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
+                  boxShadow: '0 6px 20px rgba(139, 92, 246, 0.45)',
+                  transform: 'translateY(-1px)',
+                },
+              }}
+            >
+              Add Branch
+            </Button>
+          </Can>
         </Box>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 4, fontWeight: 500 }}>
           Configure retail branches, operational physical outlets, and warehouse assignments.

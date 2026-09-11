@@ -1,9 +1,26 @@
+import mongoose from 'mongoose';
 import { Role } from '../models/Role.js';
 import { SYSTEM_ROLES, SYSTEM_PERMISSIONS } from '../../shared/constants.js';
+import { DEFAULT_ROLE_PERMISSIONS } from '../../shared/permissions.js';
 import { logger } from '../logger.js';
+import { config } from '../../config/environment.js';
 
 export async function seedRolesIfEmpty(): Promise<void> {
+  if (mongoose.connection.readyState !== 1) return;
   try {
+    // Always ensure the authoritative permissions for default system roles in the DB
+    await Role.updateOne(
+      { name: SYSTEM_ROLES.COMPANY_OWNER },
+      {
+        $set: {
+          permissions: DEFAULT_ROLE_PERMISSIONS[SYSTEM_ROLES.COMPANY_OWNER],
+          description: 'Company Tenant Owner with full access within tenant scope.',
+          isSystem: true,
+        },
+      },
+      { upsert: true }
+    );
+
     const existingCount = await Role.countDocuments();
     if (existingCount >= 6) return;
 
@@ -16,8 +33,8 @@ export async function seedRolesIfEmpty(): Promise<void> {
       },
       {
         name: SYSTEM_ROLES.COMPANY_OWNER,
-        description: 'Company Tenant Owner with full access.',
-        permissions: Object.values(SYSTEM_PERMISSIONS),
+        description: 'Company Tenant Owner with full access within tenant scope.',
+        permissions: DEFAULT_ROLE_PERMISSIONS[SYSTEM_ROLES.COMPANY_OWNER],
         isSystem: true,
       },
       {
@@ -97,12 +114,15 @@ export async function seedRolesIfEmpty(): Promise<void> {
 }
 
 export async function seedProductsIfEmpty(): Promise<void> {
+  if (config.isProduction || mongoose.connection.readyState !== 1) {
+    return;
+  }
   const { Product } = await import('../models/Product.js');
   try {
     const count = await Product.countDocuments();
     if (count > 0) return;
 
-    const mockProducts = [
+    const initialDevProducts = [
       {
         sku: 'SKU-APP-001',
         name: 'Fuji Apples (Organic)',
@@ -153,14 +173,17 @@ export async function seedProductsIfEmpty(): Promise<void> {
       },
     ];
 
-    await Product.insertMany(mockProducts);
-    logger.info('[Database Seeding] Successfully seeded default mock products.');
+    await Product.insertMany(initialDevProducts);
+    logger.info('[Database Seeding] Successfully seeded initial development products.');
   } catch (err: unknown) {
     logger.error('Failed to seed default products:', err);
   }
 }
 
 export async function seedDefaultsIfEmpty(): Promise<void> {
+  if (config.isProduction || mongoose.connection.readyState !== 1) {
+    return;
+  }
   try {
     const { Company } = await import('../models/Company.js');
     const { Branch } = await import('../models/Branch.js');
@@ -232,6 +255,7 @@ export async function seedDefaultsIfEmpty(): Promise<void> {
     if (!customer) {
       await Customer.create({
         name: 'Alice Johnson',
+        code: 'CUST-001',
         email: 'alice@example.com',
         phone: '555-0199',
         tier: 'GOLD',
@@ -241,5 +265,80 @@ export async function seedDefaultsIfEmpty(): Promise<void> {
     }
   } catch (err: unknown) {
     logger.error('Failed to seed default organizational entities:', err);
+  }
+}
+
+export async function seedUsersIfEmpty(): Promise<void> {
+  if (config.isProduction || mongoose.connection.readyState !== 1) {
+    return;
+  }
+  try {
+    const { User } = await import('../models/User.js');
+    const bcrypt = (await import('bcryptjs')).default;
+
+    const salt = await bcrypt.genSalt(10);
+    const adminPassword = process.env.INITIAL_ADMIN_PASSWORD || 'Password123!';
+    const passwordHash = await bcrypt.hash(adminPassword, salt);
+
+    // STRICT INVARIANT: The ONLY authorized platform superadmin email
+    const solePlatformAdminEmail = (config.platformAdminEmail || 'trustezika831@gmail.com')
+      .toLowerCase()
+      .trim();
+
+    // 1. Ensure the sole platform administrator account is present and properly elevated
+    const existing = await User.findOne({ email: solePlatformAdminEmail });
+    if (!existing) {
+      await User.create({
+        username: solePlatformAdminEmail.split('@')[0],
+        email: solePlatformAdminEmail,
+        password: passwordHash,
+        roleName: 'Super Administrator',
+        isPlatformAdmin: true,
+        isActive: true,
+        isVerified: true,
+        tenants: [],
+        failedLoginAttempts: 0,
+      });
+      logger.info(
+        `[Database Bootstrap] Created sole platform superadmin: ${solePlatformAdminEmail}`
+      );
+    } else {
+      await User.updateOne(
+        { email: solePlatformAdminEmail },
+        {
+          $set: {
+            roleName: 'Super Administrator',
+            isPlatformAdmin: true,
+            isActive: true,
+            isVerified: true,
+          },
+        }
+      );
+      logger.info(
+        `[Database Bootstrap] Sole platform superadmin verified: ${solePlatformAdminEmail}`
+      );
+    }
+
+    // 2. CRITICAL SANITIZATION: Demote any other user in the database who was mistakenly granted
+    // isPlatformAdmin: true or roleName: 'Super Administrator'
+    const demoteResult = await User.updateMany(
+      {
+        email: { $ne: solePlatformAdminEmail },
+        $or: [{ isPlatformAdmin: true }, { roleName: 'Super Administrator' }],
+      },
+      {
+        $set: {
+          isPlatformAdmin: false,
+          roleName: 'Company Owner',
+        },
+      }
+    );
+    if (demoteResult.modifiedCount > 0) {
+      logger.warn(
+        `[Database Security] Demoted ${demoteResult.modifiedCount} unauthorized account(s) from platform superadmin status.`
+      );
+    }
+  } catch (err: unknown) {
+    logger.error('Failed to bootstrap initial enterprise administrator accounts:', err);
   }
 }

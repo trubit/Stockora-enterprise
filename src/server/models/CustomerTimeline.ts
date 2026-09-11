@@ -6,11 +6,17 @@ export type CustomerEventType =
   | 'REFUND'
   | 'LOYALTY_EARNED'
   | 'LOYALTY_REDEEMED'
+  | 'LOYALTY_TIER_CHANGED'
+  | 'LOYALTY_EXPIRED'
+  | 'REWARD_REDEEMED'
   | 'CAMPAIGN_SENT'
   | 'CAMPAIGN_OPENED'
   | 'SUPPORT_NOTE'
   | 'SEGMENT_CHANGE'
-  | 'STATUS_CHANGE';
+  | 'STATUS_CHANGE'
+  | 'CUSTOMER_CREATED'
+  | 'CUSTOMER_UPDATED'
+  | 'JOURNEY_STEP_EXECUTED';
 
 export interface ICustomerTimeline extends Document {
   tenantId?: string;
@@ -38,11 +44,17 @@ const CustomerTimelineSchema = new Schema<ICustomerTimeline>(
         'REFUND',
         'LOYALTY_EARNED',
         'LOYALTY_REDEEMED',
+        'LOYALTY_TIER_CHANGED',
+        'LOYALTY_EXPIRED',
+        'REWARD_REDEEMED',
         'CAMPAIGN_SENT',
         'CAMPAIGN_OPENED',
         'SUPPORT_NOTE',
         'SEGMENT_CHANGE',
         'STATUS_CHANGE',
+        'CUSTOMER_CREATED',
+        'CUSTOMER_UPDATED',
+        'JOURNEY_STEP_EXECUTED',
       ],
       required: true,
       index: true,

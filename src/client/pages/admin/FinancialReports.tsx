@@ -16,10 +16,10 @@ import {
 } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
-import LocalActivityIcon from '@mui/icons-material/LocalActivity';
 import { apiClient } from '../../api/client.ts';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { motion } from 'framer-motion';
+import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 
 interface FinancialData {
   revenue: number;
@@ -48,6 +48,7 @@ interface FinancialData {
 }
 
 export default function FinancialReports() {
+  const { formatAmount } = useRegionalSettings();
   const { data: reports, isLoading } = useQuery<FinancialData>({
     queryKey: ['financial-reports'],
     queryFn: async () => {
@@ -133,7 +134,7 @@ export default function FinancialReports() {
                       Gross Revenue
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                      ${reports.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      {formatAmount(reports.revenue)}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -141,10 +142,7 @@ export default function FinancialReports() {
                       Tax Collected (8%)
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      -$
-                      {reports.salesTaxCollected.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                      })}
+                      -{formatAmount(reports.salesTaxCollected)}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -152,7 +150,7 @@ export default function FinancialReports() {
                       Cost of Goods Sold (COGS)
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      -${reports.cogs.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      -{formatAmount(reports.cogs)}
                     </Typography>
                   </Box>
                   <Box sx={{ borderBottom: '1px solid rgba(255,255,255,0.08)', my: 0.5 }} />
@@ -163,7 +161,7 @@ export default function FinancialReports() {
                       Net Gross Profit
                     </Typography>
                     <Typography variant="h5" color="success.light" sx={{ fontWeight: 800 }}>
-                      ${reports.grossProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      {formatAmount(reports.grossProfit)}
                     </Typography>
                   </Box>
                 </Box>
@@ -187,10 +185,7 @@ export default function FinancialReports() {
                       Inventory Asset Value
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      $
-                      {reports.balanceSheet.inventoryValuation.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                      })}
+                      {formatAmount(reports.balanceSheet.inventoryValuation)}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -198,10 +193,7 @@ export default function FinancialReports() {
                       Cash On Hand
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      $
-                      {reports.balanceSheet.cashOnHand.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                      })}
+                      {formatAmount(reports.balanceSheet.cashOnHand)}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -209,10 +201,7 @@ export default function FinancialReports() {
                       Liabilities (Accounts Payable)
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.light' }}>
-                      -$
-                      {reports.balanceSheet.accountsPayable.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                      })}
+                      -{formatAmount(reports.balanceSheet.accountsPayable)}
                     </Typography>
                   </Box>
                   <Box sx={{ borderBottom: '1px solid rgba(255,255,255,0.08)', my: 0.5 }} />
@@ -223,10 +212,7 @@ export default function FinancialReports() {
                       Total Shareholder Equity
                     </Typography>
                     <Typography variant="h5" color="primary.light" sx={{ fontWeight: 800 }}>
-                      $
-                      {reports.balanceSheet.equity.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                      })}
+                      {formatAmount(reports.balanceSheet.equity)}
                     </Typography>
                   </Box>
                 </Box>
@@ -239,7 +225,7 @@ export default function FinancialReports() {
             <Card className="glass-panel" sx={{ height: '100%' }}>
               <CardContent sx={{ p: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-                  <LocalActivityIcon sx={{ color: 'info.main' }} />
+                  <AccountBalanceIcon sx={{ color: 'info.main' }} />
                   <Typography variant="h6" sx={{ fontWeight: 800 }}>
                     Cash Flow Statement
                   </Typography>
@@ -250,10 +236,7 @@ export default function FinancialReports() {
                       Cash Inflows (Sales)
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.light' }}>
-                      +$
-                      {reports.cashFlow.inflow.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                      })}
+                      +{formatAmount(reports.cashFlow.inflow)}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -261,10 +244,7 @@ export default function FinancialReports() {
                       Cash Outflows (Supplier Paid)
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.light' }}>
-                      -$
-                      {reports.cashFlow.outflow.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                      })}
+                      -{formatAmount(reports.cashFlow.outflow)}
                     </Typography>
                   </Box>
                   <Box sx={{ borderBottom: '1px solid rgba(255,255,255,0.08)', my: 0.5 }} />
@@ -280,10 +260,7 @@ export default function FinancialReports() {
                       Net Cash Flow Change
                     </Typography>
                     <Typography variant="h5" color="info.main" sx={{ fontWeight: 800 }}>
-                      $
-                      {reports.cashFlow.netCashFlow.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                      })}
+                      {formatAmount(reports.cashFlow.netCashFlow)}
                     </Typography>
                   </Box>
                 </Box>
@@ -345,7 +322,7 @@ export default function FinancialReports() {
                           />
                         </TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>{item.qty}</TableCell>
-                        <TableCell sx={{ fontWeight: 800 }}>${item.revenue.toFixed(2)}</TableCell>
+                        <TableCell sx={{ fontWeight: 800 }}>{formatAmount(item.revenue)}</TableCell>
                       </TableRow>
                     ))
                   )}

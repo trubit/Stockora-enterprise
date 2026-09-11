@@ -1,187 +1,138 @@
-import { useEffect, useState } from 'react';
-import { Box, Typography, Grid, Button, TextField, Paper } from '@mui/material';
-import DispatchIcon from '@mui/icons-material/LocalShipping';
+import { useState, useEffect } from 'react';
+import {
+  Box,
+  Typography,
+  Paper,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+} from '@mui/material';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { api } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 
 export default function DispatchConsole() {
-  const [warehouses, setWarehouses] = useState<any[]>([]);
-  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
-  const [carrier, setCarrier] = useState('DHL Express');
-  const [driverName, setDriverName] = useState('John Driver');
-  const [driverPhone, setDriverPhone] = useState('+1-555-0192');
-  const [vehicleNumber, setVehicleNumber] = useState('TRK-9821');
-  const [packageIdsInput, setPackageIdsInput] = useState('');
-  const [dispatchManifest, setDispatchManifest] = useState<any>(null);
+  const [manifests, setManifests] = useState<any[]>([]);
 
-  useEffect(() => {
-    api
-      .get('/warehouses')
-      .then((res: any) => {
-        const whList = res.data || [];
-        setWarehouses(whList);
-        if (whList.length > 0) setSelectedWarehouseId(whList[0]._id);
-      })
-      .catch((err) => console.error(err));
-  }, []);
-
-  const handleCreateManifest = async () => {
-    const pkgIds = packageIdsInput
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-
+  const fetchManifests = async () => {
     try {
-      const res = await api.post('/warehouses/dispatch', {
-        warehouseId: selectedWarehouseId || 'wh-main',
-        carrier,
-        driverName,
-        driverPhone,
-        vehicleNumber,
-        packageIds: pkgIds.length > 0 ? pkgIds : ['pkg-demo-1'],
-      });
-
-      setDispatchManifest(res.data);
-      toast.success(`Dispatch manifest [${res.data.dispatchNumber}] created & verified!`);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to create dispatch manifest');
+      const res = await api.get('/warehouse-advanced/manifests');
+      setManifests(res.data || []);
+    } catch {
+      toast.error('Failed to load dispatch manifests.');
     }
   };
 
-  const handleExecuteDispatch = async () => {
-    if (!dispatchManifest) return;
+  useEffect(() => {
+    fetchManifests();
+  }, []);
+
+  const handleDispatch = async (id: string) => {
     try {
-      await api.post(`/warehouses/dispatch/${dispatchManifest._id}/execute`);
-      toast.success(
-        `Dispatch [${dispatchManifest.dispatchNumber}] executed! Packages handed off to carrier.`
-      );
-      setDispatchManifest(null);
+      await api.post(`/warehouse-advanced/manifests/${id}/dispatch`);
+      toast.success('Carrier handover completed & shipment dispatched!');
+      fetchManifests();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to execute dispatch');
+      toast.error(err.response?.data?.message || 'Failed to dispatch manifest.');
     }
   };
 
   return (
-    <Box sx={{ p: 3, background: '#0b0f19', minHeight: '100vh', color: '#f3f4f6' }}>
+    <Box sx={{ p: 3, background: '#0b0f19', minHeight: '100vh', color: '#f8fafc' }}>
       <Box sx={{ mb: 3 }}>
         <Typography
           variant="h4"
           sx={{
-            fontWeight: 700,
-            color: '#6366f1',
+            fontWeight: 800,
+            color: '#8b5cf6',
             display: 'flex',
             alignItems: 'center',
             gap: 1.5,
           }}
         >
-          <DispatchIcon fontSize="large" /> Carrier Dispatch & Manifest Verification
+          <LocalShippingIcon fontSize="large" /> Carrier Handover & Dispatch Verification
         </Typography>
-        <Typography variant="body2" sx={{ color: '#9ca3af' }}>
-          Verify outbound packages, log driver & vehicle info, and execute final carrier handoff.
+        <Typography variant="body2" sx={{ color: '#9ca3af', mt: 0.5 }}>
+          Verify staged outbound shipments, perform driver sign-off & log carrier handover dispatch
+          events
         </Typography>
       </Box>
 
-      {/* Warehouse Selector */}
-      {warehouses.length > 0 && (
-        <Box sx={{ mb: 3, display: 'flex', gap: 1 }}>
-          {warehouses.map((wh) => (
-            <Button
-              key={wh._id}
-              variant={selectedWarehouseId === wh._id ? 'contained' : 'outlined'}
-              onClick={() => setSelectedWarehouseId(wh._id)}
-            >
-              {wh.name} ({wh.code})
-            </Button>
-          ))}
-        </Box>
-      )}
-
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3, background: '#1e293b', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <Typography variant="h6" sx={{ color: '#fff', mb: 2, fontWeight: 600 }}>
-              Create Dispatch Manifest
-            </Typography>
-
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <TextField
-                label="Carrier Name"
-                value={carrier}
-                onChange={(e) => setCarrier(e.target.value)}
-                fullWidth
-              />
-              <TextField
-                label="Driver Name"
-                value={driverName}
-                onChange={(e) => setDriverName(e.target.value)}
-                fullWidth
-              />
-              <TextField
-                label="Driver Phone"
-                value={driverPhone}
-                onChange={(e) => setDriverPhone(e.target.value)}
-                fullWidth
-              />
-              <TextField
-                label="Vehicle / Truck License #"
-                value={vehicleNumber}
-                onChange={(e) => setVehicleNumber(e.target.value)}
-                fullWidth
-              />
-              <TextField
-                label="Package Object IDs (comma-separated, optional)"
-                value={packageIdsInput}
-                onChange={(e) => setPackageIdsInput(e.target.value)}
-                placeholder="65a123..., 65a456..."
-                multiline
-                rows={2}
-                fullWidth
-              />
-
-              <Button
-                variant="contained"
-                size="large"
-                onClick={handleCreateManifest}
-                sx={{ background: '#6366f1' }}
-              >
-                Verify & Generate Manifest
-              </Button>
-            </Box>
-          </Paper>
-        </Grid>
-
-        {dispatchManifest && (
-          <Grid item xs={12} md={6}>
-            <Paper
-              sx={{ p: 3, background: '#1e293b', border: '1px solid rgba(16, 185, 129, 0.3)' }}
-            >
-              <Typography variant="h6" sx={{ color: '#10b981', mb: 1, fontWeight: 700 }}>
-                Manifest Verified: {dispatchManifest.dispatchNumber}
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#cbd5e1' }}>
-                Carrier: {dispatchManifest.carrier}
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#cbd5e1' }}>
-                Driver: {dispatchManifest.driverName} ({dispatchManifest.driverPhone})
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#cbd5e1' }}>
-                Total Packages: {dispatchManifest.totalPackages} ({dispatchManifest.totalWeight} kg)
-              </Typography>
-
-              <Button
-                variant="contained"
-                color="success"
-                size="large"
-                onClick={handleExecuteDispatch}
-                sx={{ mt: 3 }}
-                fullWidth
-              >
-                Execute Final Dispatch Handoff
-              </Button>
-            </Paper>
-          </Grid>
-        )}
-      </Grid>
+      <Paper
+        sx={{
+          p: 3,
+          background: '#111827',
+          border: '1px solid #1f2937',
+          borderRadius: 3,
+          color: '#f8fafc',
+        }}
+      >
+        <TableContainer>
+          <Table>
+            <TableHead sx={{ background: '#1f2937' }}>
+              <TableRow>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Manifest #</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Carrier</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Driver / Vehicle</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Total Packages</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Status</TableCell>
+                <TableCell align="right" sx={{ color: '#9ca3af', fontWeight: 600 }}>
+                  Actions
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {manifests.map((m) => (
+                <TableRow key={m._id} sx={{ '&:hover': { background: '#1e293b' } }}>
+                  <TableCell sx={{ color: '#818cf8', fontWeight: 700 }}>
+                    {m.manifestNumber}
+                  </TableCell>
+                  <TableCell sx={{ color: '#f8fafc', fontWeight: 600 }}>{m.carrierName}</TableCell>
+                  <TableCell sx={{ color: '#cbd5e1' }}>
+                    {m.driverName || 'Driver'} ({m.vehiclePlateNumber || 'Plate'})
+                  </TableCell>
+                  <TableCell sx={{ color: '#34d399', fontWeight: 700 }}>
+                    {m.totalPackages || 0} PKGs
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={m.status}
+                      size="small"
+                      sx={{
+                        fontWeight: 600,
+                        background:
+                          m.status === 'DISPATCHED'
+                            ? 'rgba(16, 185, 129, 0.2)'
+                            : 'rgba(56, 189, 248, 0.2)',
+                        color: m.status === 'DISPATCHED' ? '#34d399' : '#38bdf8',
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    {m.status !== 'DISPATCHED' && (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        startIcon={<CheckCircleIcon />}
+                        onClick={() => handleDispatch(m._id)}
+                        sx={{ background: '#10b981', color: '#fff' }}
+                      >
+                        Handover & Dispatch
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
     </Box>
   );
 }

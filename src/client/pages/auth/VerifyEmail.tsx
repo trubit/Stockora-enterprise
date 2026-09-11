@@ -1,14 +1,89 @@
-import { Box, Card, CardContent, Typography, Button } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  TextField,
+  CircularProgress,
+  Link,
+} from '@mui/material';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import { apiClient } from '../../api/client.ts';
+import { useAuthStore } from '../../store/auth.ts';
+import OtpInput from '../../components/auth/OtpInput.tsx';
+import MarkEmailReadOutlinedIcon from '@mui/icons-material/MarkEmailReadOutlined';
+import type { AuthResponse } from '../../../shared/types.js';
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const setSession = useAuthStore((s) => s.setSession);
 
-  const handleVerify = () => {
-    toast.success('Email verified successfully!');
-    navigate('/');
+  const initialEmail = (location.state as { email?: string })?.email || '';
+  const [email, setEmail] = useState(initialEmail);
+  const [otp, setOtp] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+
+  const handleVerify = async (codeToVerify?: string) => {
+    const code = codeToVerify || otp;
+    if (!email || !email.includes('@')) {
+      toast.error('Please enter a valid email address.');
+      return;
+    }
+    if (!code || code.length !== 6) {
+      toast.error('Please enter the 6-digit verification code.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data } = await apiClient.post<AuthResponse>('/auth/verify-email', {
+        email: email.toLowerCase().trim(),
+        otp: code.trim(),
+      });
+
+      toast.success('Email verified successfully! Welcome to Stockora.');
+      setSession(data.user, data.accessToken, data.refreshToken);
+      navigate('/');
+    } catch (err: any) {
+      const errorMsg =
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        err.message ||
+        'Verification failed. Please verify your code and try again.';
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (!email || !email.includes('@')) {
+      toast.error('Please enter a valid email address first.');
+      return;
+    }
+
+    setResending(true);
+    try {
+      const { data } = await apiClient.post('/auth/resend-verification-otp', {
+        email: email.toLowerCase().trim(),
+      });
+      toast.success(data?.message || 'A new verification code has been dispatched.');
+    } catch (err: any) {
+      const errorMsg =
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        err.message ||
+        'Failed to resend code. Please try again shortly.';
+      toast.error(errorMsg);
+    } finally {
+      setResending(false);
+    }
   };
 
   return (
@@ -22,17 +97,18 @@ export default function VerifyEmail() {
         position: 'relative',
         overflow: 'hidden',
         px: 2,
+        py: 4,
         '&::before': {
           content: '""',
           position: 'absolute',
           top: '20%',
           left: '30%',
-          width: 400,
-          height: 400,
+          width: 450,
+          height: 450,
           borderRadius: '50%',
           background:
-            'radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0) 70%)',
-          filter: 'blur(40px)',
+            'radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, rgba(139, 92, 246, 0) 70%)',
+          filter: 'blur(45px)',
           zIndex: 0,
         },
       }}
@@ -41,11 +117,10 @@ export default function VerifyEmail() {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        style={{ zIndex: 1 }}
+        style={{ zIndex: 1, width: '100%', maxWidth: 460 }}
       >
         <Card
           sx={{
-            width: 420,
             boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4), 0 0 40px rgba(139, 92, 246, 0.08)',
             border: '1px solid rgba(139, 92, 246, 0.15)',
             background:
@@ -67,13 +142,29 @@ export default function VerifyEmail() {
         >
           <CardContent
             sx={{
-              p: { xs: 4, md: 5 },
+              p: { xs: 3.5, md: 5 },
               display: 'flex',
               flexDirection: 'column',
               gap: 3.5,
               alignItems: 'center',
             }}
           >
+            <Box
+              sx={{
+                width: 56,
+                height: 56,
+                borderRadius: '50%',
+                background: 'rgba(139, 92, 246, 0.12)',
+                border: '1px solid rgba(139, 92, 246, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#a78bfa',
+              }}
+            >
+              <MarkEmailReadOutlinedIcon sx={{ fontSize: 28 }} />
+            </Box>
+
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
               <Typography
                 variant="h4"
@@ -86,22 +177,47 @@ export default function VerifyEmail() {
                   WebkitTextFillColor: 'transparent',
                 }}
               >
-                Verify Email
+                Verify Your Email
               </Typography>
               <Typography
                 variant="body2"
-                sx={{ textAlign: 'center', color: 'text.secondary', fontWeight: 500 }}
+                sx={{ textAlign: 'center', color: 'text.secondary', fontWeight: 500, px: 2 }}
               >
-                Confirm ownership of your registered user email address
+                We've sent a 6-digit verification code to{' '}
+                <strong style={{ color: '#e2e8f0' }}>{email || 'your email'}</strong>
               </Typography>
             </Box>
 
+            {!initialEmail && (
+              <TextField
+                label="Email Address"
+                type="email"
+                fullWidth
+                size="small"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@company.com"
+                InputLabelProps={{ shrink: true }}
+              />
+            )}
+
+            <OtpInput
+              value={otp}
+              onChange={setOtp}
+              onComplete={(code) => handleVerify(code)}
+              disabled={loading}
+              onResend={handleResendOtp}
+              isResending={resending}
+              resendCooldown={60}
+            />
+
             <Button
               variant="contained"
-              onClick={handleVerify}
+              onClick={() => handleVerify()}
+              disabled={loading || otp.length !== 6}
+              fullWidth
               sx={{
                 py: 1.6,
-                px: 5,
                 fontWeight: 800,
                 borderRadius: 2.5,
                 textTransform: 'none',
@@ -116,8 +232,40 @@ export default function VerifyEmail() {
                 },
               }}
             >
-              Confirm Verification
+              {loading ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CircularProgress size={18} color="inherit" />
+                  <span>Verifying Code...</span>
+                </Box>
+              ) : (
+                'Verify & Activate Account'
+              )}
             </Button>
+
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                borderTop: '1px solid rgba(255,255,255,0.05)',
+                pt: 2.5,
+                width: '100%',
+              }}
+            >
+              <Link
+                onClick={() => navigate('/login')}
+                sx={{
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  color: 'primary.light',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  transition: 'color 0.2s',
+                  '&:hover': { color: 'primary.main' },
+                }}
+              >
+                Back to Sign In
+              </Link>
+            </Box>
           </CardContent>
         </Card>
       </motion.div>

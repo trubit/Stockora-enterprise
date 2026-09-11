@@ -17,4 +17,5 @@ posRouter.post('/sync-offline', POSController.syncOffline);
 posRouter.post('/register/open', POSController.openRegister);
 posRouter.post('/register/cash-movement', POSController.cashMovement);
 posRouter.post('/register/close', POSController.closeRegister);
+posRouter.get('/register/shift-summary', POSController.getShiftSummary);
 posRouter.get('/register/active/:registerId', POSController.getActiveRegister);

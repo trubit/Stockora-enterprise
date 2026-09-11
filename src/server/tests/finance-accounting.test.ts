@@ -184,7 +184,9 @@ describe('Phase 32 — Advanced Finance, Accounting & Financial Intelligence Tes
     it('should block journal entry posting when fiscal period is closed', async () => {
       const now = new Date();
       await FiscalPeriod.create({
+        name: 'August 2026',
         periodCode: 'FP-2026-08',
+        quarter: 3,
         year: 2026,
         month: 8,
         startDate: new Date(now.getFullYear(), now.getMonth(), 1),

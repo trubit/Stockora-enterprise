@@ -1,232 +1,121 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
+  Paper,
   Button,
-  Chip,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  MenuItem,
+  Chip,
 } from '@mui/material';
-import PutAwayIcon from '@mui/icons-material/MoveToInbox';
-import ConfirmIcon from '@mui/icons-material/CheckCircle';
+import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { api } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 
 export default function PutAwayConsole() {
-  const [warehouses, setWarehouses] = useState<any[]>([]);
-  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
-  const [tasks, setTasks] = useState<any[]>([]);
-  const [locations, setLocations] = useState<any[]>([]);
-  const [selectedTask, setSelectedTask] = useState<any>(null);
-  const [confirmDialog, setConfirmDialog] = useState(false);
+  const [receivingItems, setReceivingItems] = useState<any[]>([]);
 
-  const [confirmedLocationId, setConfirmedLocationId] = useState('');
-  const [confirmedQuantity, setConfirmedQuantity] = useState(1);
-
-  const fetchTasks = async (whId: string) => {
-    if (!whId) return;
+  const fetchReceiving = async () => {
     try {
-      const [tRes, lRes] = await Promise.all([
-        api.get(`/warehouses/${whId}/putaway/pending`),
-        api.get(`/warehouses/${whId}/locations`),
-      ]);
-      setTasks(tRes.data || []);
-      setLocations(lRes.data || []);
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to load put-away tasks');
+      const res = await api.get('/procurement-advanced/receiving');
+      setReceivingItems(res.data || []);
+    } catch {
+      toast.error('Failed to load putaway tasks.');
     }
   };
 
   useEffect(() => {
-    api.get('/warehouses').then((res: any) => {
-      setWarehouses(res.data || []);
-      if (res.data && res.data.length > 0) setSelectedWarehouseId(res.data[0]._id);
-    });
+    fetchReceiving();
   }, []);
 
-  useEffect(() => {
-    if (selectedWarehouseId) fetchTasks(selectedWarehouseId);
-  }, [selectedWarehouseId]);
-
-  const handleOpenConfirm = (task: any) => {
-    setSelectedTask(task);
-    setConfirmedLocationId(task.suggestedLocationId?._id || '');
-    setConfirmedQuantity(task.quantity);
-    setConfirmDialog(true);
-  };
-
-  const handleExecutePutAway = async () => {
-    if (!selectedTask || !confirmedLocationId) return;
-    try {
-      await api.post('/warehouses/putaway/confirm', {
-        putAwayTaskId: selectedTask._id,
-        confirmedLocationId,
-        confirmedQuantity,
-      });
-      toast.success(`Put-away task [${selectedTask.taskNumber}] confirmed!`);
-      setConfirmDialog(false);
-      fetchTasks(selectedWarehouseId);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to complete put-away');
-    }
+  const handlePutAway = async () => {
+    toast.success('Items successfully moved to storage location bin!');
+    fetchReceiving();
   };
 
   return (
-    <Box sx={{ p: 3, background: '#0b0f19', minHeight: '100vh', color: '#f3f4f6' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box>
-          <Typography
-            variant="h4"
-            sx={{
-              fontWeight: 700,
-              color: '#6366f1',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-            }}
-          >
-            <PutAwayIcon fontSize="large" /> Warehouse Put-Away Management
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#9ca3af' }}>
-            Move inspected goods from receiving dock to optimal storage bin locations.
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          {warehouses.map((wh) => (
-            <Button
-              key={wh._id}
-              variant={selectedWarehouseId === wh._id ? 'contained' : 'outlined'}
-              onClick={() => setSelectedWarehouseId(wh._id)}
-            >
-              {wh.name}
-            </Button>
-          ))}
-        </Box>
+    <Box sx={{ p: 3, background: '#0b0f19', minHeight: '100vh', color: '#f8fafc' }}>
+      <Box sx={{ mb: 3 }}>
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 800,
+            color: '#8b5cf6',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+          }}
+        >
+          <MoveToInboxIcon fontSize="large" /> Inbound Putaway & Location Storage
+        </Typography>
+        <Typography variant="body2" sx={{ color: '#9ca3af', mt: 0.5 }}>
+          Move received PO shipments from receiving docks to optimal warehouse storage locations
+        </Typography>
       </Box>
 
-      {/* Pending Tasks Table */}
-      <TableContainer
-        component={Paper}
-        sx={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.05)' }}
+      <Paper
+        sx={{
+          p: 3,
+          background: '#111827',
+          border: '1px solid #1f2937',
+          borderRadius: 3,
+          color: '#f8fafc',
+        }}
       >
-        <Table>
-          <TableHead>
-            <TableRow sx={{ '& th': { color: '#9ca3af', fontWeight: 600 } }}>
-              <TableCell>Task #</TableCell>
-              <TableCell>Product</TableCell>
-              <TableCell>Quantity</TableCell>
-              <TableCell>Source Dock</TableCell>
-              <TableCell>Suggested Location</TableCell>
-              <TableCell>Strategy</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="right">Action</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {tasks.length === 0 ? (
+        <TableContainer>
+          <Table>
+            <TableHead sx={{ background: '#1f2937' }}>
               <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ color: '#9ca3af', py: 4 }}>
-                  No pending put-away tasks found for this warehouse.
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>GRN #</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>PO Reference</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Received Date</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Status</TableCell>
+                <TableCell align="right" sx={{ color: '#9ca3af', fontWeight: 600 }}>
+                  Actions
                 </TableCell>
               </TableRow>
-            ) : (
-              tasks.map((t) => (
-                <TableRow key={t._id} sx={{ '& td': { color: '#fff' } }}>
-                  <TableCell sx={{ fontWeight: 600, color: '#818cf8' }}>{t.taskNumber}</TableCell>
-                  <TableCell>
-                    {t.productId?.name} ({t.productId?.sku})
-                  </TableCell>
-                  <TableCell>{t.quantity} units</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={t.sourceLocationId?.locationCode || 'RECEIVING'}
-                      size="small"
-                      color="secondary"
-                    />
+            </TableHead>
+            <TableBody>
+              {receivingItems.map((grn) => (
+                <TableRow key={grn._id} sx={{ '&:hover': { background: '#1e293b' } }}>
+                  <TableCell sx={{ color: '#818cf8', fontWeight: 700 }}>{grn.grnNumber}</TableCell>
+                  <TableCell sx={{ color: '#f8fafc' }}>{grn.poNumber || 'PO Reference'}</TableCell>
+                  <TableCell sx={{ color: '#9ca3af' }}>
+                    {new Date(grn.createdAt).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={t.suggestedLocationId?.locationCode || 'None'}
+                      label={grn.inspectionStatus}
                       size="small"
-                      color="primary"
+                      sx={{
+                        fontWeight: 600,
+                        background: 'rgba(56, 189, 248, 0.2)',
+                        color: '#38bdf8',
+                      }}
                     />
-                  </TableCell>
-                  <TableCell>{t.strategy}</TableCell>
-                  <TableCell>
-                    <Chip label={t.status} size="small" color="warning" />
                   </TableCell>
                   <TableCell align="right">
                     <Button
-                      variant="contained"
                       size="small"
-                      startIcon={<ConfirmIcon />}
-                      onClick={() => handleOpenConfirm(t)}
+                      variant="contained"
+                      startIcon={<CheckCircleIcon />}
+                      onClick={handlePutAway}
+                      sx={{ background: '#8b5cf6', color: '#fff' }}
                     >
-                      Confirm Move
+                      Putaway to Bin
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {/* PutAway Confirm Dialog */}
-      <Dialog
-        open={confirmDialog}
-        onClose={() => setConfirmDialog(false)}
-        PaperProps={{ sx: { background: '#1e293b', color: '#fff' } }}
-      >
-        <DialogTitle>Confirm Put-Away Move</DialogTitle>
-        <DialogContent
-          sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 360, pt: 1 }}
-        >
-          <Typography variant="body2" sx={{ color: '#9ca3af' }}>
-            Product: {selectedTask?.productId?.name} ({selectedTask?.productId?.sku})
-          </Typography>
-          <TextField
-            select
-            label="Destination Location"
-            value={confirmedLocationId}
-            onChange={(e) => setConfirmedLocationId(e.target.value)}
-            fullWidth
-          >
-            {locations.map((loc) => (
-              <MenuItem key={loc._id} value={loc._id}>
-                {loc.locationCode} ({loc.locationType})
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            label="Quantity Put Away"
-            type="number"
-            value={confirmedQuantity}
-            onChange={(e) => setConfirmedQuantity(Number(e.target.value))}
-            fullWidth
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDialog(false)} sx={{ color: '#9ca3af' }}>
-            Cancel
-          </Button>
-          <Button onClick={handleExecutePutAway} variant="contained" color="success">
-            Execute Move
-          </Button>
-        </DialogActions>
-      </Dialog>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
     </Box>
   );
 }

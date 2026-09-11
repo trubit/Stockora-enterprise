@@ -32,15 +32,29 @@ export class AuthService {
   public static generateAccessToken(user: IUser, sessionToken?: string): string {
     return jwt.sign(
       {
-        id: user._id,
+        id: user._id.toString(),
         username: user.username,
+        email: user.email,
         roleName: user.roleName,
+        tenantId: user.tenantId ? user.tenantId.toString() : undefined,
+        isPlatformAdmin: user.isPlatformAdmin,
         branchId: user.branchId,
         allowedBranches: user.allowedBranches,
+        tenants: user.tenants
+          ? user.tenants.map((t) => ({
+              tenantId: t.tenantId.toString(),
+              tenantSlug: t.tenantSlug,
+              tenantName: t.tenantName,
+              roleName: t.roleName,
+              branchId: t.branchId,
+              allowedBranches: t.allowedBranches,
+              isDefault: t.isDefault,
+            }))
+          : [],
         sessionToken, // Hashed version signed in JWT payload to identify DB Session
       },
       config.jwtSecret,
-      { expiresIn: '15m' }
+      { expiresIn: '30m' }
     );
   }
 
@@ -65,9 +79,14 @@ export class AuthService {
     userAgent = 'Unknown',
     deviceFingerprint?: string
   ): Promise<{ user: IUser; accessToken: string; refreshToken: string; sessionId: string }> {
-    const user = await User.findOne({ email }).select('+password');
+    const normalizedEmail = (email || '').toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail }).select('+password');
     if (!user) {
       throw new AuthenticationError('Invalid email or password.');
+    }
+
+    if (!user.isActive) {
+      throw new AuthenticationError('Account has been deactivated. Please contact support.');
     }
 
     if (user.lockUntil && user.lockUntil > new Date()) {
@@ -122,10 +141,19 @@ export class AuthService {
     }
 
     // 2. Concurrent Session Enforcement (invalidate oldest sessions if limit exceeded)
+    //    We expire sessions that are already past their expiry first, then enforce the cap.
+    const now = new Date();
+    // Clean up expired sessions silently before counting
+    await Session.updateMany(
+      { userId: user._id, isActive: true, expiresAt: { $lt: now } },
+      { $set: { isActive: false } }
+    );
+
     const activeSessions = await Session.find({ userId: user._id, isActive: true }).sort({
       lastSeenAt: 1,
     });
     const maxSessions = sysConfig.maxConcurrentSessions || 3;
+    // Only terminate oldest sessions when we are already AT the limit (not +1 over)
     if (activeSessions.length >= maxSessions) {
       const overage = activeSessions.length - maxSessions + 1;
       for (let i = 0; i < overage; i++) {
@@ -181,34 +209,150 @@ export class AuthService {
 
   public static async rotateRefreshToken(
     tokenStr: string
-  ): Promise<{ accessToken: string; refreshToken: string }> {
-    const activeToken = await RefreshToken.findOne({ token: tokenStr });
-    if (!activeToken || !activeToken.isActive) {
-      throw new AuthenticationError('Session expired or invalid.');
+  ): Promise<{ accessToken: string; refreshToken: string; user: any }> {
+    if (!tokenStr || typeof tokenStr !== 'string') {
+      throw new AuthenticationError('Refresh token is required.');
     }
 
-    const user = await User.findById(activeToken.userId);
-    if (!user || !user.isActive) {
-      throw new AuthenticationError('Session owner is deactivated.');
-    }
-
-    // Attempt to rotate while maintaining current session binding if present
-    const newAccessToken = this.generateAccessToken(user);
-    const newRefreshTokenStr = crypto.randomBytes(40).toString('hex');
+    const cleanToken = tokenStr.trim();
+    const newRefreshTokenCandidate = crypto.randomBytes(40).toString('hex');
+    const now = new Date();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    activeToken.revokedAt = new Date();
-    activeToken.replacedByToken = newRefreshTokenStr;
-    await activeToken.save();
+    // 1. Atomically claim and revoke the active refresh token
+    const activeToken = await RefreshToken.findOneAndUpdate(
+      {
+        token: cleanToken,
+        revokedAt: { $exists: false },
+        expiresAt: { $gt: now },
+      },
+      {
+        $set: {
+          revokedAt: now,
+          replacedByToken: newRefreshTokenCandidate,
+        },
+      },
+      { new: false }
+    );
 
-    await RefreshToken.create({
+    let targetUserId: any;
+    let resolvedRefreshTokenStr: string;
+
+    if (activeToken) {
+      targetUserId = activeToken.userId;
+      await RefreshToken.create({
+        userId: targetUserId,
+        token: newRefreshTokenCandidate,
+        expiresAt,
+      });
+
+      resolvedRefreshTokenStr = newRefreshTokenCandidate;
+    } else {
+      // 2. Concurrency / Race-Condition Grace Period (30 seconds):
+      // If multiple API requests receive 401 simultaneously upon access token expiration,
+      // they may all present the initial refresh token within a few seconds of each other.
+      const gracePeriodCutoff = new Date(Date.now() - 30 * 1000);
+      const recentlyRotated = await RefreshToken.findOne({
+        token: cleanToken,
+        revokedAt: { $gte: gracePeriodCutoff },
+        replacedByToken: { $exists: true },
+      });
+
+      if (recentlyRotated && recentlyRotated.replacedByToken) {
+        // Token was rotated within the last 30s.
+        const { logger } = await import('../logger.js');
+        logger.info(
+          `[AuthService.rotateRefreshToken] Concurrent refresh race detected. Returning replacement token within grace period for user ${recentlyRotated.userId}`
+        );
+        targetUserId = recentlyRotated.userId;
+        resolvedRefreshTokenStr = recentlyRotated.replacedByToken;
+      } else {
+        // Token was revoked outside grace period — potential replay attempt
+        const oldRevoked = await RefreshToken.findOne({ token: cleanToken });
+        if (oldRevoked) {
+          const { logger } = await import('../logger.js');
+          logger.warn(
+            `[AuthService.rotateRefreshToken] Refresh token reuse attempt detected for revoked token (revoked at: ${oldRevoked.revokedAt})`
+          );
+        }
+        throw new AuthenticationError('Session expired or invalid. Please log in again.');
+      }
+    }
+
+    const user = await User.findById(targetUserId);
+    if (!user || !user.isActive) {
+      throw new AuthenticationError('Account is deactivated or not found.');
+    }
+
+    // Maintain active DB session if available
+    let sessionTokenToEmbed: string | undefined;
+    const activeSession = await Session.findOne({
       userId: user._id,
-      token: newRefreshTokenStr,
-      expiresAt,
+      isActive: true,
+      expiresAt: { $gt: new Date() },
+    }).sort({ lastSeenAt: -1 });
+
+    if (activeSession) {
+      activeSession.lastSeenAt = new Date();
+      activeSession.expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      await activeSession.save();
+      sessionTokenToEmbed = activeSession.sessionToken;
+    }
+
+    const newAccessToken = this.generateAccessToken(user, sessionTokenToEmbed);
+
+    const { Role } = await import('../models/Role.js');
+    const { getEffectivePermissions } = await import('../../shared/permissions.js');
+
+    const role = await Role.findOne({ name: user.roleName }).select('permissions').lean();
+    const effectivePermissions = getEffectivePermissions({
+      roleName: user.roleName,
+      isPlatformAdmin: user.isPlatformAdmin,
+      permissions: role ? (role.permissions as string[]) : [],
     });
 
-    return { accessToken: newAccessToken, refreshToken: newRefreshTokenStr };
+    const safeUser = {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      roleName: user.roleName,
+      tenantId: user.tenantId,
+      isPlatformAdmin: user.isPlatformAdmin,
+      tenants: user.tenants || [],
+      permissions: effectivePermissions,
+      isActive: user.isActive,
+      themePreference: user.themePreference,
+      preferredLanguage: user.preferredLanguage,
+      timeZone: user.timeZone,
+      avatarUrl: user.avatarUrl,
+      branchId: user.branchId,
+      allowedBranches: user.allowedBranches,
+    };
+
+    return {
+      accessToken: newAccessToken,
+      refreshToken: resolvedRefreshTokenStr,
+      user: safeUser,
+    };
+  }
+
+  /**
+   * logout: Revokes the active refresh token and marks the current session inactive.
+   * Called when the user explicitly logs out from the client.
+   */
+  public static async logout(refreshTokenStr: string, sessionId?: string): Promise<void> {
+    // 1. Revoke the refresh token
+    if (refreshTokenStr) {
+      await RefreshToken.updateOne(
+        { token: refreshTokenStr, revokedAt: { $exists: false } },
+        { $set: { revokedAt: new Date() } }
+      );
+    }
+    // 2. Inactivate the DB session
+    if (sessionId) {
+      await Session.findByIdAndUpdate(sessionId, { $set: { isActive: false } });
+    }
   }
 
   public static async revokeToken(tokenStr: string): Promise<void> {

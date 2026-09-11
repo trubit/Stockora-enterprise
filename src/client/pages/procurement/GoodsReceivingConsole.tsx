@@ -17,193 +17,208 @@ import {
   DialogActions,
   TextField,
   Grid,
-  MenuItem,
   Alert,
-  TablePagination,
 } from '@mui/material';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import client from '../../api/client';
+import { api } from '../../api/client.ts';
+import { toast } from 'react-hot-toast';
+import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 
 export default function GoodsReceivingConsole() {
+  const { formatAmount } = useRegionalSettings();
   const [goodsReceipts, setGoodsReceipts] = useState<any[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
   const [openModal, setOpenModal] = useState(false);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [totalCount, setTotalCount] = useState(0);
   const [formData, setFormData] = useState({
     poId: '',
-    productId: 'Industrial Bolt Pack',
+    productId: '',
     quantityReceived: 10,
     batchNumber: 'BATCH-2026-001',
     notes: 'Received shipment in good order.',
   });
 
-  const fetchGoodsReceipts = async () => {
+  const fetchData = async () => {
     try {
-      const res = await client.get(
-        `/procurement/goods-receipts?page=${page + 1}&limit=${rowsPerPage}`
-      );
-      const responseData = res.data?.data ? res.data.data : Array.isArray(res.data) ? res.data : [];
-      setGoodsReceipts(responseData);
-      setTotalCount(res.data?.total || responseData.length);
+      const [grnRes, poRes] = await Promise.all([
+        api.get('/procurement-advanced/receiving'),
+        api.get('/procurement-advanced/purchase-orders'),
+      ]);
+      setGoodsReceipts(grnRes.data || []);
+      setPurchaseOrders(poRes.data || []);
     } catch {
-      // Fallback
-    }
-  };
-
-  const fetchPurchaseOrders = async () => {
-    try {
-      const res = await client.get('/procurement/purchase-orders');
-      const responseData = res.data?.data ? res.data.data : Array.isArray(res.data) ? res.data : [];
-      setPurchaseOrders(responseData);
-    } catch {
-      // Fallback
+      toast.error('Failed to load goods receiving data.');
     }
   };
 
   useEffect(() => {
-    fetchGoodsReceipts();
-    fetchPurchaseOrders();
-  }, [page, rowsPerPage]);
-
-  const handleChangePage = (_: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+    fetchData();
+  }, []);
 
   const handleReceiveGoods = async () => {
     try {
-      await client.post('/procurement/goods-receipts', {
+      if (!formData.poId) {
+        toast.error('Please select a Purchase Order.');
+        return;
+      }
+      const selectedPO = purchaseOrders.find((p) => p._id === formData.poId);
+      const targetProductId = formData.productId || selectedPO?.items?.[0]?.productId;
+
+      if (!targetProductId) {
+        toast.error('No target product found for this PO.');
+        return;
+      }
+
+      await api.post('/procurement-advanced/receiving', {
         poId: formData.poId,
         items: [
           {
-            productId: formData.productId,
-            quantityReceived: formData.quantityReceived,
+            productId: targetProductId,
+            quantityReceived: Number(formData.quantityReceived),
             batchNumber: formData.batchNumber,
-            barcodeScanned: true,
           },
         ],
         notes: formData.notes,
       });
+      toast.success('Shipment received and stock updated!');
       setOpenModal(false);
-      fetchGoodsReceipts();
-    } catch {
-      // Fallback
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to process goods receipt.');
     }
   };
 
   return (
-    <Box p={3}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+    <Box sx={{ p: 3, background: '#0b0f19', minHeight: '100vh', color: '#f8fafc' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
-          <Typography variant="h4" fontWeight="bold" color="primary">
-            Barcode Goods Receiving & Quality Inspection
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 800,
+              color: '#8b5cf6',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+            }}
+          >
+            <LocalShippingIcon fontSize="large" /> Barcode Goods Receiving Console
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Process incoming vendor shipments, scan barcodes, run quality inspections & isolate
-            quarantine stock
+          <Typography variant="body2" sx={{ color: '#9ca3af', mt: 0.5 }}>
+            Process incoming vendor shipments against POs, run barcode scans & over-receiving
+            validation
           </Typography>
         </Box>
         <Button
           variant="contained"
-          color="primary"
           startIcon={<QrCodeScannerIcon />}
           onClick={() => setOpenModal(true)}
+          sx={{
+            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+            color: '#ffffff',
+            fontWeight: 600,
+            borderRadius: '9999px',
+            px: 3,
+            '&:hover': {
+              background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+            },
+          }}
         >
-          Receive New Shipment
+          Receive Shipment
         </Button>
       </Box>
 
-      <Alert severity="info" sx={{ mb: 3 }}>
-        Over-receiving variance limit is strictly capped at 5%. Received items auto-update weighted
-        average product costs.
+      <Alert
+        severity="info"
+        sx={{ mb: 3, background: '#1e293b', color: '#38bdf8', border: '1px solid #334155' }}
+      >
+        Over-receiving variance limit is strictly capped at 5%. Received items automatically update
+        weighted average product costs.
       </Alert>
 
-      <Paper elevation={2}>
+      <Paper
+        sx={{
+          p: 3,
+          background: '#111827',
+          border: '1px solid #1f2937',
+          borderRadius: 3,
+          color: '#f8fafc',
+        }}
+      >
         <TableContainer>
           <Table>
-            <TableHead>
-              <TableRow sx={{ bgcolor: 'action.hover' }}>
-                <TableCell>GRN Number</TableCell>
-                <TableCell>PO Reference</TableCell>
-                <TableCell>Received Date</TableCell>
-                <TableCell>Quality Inspection</TableCell>
-                <TableCell align="right">Actions</TableCell>
+            <TableHead sx={{ background: '#1f2937' }}>
+              <TableRow>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>GRN #</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>PO Reference</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Received Date</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Quality Status</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {goodsReceipts.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} align="center">
-                    <Typography color="text.secondary" py={2}>
-                      No goods receipts recorded.
-                    </Typography>
+              {goodsReceipts.map((grn) => (
+                <TableRow key={grn._id} sx={{ '&:hover': { background: '#1e293b' } }}>
+                  <TableCell sx={{ color: '#818cf8', fontWeight: 700 }}>{grn.grnNumber}</TableCell>
+                  <TableCell sx={{ color: '#f8fafc' }}>{grn.poNumber || 'PO Reference'}</TableCell>
+                  <TableCell sx={{ color: '#9ca3af' }}>
+                    {new Date(grn.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={grn.inspectionStatus}
+                      size="small"
+                      sx={{
+                        fontWeight: 600,
+                        background:
+                          grn.inspectionStatus === 'PASSED'
+                            ? 'rgba(16, 185, 129, 0.2)'
+                            : 'rgba(245, 158, 11, 0.2)',
+                        color: grn.inspectionStatus === 'PASSED' ? '#34d399' : '#fbbf24',
+                      }}
+                    />
                   </TableCell>
                 </TableRow>
-              ) : (
-                goodsReceipts.map((grn) => (
-                  <TableRow key={grn._id} hover>
-                    <TableCell sx={{ fontWeight: 'bold' }}>{grn.grnNumber}</TableCell>
-                    <TableCell>{grn.poId?.poNumber || 'PO Reference'}</TableCell>
-                    <TableCell>{new Date(grn.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <Chip label={grn.inspectionStatus || 'PASSED'} color="success" size="small" />
-                    </TableCell>
-                    <TableCell align="right">
-                      <Button size="small" variant="outlined" startIcon={<LocalShippingIcon />}>
-                        Details
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+              ))}
             </TableBody>
           </Table>
         </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={totalCount}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
       </Paper>
 
-      <Dialog open={openModal} onClose={() => setOpenModal(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Receive Incoming Vendor Shipment</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 0.5 }}>
+      {/* Receive Shipment Modal */}
+      <Dialog
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { background: '#111827', color: '#f8fafc', border: '1px solid #1f2937' },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, borderBottom: '1px solid #1f2937' }}>
+          Process Goods Receipt
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          <Grid container spacing={2}>
             <Grid item xs={12}>
               <TextField
                 select
                 fullWidth
-                label="Select Purchase Order (Optional)"
+                label="Select Purchase Order"
                 value={formData.poId}
                 onChange={(e) => setFormData({ ...formData, poId: e.target.value })}
+                SelectProps={{ native: true }}
+                InputLabelProps={{ shrink: true, style: { color: '#9ca3af' } }}
+                InputProps={{ style: { color: '#fff' } }}
               >
-                <MenuItem value="">-- Auto-Assign / Recent Purchase Order --</MenuItem>
+                <option value="" style={{ background: '#111827' }}>
+                  -- Select PO --
+                </option>
                 {purchaseOrders.map((po) => (
-                  <MenuItem key={po._id} value={po._id}>
-                    {po.poNumber} - ${po.totalAmount}
-                  </MenuItem>
+                  <option key={po._id} value={po._id} style={{ background: '#111827' }}>
+                    {po.poNumber} - {formatAmount(po.totalAmount)}
+                  </option>
                 ))}
               </TextField>
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Product ID / SKU / Name"
-                value={formData.productId}
-                onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
-              />
             </Grid>
             <Grid item xs={6}>
               <TextField
@@ -214,30 +229,42 @@ export default function GoodsReceivingConsole() {
                 onChange={(e) =>
                   setFormData({ ...formData, quantityReceived: Number(e.target.value) })
                 }
+                InputLabelProps={{ shrink: true, style: { color: '#9ca3af' } }}
+                InputProps={{ style: { color: '#fff' } }}
               />
             </Grid>
             <Grid item xs={6}>
               <TextField
                 fullWidth
-                label="Batch / Lot Number"
+                label="Batch / Lot #"
                 value={formData.batchNumber}
                 onChange={(e) => setFormData({ ...formData, batchNumber: e.target.value })}
+                InputLabelProps={{ shrink: true, style: { color: '#9ca3af' } }}
+                InputProps={{ style: { color: '#fff' } }}
               />
             </Grid>
-            <Grid item xs={6}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Receiving Notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                InputLabelProps={{ shrink: true, style: { color: '#9ca3af' } }}
+                InputProps={{ style: { color: '#fff' } }}
               />
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenModal(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleReceiveGoods}>
-            Submit Receiving
+        <DialogActions sx={{ p: 2.5, borderTop: '1px solid #1f2937' }}>
+          <Button onClick={() => setOpenModal(false)} sx={{ color: '#9ca3af' }}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleReceiveGoods}
+            sx={{ background: '#8b5cf6', color: '#fff' }}
+          >
+            Confirm Goods Receipt
           </Button>
         </DialogActions>
       </Dialog>

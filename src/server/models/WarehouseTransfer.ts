@@ -20,6 +20,7 @@ export type TransferStatus =
   | 'REQUESTED'
   | 'APPROVED'
   | 'PICKING'
+  | 'DISPATCHED'
   | 'IN_TRANSIT'
   | 'PARTIALLY_RECEIVED'
   | 'RECEIVED'
@@ -27,6 +28,7 @@ export type TransferStatus =
   | 'COMPLETED';
 
 export interface IWarehouseTransfer extends Document {
+  tenantId?: string;
   companyId?: mongoose.Types.ObjectId;
   transferNumber: string;
   fromWarehouseId: mongoose.Types.ObjectId;
@@ -44,7 +46,7 @@ export interface IWarehouseTransfer extends Document {
   carrier?: string;
   notes?: string;
   idempotencyKey?: string;
-  createdBy: mongoose.Types.ObjectId;
+  createdBy?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -68,6 +70,7 @@ const WarehouseTransferItemSchema = new Schema<IWarehouseTransferItem>(
 
 const WarehouseTransferSchema = new Schema<IWarehouseTransfer>(
   {
+    tenantId: { type: String, index: true },
     companyId: { type: Schema.Types.ObjectId, ref: 'Company', index: true },
     transferNumber: { type: String, required: true, unique: true, index: true },
     fromWarehouseId: { type: Schema.Types.ObjectId, ref: 'Warehouse', required: true, index: true },
@@ -81,6 +84,7 @@ const WarehouseTransferSchema = new Schema<IWarehouseTransfer>(
         'REQUESTED',
         'APPROVED',
         'PICKING',
+        'DISPATCHED',
         'IN_TRANSIT',
         'PARTIALLY_RECEIVED',
         'RECEIVED',
@@ -102,12 +106,11 @@ const WarehouseTransferSchema = new Schema<IWarehouseTransfer>(
     carrier: { type: String },
     notes: { type: String },
     idempotencyKey: { type: String, index: true, sparse: true },
-    createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
 );
 
-export const WarehouseTransfer = mongoose.model<IWarehouseTransfer>(
-  'WarehouseTransfer',
-  WarehouseTransferSchema
-);
+export const WarehouseTransfer =
+  mongoose.models.WarehouseTransfer ||
+  mongoose.model<IWarehouseTransfer>('WarehouseTransfer', WarehouseTransferSchema);

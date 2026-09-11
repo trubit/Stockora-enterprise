@@ -87,7 +87,7 @@ export interface Product {
 
 export type TransactionType = 'SALE' | 'RETURN' | 'TRANSFER';
 export type TransactionStatus = 'COMPLETED' | 'PENDING' | 'CANCELLED';
-export type PaymentMethod = 'CASH' | 'CARD' | 'MOBILE' | 'SPLIT';
+export type PaymentMethod = 'CASH' | 'CARD' | 'BANK_TRANSFER';
 
 export interface TransactionItem {
   productId: string;
@@ -287,4 +287,72 @@ export interface Customer {
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+// ── Phase 47 Globalization & Regional Settings Types ─────────────────────────
+
+export interface TaxRateItem {
+  id?: string;
+  _id?: string;
+  name: string;
+  code: string;
+  ratePercentage: number;
+  type: 'VAT' | 'SALES_TAX' | 'GST' | 'CUSTOMS' | 'EXEMPT';
+  category: 'STANDARD' | 'REDUCED' | 'ZERO_RATED' | 'EXEMPT';
+  isInclusive: boolean;
+  isActive: boolean;
+  description?: string;
+}
+
+export interface TaxConfiguration {
+  taxId?: string;
+  taxRegistrationName?: string;
+  taxType: 'VAT' | 'SALES_TAX' | 'GST' | 'EXEMPT';
+  defaultTaxRate: number;
+  isTaxInclusive: boolean;
+  taxExemptionAllowed: boolean;
+  taxRates?: TaxRateItem[];
+}
+
+export interface RegionalSettings {
+  country: string;
+  countryCode: string;
+  currency: string;
+  currencySymbol: string;
+  supportedCurrencies: string[];
+  timezone: string;
+  language: string;
+  dateFormat: string;
+  timeFormat: '12h' | '24h';
+  numberFormat: {
+    decimalSeparator: string;
+    thousandSeparator: string;
+    precision: number;
+  };
+  firstDayOfWeek: 'Sunday' | 'Monday';
+  measurementSystem: 'Metric' | 'Imperial';
+  taxConfig: TaxConfiguration;
+}
+
+export interface ExchangeRate {
+  id?: string;
+  _id?: string;
+  tenantId?: string;
+  baseCurrency: string;
+  targetCurrency: string;
+  rate: number;
+  provider: string;
+  fetchedAt: Date | string;
+  isStale?: boolean;
+  isCustomOverride?: boolean;
+}
+
+export interface CurrencyConversionResult {
+  fromCurrency: string;
+  toCurrency: string;
+  originalAmount: number;
+  convertedAmount: number;
+  exchangeRate: number;
+  rateTimestamp: Date | string;
+  provider: string;
 }

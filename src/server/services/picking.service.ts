@@ -3,6 +3,8 @@ import { PickingWave, type IPickingWave } from '../models/PickingWave.js';
 import { InventoryAllocation } from '../models/InventoryAllocation.js';
 import { Product } from '../models/Product.js';
 import { WarehouseLocation } from '../models/WarehouseLocation.js';
+import { InventoryLocation } from '../models/InventoryLocation.js';
+import { StockMovement } from '../models/StockMovement.js';
 import { inventoryLocationService } from './inventory-location.service.js';
 import { NotFoundError, ValidationError } from '../errors/AppError.js';
 import { eventBus } from '../events/eventBus.js';
@@ -149,7 +151,7 @@ export class PickingService {
       priority,
       items,
       totalItems: items.length,
-      totalRequired: items.reduce((acc, i) => acc + i.quantityRequired, 0),
+      totalRequired: items.reduce((acc: number, i: any) => acc + (i.quantityRequired || 0), 0),
       totalPicked: 0,
       totalShort: 0,
       createdBy: userObjId,
@@ -192,7 +194,7 @@ export class PickingService {
     }
     if (!pickList) throw new NotFoundError('Pick List not found');
 
-    const itemIndex = pickList.items.findIndex((i) => (i as any)._id?.toString() === itemId);
+    const itemIndex = pickList.items.findIndex((i: any) => (i as any)._id?.toString() === itemId);
 
     if (itemIndex === -1) {
       throw new ValidationError(
@@ -202,31 +204,53 @@ export class PickingService {
 
     const item = pickList.items[itemIndex];
 
-    if (item.sku.toUpperCase() !== scannedSku.toUpperCase()) {
+    // Verify SKU match
+    if (scannedSku && item.sku !== scannedSku) {
       throw new ValidationError(
-        `WRONG PRODUCT SCANNED: Expected SKU [${item.sku}], scanned [${scannedSku}].`
+        `SKU MISMATCH: Expected ${item.sku}, but scanned barcode matched ${scannedSku}`
       );
     }
 
-    if (item.locationCode.toUpperCase() !== scannedLocationCode.toUpperCase()) {
+    // Verify Location match
+    if (scannedLocationCode && item.locationCode !== scannedLocationCode) {
       throw new ValidationError(
-        `WRONG LOCATION SCANNED: Item is located at [${item.locationCode}], scanned [${scannedLocationCode}].`
+        `LOCATION MISMATCH: Item is at ${item.locationCode}, scanned ${scannedLocationCode}`
       );
     }
 
-    const qtyToPick = quantityToPick || item.quantityRequired - item.quantityPicked;
+    const qtyToPick = quantityToPick || 1;
+    const remainingToPick = item.quantityRequired - item.quantityPicked;
 
-    // Execute atomic stock move
-    await inventoryLocationService.moveStock({
-      companyId: pickList.companyId.toString(),
-      warehouseId: pickList.warehouseId.toString(),
-      productId: item.productId.toString(),
+    if (qtyToPick > remainingToPick) {
+      throw new ValidationError(
+        `OVER-PICK ERROR: Required remaining is ${remainingToPick}, cannot pick ${qtyToPick}.`
+      );
+    }
+
+    // Decrement stock at location
+    await InventoryLocation.findOneAndUpdate(
+      {
+        warehouseId: pickList.warehouseId,
+        productId: item.productId,
+        locationCode: item.locationCode,
+      },
+      {
+        $inc: { quantity: -qtyToPick },
+        $set: { lastCountDate: new Date() },
+      }
+    );
+
+    // Record stock movement
+    await StockMovement.create({
+      tenantId: 'default',
+      productId: item.productId,
+      warehouseId: pickList.warehouseId,
+      type: 'PICK',
       quantity: qtyToPick,
-      fromLocationId: item.locationId.toString(),
-      toLocationId: item.locationId.toString(),
-      movementType: 'PICK',
+      fromLocation: item.locationCode,
+      referenceType: 'PICK_LIST',
       referenceId: pickList._id.toString(),
-      userId: pickerId,
+      createdBy: safeObjectId(pickerId) || pickList.createdBy,
       notes: `Barcode Pick Scan [${pickList.pickListNumber}]`,
     });
 
@@ -238,7 +262,9 @@ export class PickingService {
     }
 
     pickList.totalPicked += qtyToPick;
-    const allPicked = pickList.items.every((i) => i.status === 'PICKED' || i.status === 'SHORT');
+    const allPicked = pickList.items.every(
+      (i: any) => i.status === 'PICKED' || i.status === 'SHORT'
+    );
     pickList.status = allPicked ? 'PICKED' : 'IN_PROGRESS';
 
     if (!pickList.startedAt) pickList.startedAt = new Date();
@@ -271,7 +297,7 @@ export class PickingService {
     if (!pickList) throw new NotFoundError('Pick List not found');
 
     const item = pickList.items.find(
-      (i) => (i as any)._id?.toString() === itemId || i.sku === itemId
+      (i: any) => (i as any)._id?.toString() === itemId || i.sku === itemId
     );
     if (!item) throw new NotFoundError('Item not found in pick list');
 
@@ -284,7 +310,9 @@ export class PickingService {
     pickList.totalPicked += quantityPicked;
     pickList.totalShort += shortQty;
 
-    const allCompleted = pickList.items.every((i) => i.status === 'PICKED' || i.status === 'SHORT');
+    const allCompleted = pickList.items.every(
+      (i: any) => i.status === 'PICKED' || i.status === 'SHORT'
+    );
     pickList.status = allCompleted ? 'PARTIAL' : 'IN_PROGRESS';
     await pickList.save();
 

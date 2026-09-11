@@ -24,6 +24,9 @@ describe('Phase 23 Enterprise Reporting Integration tests', () => {
       SavedReport.deleteMany({}),
       ScheduledReport.deleteMany({}),
     ]);
+    try {
+      await redis.flushdb();
+    } catch {}
     // 1. Establish template
     const template = await ReportTemplate.create({
       name: 'Base Sales Summary',
@@ -38,6 +41,7 @@ describe('Phase 23 Enterprise Reporting Integration tests', () => {
     await Product.create([
       {
         companyId,
+        tenantId: companyId.toString(),
         name: 'Whole Milk 1L',
         sku: 'MILK-123',
         category: 'Dairy',
@@ -48,6 +52,7 @@ describe('Phase 23 Enterprise Reporting Integration tests', () => {
       },
       {
         companyId,
+        tenantId: companyId.toString(),
         name: 'Bread',
         sku: 'BREAD-123',
         category: 'Bakery',
@@ -60,6 +65,7 @@ describe('Phase 23 Enterprise Reporting Integration tests', () => {
 
     // 3. Add demo transaction
     await Transaction.create({
+      tenantId: companyId.toString(),
       transactionNumber: 'TX-NUM-REPORT-999',
       cashierId: 'user-cashier-1',
       branchId: 'branch-hq-123',

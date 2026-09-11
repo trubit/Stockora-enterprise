@@ -33,10 +33,13 @@ export default function ChartOfAccountsManager() {
 
   const fetchAccounts = async () => {
     try {
-      const res = await apiClient.get('/accounting/accounts');
-      setAccounts(res.data?.data || []);
+      const res = await apiClient.get('/finance/accounts');
+      const resData = res.data?.data;
+      const list = Array.isArray(resData) ? resData : Array.isArray(res.data) ? res.data : [];
+      setAccounts(list);
     } catch {
       toast.error('Failed to load Chart of Accounts.');
+      setAccounts([]);
     }
   };
 
@@ -51,14 +54,15 @@ export default function ChartOfAccountsManager() {
     }
 
     try {
-      await apiClient.post('/accounting/accounts', { code, name, type, description });
+      await apiClient.post('/finance/accounts', { code, name, type, description });
       toast.success('Account Created Successfully!');
       setModalOpen(false);
       setCode('');
       setName('');
+      setDescription('');
       fetchAccounts();
-    } catch {
-      toast.error('Failed to create account.');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to create account.');
     }
   };
 

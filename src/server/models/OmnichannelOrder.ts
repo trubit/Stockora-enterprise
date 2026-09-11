@@ -5,6 +5,7 @@ export interface IOmnichannelOrderItem {
   sku: string;
   name: string;
   quantity: number;
+  priceTier?: 'RETAIL' | 'WHOLESALE';
   unitPrice: number;
   discount: number;
   tax: number;
@@ -20,6 +21,7 @@ export interface IPaymentAllocation {
 }
 
 export interface IOmnichannelOrder extends Document {
+  tenantId?: string;
   orderNumber: string;
   channel: 'POS' | 'WEBSITE' | 'MOBILE' | 'MARKETPLACE' | 'API' | 'MANUAL';
   customerId?: mongoose.Types.ObjectId;
@@ -40,9 +42,11 @@ export interface IOmnichannelOrder extends Document {
   fulfillmentStatus:
     | 'UNFULFILLED'
     | 'PICKING'
+    | 'PICKED'
     | 'PACKED'
     | 'READY_FOR_PICKUP'
     | 'SHIPPED'
+    | 'DISPATCHED'
     | 'DELIVERED'
     | 'CANCELLED';
   fulfillmentMethod: 'SHIP' | 'PICKUP' | 'STORE_PICKUP';
@@ -60,6 +64,7 @@ export interface IOmnichannelOrder extends Document {
     | 'COMPLETED';
   riskScore: number;
   riskLevel: 'NORMAL' | 'REVIEW' | 'HIGH_RISK';
+  pricingMode?: 'RETAIL' | 'WHOLESALE' | 'MIXED';
   idempotencyKey?: string;
   notes?: string;
   createdAt: Date;
@@ -71,6 +76,7 @@ const OmnichannelOrderItemSchema = new Schema<IOmnichannelOrderItem>({
   sku: { type: String, required: true },
   name: { type: String, required: true },
   quantity: { type: Number, required: true, min: 1 },
+  priceTier: { type: String, enum: ['RETAIL', 'WHOLESALE'], default: 'RETAIL' },
   unitPrice: { type: Number, required: true, min: 0 },
   discount: { type: Number, required: true, default: 0, min: 0 },
   tax: { type: Number, required: true, default: 0, min: 0 },
@@ -95,7 +101,13 @@ const PaymentAllocationSchema = new Schema<IPaymentAllocation>({
 
 const OmnichannelOrderSchema = new Schema<IOmnichannelOrder>(
   {
+    tenantId: { type: String, index: true },
     orderNumber: { type: String, required: true, unique: true, index: true },
+    pricingMode: {
+      type: String,
+      enum: ['RETAIL', 'WHOLESALE', 'MIXED'],
+      default: 'RETAIL',
+    },
     channel: {
       type: String,
       enum: ['POS', 'WEBSITE', 'MOBILE', 'MARKETPLACE', 'API', 'MANUAL'],
@@ -128,9 +140,11 @@ const OmnichannelOrderSchema = new Schema<IOmnichannelOrder>(
       enum: [
         'UNFULFILLED',
         'PICKING',
+        'PICKED',
         'PACKED',
         'READY_FOR_PICKUP',
         'SHIPPED',
+        'DISPATCHED',
         'DELIVERED',
         'CANCELLED',
       ],

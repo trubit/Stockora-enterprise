@@ -80,9 +80,13 @@ export class InventoryOptimizationService {
 
     for (const product of products) {
       const recentSalesCount = await Transaction.countDocuments({
-        productId: product._id,
+        $or: [
+          { 'items.productId': product._id.toString() },
+          { 'items.sku': product.sku },
+          { productId: product._id },
+        ],
         createdAt: { $gte: ninetiesDaysAgo },
-        type: { $in: ['SALE', 'POS_SALE'] },
+        status: { $ne: 'CANCELLED' },
       });
 
       if (product.quantity > 100 && recentSalesCount < 3) {

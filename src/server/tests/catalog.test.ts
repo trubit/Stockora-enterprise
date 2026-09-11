@@ -9,16 +9,15 @@ describe('Product Catalog, Suppliers & Customers Integration', () => {
     if (mongoose.connection.readyState === 0) {
       await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_catalog');
     }
-    await Product.deleteMany({});
-    await Supplier.deleteMany({});
-    await Customer.deleteMany({});
+    await Product.deleteMany({ sku: { $in: ['SKU-TEST-VAR-1', 'SKU-TEST-VAR-1-XL'] } });
+    await Supplier.deleteMany({ code: 'GPD-VEND' });
+    await Customer.deleteMany({ code: 'CUST-SARAH' });
   });
 
   afterAll(async () => {
-    await Product.deleteMany({});
-    await Supplier.deleteMany({});
-    await Customer.deleteMany({});
-    await mongoose.connection.close();
+    await Product.deleteMany({ sku: { $in: ['SKU-TEST-VAR-1', 'SKU-TEST-VAR-1-XL'] } });
+    await Supplier.deleteMany({ code: 'GPD-VEND' });
+    await Customer.deleteMany({ code: 'CUST-SARAH' });
   });
 
   it('should create products with attributes and variants', async () => {

@@ -1,4 +1,5 @@
 import { eventBus } from './eventBus.js';
+import { logger } from '../logger.js';
 
 export interface WarehouseEventPayloads {
   'warehouse.created': { warehouseId: string; code: string };
@@ -48,19 +49,19 @@ export interface WarehouseEventPayloads {
 
 export function registerWarehouseEventHandlers() {
   eventBus.on('warehouse.inventory.moved', (data) => {
-    console.log(
+    logger.info(
       `[WMS Event] Inventory Moved: Product ${data.productId}, Qty ${data.quantity}, Type: ${data.movementType}`
     );
   });
 
   eventBus.on('warehouse.pick.short', (data) => {
-    console.warn(
+    logger.warn(
       `[WMS Event] Short Pick Alert: Item ${data.itemId}, Reason: ${data.shortReason}, Short Qty: ${data.quantityShort}`
     );
   });
 
   eventBus.on('warehouse.count.completed', (data) => {
-    console.log(
+    logger.info(
       `[WMS Event] Cycle Count Completed: ${data.countNumber}, Variance Value: $${data.totalVarianceValue}`
     );
   });

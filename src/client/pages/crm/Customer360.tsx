@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiClient } from '../../api/client.ts';
 import {
@@ -21,15 +22,24 @@ import PageHeader from '../../components/PageHeader.tsx';
 import { toast } from 'react-hot-toast';
 
 export default function Customer360() {
-  const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const { id } = useParams<{ id: string }>();
+  const [selectedCustomerId, setSelectedCustomerId] = useState(id || '');
 
   const { data: customers } = useQuery({
     queryKey: ['customers-list'],
     queryFn: async () => {
       const res = await apiClient.get('/customers');
-      return res.data;
+      return Array.isArray(res.data) ? res.data : res.data?.data || [];
     },
   });
+
+  useEffect(() => {
+    if (id) {
+      setSelectedCustomerId(id);
+    } else if (customers && customers.length > 0 && !selectedCustomerId) {
+      setSelectedCustomerId(customers[0]._id);
+    }
+  }, [id, customers, selectedCustomerId]);
 
   const {
     data: customer360,
@@ -42,6 +52,7 @@ export default function Customer360() {
       const res = await apiClient.get(`/crm/customers/${selectedCustomerId}/360`);
       return res.data.data;
     },
+    retry: 1,
   });
 
   const recalcMutation = useMutation({
@@ -54,8 +65,8 @@ export default function Customer360() {
       toast.success('Customer 360 metrics recalculated!');
       refetch();
     },
-    onError: () => {
-      toast.error('Failed to recalculate metrics.');
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || err.message || 'Failed to recalculate metrics.');
     },
   });
 

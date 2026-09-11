@@ -30,8 +30,10 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import PageHeader from '../../components/PageHeader.tsx';
 import { toast } from 'react-hot-toast';
+import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 
 export default function CouponsPromotions() {
+  const { formatAmount, currencySymbol } = useRegionalSettings();
   const [modalOpen, setModalOpen] = useState(false);
   const [code, setCode] = useState('');
   const [description, setDescription] = useState('');
@@ -124,9 +126,11 @@ export default function CouponsPromotions() {
                       <TableCell>
                         {cpn.discountType === 'PERCENTAGE'
                           ? `${cpn.discountValue}% OFF`
-                          : `$${cpn.discountValue} OFF`}
+                          : `${formatAmount(cpn.discountValue)} OFF`}
                       </TableCell>
-                      <TableCell align="right">${cpn.minPurchaseAmount || 0}</TableCell>
+                      <TableCell align="right">
+                        {formatAmount(cpn.minPurchaseAmount || 0)}
+                      </TableCell>
                       <TableCell align="right">{cpn.currentUsageCount || 0}</TableCell>
                       <TableCell>{new Date(cpn.validUntil).toLocaleDateString()}</TableCell>
                       <TableCell>
@@ -146,7 +150,7 @@ export default function CouponsPromotions() {
       </Card>
 
       {/* Create Coupon Modal */}
-      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Create Promotional Coupon</DialogTitle>
         <DialogContent>
           <TextField
@@ -173,7 +177,7 @@ export default function CouponsPromotions() {
                   onChange={(e) => setDiscountType(e.target.value)}
                 >
                   <MenuItem value="PERCENTAGE">Percentage (%)</MenuItem>
-                  <MenuItem value="FIXED">Fixed Amount ($)</MenuItem>
+                  <MenuItem value="FIXED">Fixed Amount ({currencySymbol})</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -191,7 +195,7 @@ export default function CouponsPromotions() {
           <TextField
             fullWidth
             type="number"
-            label="Minimum Purchase Amount ($)"
+            label={`Minimum Purchase Amount (${currencySymbol})`}
             value={minPurchaseAmount}
             onChange={(e) => setMinPurchaseAmount(e.target.value)}
           />

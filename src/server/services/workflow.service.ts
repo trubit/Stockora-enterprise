@@ -13,6 +13,7 @@ import { Task } from '../models/Task.js';
 import { RuleService } from './rule.service.js';
 import { NotificationService } from './notification.service.js';
 import { ResilientExecutor } from '../utils/resiliency/index.js';
+import axios from 'axios';
 import { logger } from '../logger.js';
 
 export class WorkflowService {
@@ -174,14 +175,19 @@ export class WorkflowService {
 
       case 'API_CALL': {
         const url = step.config.url;
-        const method = step.config.method || 'POST';
+        const method = (step.config.method || 'POST').toUpperCase();
 
         if (url) {
           // Resilient outbound integration execution
           await ResilientExecutor.execute({ name: `workflow-api:${step.id}` }, async () => {
             logger.info(`[Workflow] Triggering outbound API: ${method} ${url}`);
-            // Mock successfully hitting external ERP/CRM webhook integration
-            return { success: true };
+            const response = await axios({
+              method: method as any,
+              url,
+              data: instance.variables || {},
+              timeout: 10000,
+            });
+            return response.data;
           });
         }
 

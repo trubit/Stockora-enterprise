@@ -55,14 +55,15 @@ export default function HardwareControl() {
         '================================\n' +
           `        ${companyName.toUpperCase()} POS       \n` +
           `       ${companyAddress}       \n` +
-          `       Cashier: ${cashierName}       \n` +
+          `       Operator: ${cashierName}       \n` +
           '================================\n' +
-          'Sample Item          x1  $15.00\n' +
+          'ESC/POS Hardware Diagnostic Test\n' +
+          'Alignment & Feed Calibration: OK\n' +
           '--------------------------------\n' +
-          'Subtotal:                $15.00\n' +
-          'TOTAL:                   $15.00\n' +
+          'Status:                  ONLINE \n' +
+          'Diagnostic Check:        PASSED \n' +
           '================================\n' +
-          '       Thank you for shopping!  \n' +
+          '     Hardware Ready For Use     \n' +
           '================================\n'
       );
     });

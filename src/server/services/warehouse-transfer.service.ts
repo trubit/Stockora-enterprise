@@ -167,7 +167,9 @@ export class WarehouseTransferService {
     let allFullyReceived = true;
 
     for (const rItem of receivedItems) {
-      const itemIndex = transfer.items.findIndex((i) => i.productId.toString() === rItem.productId);
+      const itemIndex = transfer.items.findIndex(
+        (i: any) => i.productId?.toString() === rItem.productId
+      );
       if (itemIndex === -1) continue;
 
       const item = transfer.items[itemIndex];

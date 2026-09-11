@@ -8,12 +8,16 @@ export const uploadRouter = Router();
 
 uploadRouter.use(authMiddleware);
 
-uploadRouter.post('/image', fileUploader.single('file'), async (req, res, next) => {
+uploadRouter.post('/image', fileUploader.single('file'), async (req: any, res, next) => {
   if (!req.file) {
     return next(new ValidationError('Please upload an image file.'));
   }
   try {
-    const url = await UploadService.processAndSaveImage(req.file);
+    const tenantId = req.tenantId || req.user?.tenantId;
+    const url = await UploadService.processAndSaveImage(
+      req.file,
+      tenantId ? String(tenantId) : undefined
+    );
     res.json({ url });
   } catch (err: unknown) {
     next(err);

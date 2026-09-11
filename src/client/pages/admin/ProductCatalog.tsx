@@ -22,33 +22,51 @@ import {
   Tooltip,
   Tab,
   Tabs,
+  InputAdornment,
+  Divider,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import Inventory2Icon from '@mui/icons-material/Inventory2';
+import FlashOnIcon from '@mui/icons-material/FlashOn';
+import SearchIcon from '@mui/icons-material/Search';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { apiClient } from '../../api/client.ts';
-import { useAuthStore } from '../../store/auth.ts';
 import { toast } from 'react-hot-toast';
+import { notify } from '../../utils/notify.ts';
+import { useConfirm } from '../../context/ConfirmDialogContext.tsx';
 import type { Product } from '../../../shared/types.js';
 import { motion } from 'framer-motion';
+import { usePermission } from '../../hooks/usePermission.js';
+import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
+import { CurrencySelector } from '../../components/CurrencySelector.tsx';
 
 const textFieldStyle = {};
 
 export default function ProductCatalog() {
-  const { user } = useAuthStore();
+  const confirm = useConfirm();
+  const { formatAmount, convertAmount, activeCurrency, baseCurrency, currencySymbol } =
+    useRegionalSettings();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [imageUrl, setImageUrl] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const canWriteProducts =
-    user?.roleName === 'Company Owner' ||
-    user?.roleName === 'Super Administrator' ||
-    user?.permissions?.includes('products:write');
+  // Quick Restock State
+  const [restockDialogOpen, setRestockDialogOpen] = useState(false);
+  const [restockProduct, setRestockProduct] = useState<Product | null>(null);
+  const [restockQuantity, setRestockQuantity] = useState<number>(10);
+  const [restockCostPrice, setRestockCostPrice] = useState<number>(0);
+  const [restockReason, setRestockReason] = useState<string>('Supplier Delivery / Restock');
+
+  const canWriteProducts = usePermission('products:write');
 
   const { data: products = [], refetch } = useQuery({
     queryKey: ['products'],
@@ -71,6 +89,8 @@ export default function ProductCatalog() {
       sellingPrice: 0,
       wholesalePrice: 0,
       retailPrice: 0,
+      quantity: 0,
+      lowStockAlert: 10,
       status: 'ACTIVE',
       isActive: true,
       notes: '',
@@ -86,7 +106,7 @@ export default function ProductCatalog() {
       return await apiClient.post('/products', newProduct);
     },
     onSuccess: () => {
-      toast.success('Product added successfully!');
+      notify.success('Product registered successfully!');
       setOpen(false);
       reset();
       setImageUrl('');
@@ -102,7 +122,7 @@ export default function ProductCatalog() {
       );
     },
     onSuccess: () => {
-      toast.success('Product updated successfully!');
+      notify.success('Product updated successfully!');
       setOpen(false);
       setEditingProduct(null);
       reset();
@@ -111,12 +131,40 @@ export default function ProductCatalog() {
     },
   });
 
+  const restockMutation = useMutation({
+    mutationFn: async ({
+      productId,
+      quantity,
+      costPrice,
+      reason,
+    }: {
+      productId: string;
+      quantity: number;
+      costPrice: number;
+      reason: string;
+    }) => {
+      return await apiClient.post(`/products/${productId}/stock`, {
+        quantity,
+        costPrice,
+        reason,
+      });
+    },
+    onSuccess: () => {
+      notify.success('Stock added successfully!');
+      setRestockDialogOpen(false);
+      refetch();
+    },
+    onError: (err: any) => {
+      notify.error(err, { fallback: 'Failed to restock product.' });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       return await apiClient.delete(`/products/${id}`);
     },
     onSuccess: () => {
-      toast.success('Product deactivated successfully.');
+      notify.success('Product deactivated successfully.');
       refetch();
     },
   });
@@ -161,6 +209,8 @@ export default function ProductCatalog() {
       sellingPrice: 0,
       wholesalePrice: 0,
       retailPrice: 0,
+      quantity: 10,
+      lowStockAlert: 5,
       status: 'ACTIVE',
       isActive: true,
       notes: '',
@@ -175,17 +225,76 @@ export default function ProductCatalog() {
   const handleOpenEdit = (product: Product) => {
     setEditingProduct(product);
     setImageUrl(product.imageUrl || '');
-    reset(product);
+    reset({
+      ...product,
+      costPrice: Number(
+        convertAmount(product.costPrice ?? product.cost ?? 0, baseCurrency, activeCurrency).toFixed(
+          2
+        )
+      ),
+      sellingPrice: Number(
+        convertAmount(
+          product.sellingPrice ?? product.price ?? 0,
+          baseCurrency,
+          activeCurrency
+        ).toFixed(2)
+      ),
+      wholesalePrice: Number(
+        convertAmount(product.wholesalePrice ?? 0, baseCurrency, activeCurrency).toFixed(2)
+      ),
+      retailPrice: Number(
+        convertAmount(product.retailPrice ?? 0, baseCurrency, activeCurrency).toFixed(2)
+      ),
+      quantity: product.quantity ?? (product as any).stock ?? 0,
+      lowStockAlert: product.lowStockAlert ?? 10,
+    });
     setOpen(true);
+  };
+
+  const handleOpenRestock = (product: Product) => {
+    setRestockProduct(product);
+    setRestockQuantity(10);
+    const rawCost = Number(product.costPrice || product.cost || 0);
+    setRestockCostPrice(Number(convertAmount(rawCost, baseCurrency, activeCurrency).toFixed(2)));
+    setRestockReason('Supplier Delivery / Restock');
+    setRestockDialogOpen(true);
+  };
+
+  const handleExecuteRestock = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!restockProduct) return;
+    const id = restockProduct._id || restockProduct.id;
+    if (!id) return;
+
+    if (restockQuantity <= 0) {
+      notify.error('Restock quantity must be greater than 0.');
+      return;
+    }
+
+    // Convert costPrice back to base currency
+    const baseCostPrice = convertAmount(
+      Number(restockCostPrice || 0),
+      activeCurrency,
+      baseCurrency
+    );
+
+    restockMutation.mutate({
+      productId: id,
+      quantity: Number(restockQuantity),
+      costPrice: baseCostPrice,
+      reason: restockReason || 'Supplier Delivery / Restock',
+    });
   };
 
   const onSubmit = (data: Product) => {
     const payload = {
       ...data,
-      costPrice: Number(data.costPrice),
-      sellingPrice: Number(data.sellingPrice),
-      wholesalePrice: Number(data.wholesalePrice || 0),
-      retailPrice: Number(data.retailPrice || 0),
+      costPrice: convertAmount(Number(data.costPrice || 0), activeCurrency, baseCurrency),
+      sellingPrice: convertAmount(Number(data.sellingPrice || 0), activeCurrency, baseCurrency),
+      wholesalePrice: convertAmount(Number(data.wholesalePrice || 0), activeCurrency, baseCurrency),
+      retailPrice: convertAmount(Number(data.retailPrice || 0), activeCurrency, baseCurrency),
+      quantity: Number(data.quantity || 0),
+      lowStockAlert: Number(data.lowStockAlert || 10),
       width: Number(data.width || 0),
       height: Number(data.height || 0),
       depth: Number(data.depth || 0),
@@ -213,51 +322,104 @@ export default function ProductCatalog() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-          <Typography
-            variant="h4"
-            sx={{
-              fontWeight: 800,
-              background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            Product Catalog
-          </Typography>
-          {canWriteProducts && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleOpenCreate}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            justifyContent: 'space-between',
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            gap: 2,
+            mb: 1,
+          }}
+        >
+          <Box>
+            <Typography
+              variant="h4"
               sx={{
-                fontWeight: 700,
-                px: 3,
-                py: 1.2,
-                borderRadius: 2.5,
-                textTransform: 'none',
-                background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
-                boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
-                '&:hover': {
-                  background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
-                  boxShadow: '0 6px 20px rgba(139, 92, 246, 0.45)',
-                },
+                fontWeight: 800,
+                background: 'linear-gradient(90deg, #fff 0%, #a78bfa 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
               }}
             >
-              Add Product
-            </Button>
-          )}
-        </Box>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-          Add, modify, attribute, and catalog items for inventory, checkouts, and purchasing.
-        </Typography>
+              Product Catalog & Stock Management
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Add, modify, attribute, track inventory levels, and restock catalog items for all
+              branches.
+            </Typography>
+          </Box>
 
-        <Box sx={{ mb: 3 }}>
+          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
+            <CurrencySelector size="small" />
+            {canWriteProducts && (
+              <>
+                <Button
+                  variant="outlined"
+                  startIcon={<FlashOnIcon />}
+                  onClick={() => {
+                    if (products.length > 0) {
+                      handleOpenRestock(products[0]);
+                    } else {
+                      notify.error('Please create a product first before restocking.');
+                    }
+                  }}
+                  sx={{
+                    fontWeight: 700,
+                    px: 2.5,
+                    py: 1,
+                    borderRadius: 2.5,
+                    textTransform: 'none',
+                    borderColor: 'rgba(16, 185, 129, 0.5)',
+                    color: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                    '&:hover': {
+                      borderColor: '#10b981',
+                      backgroundColor: 'rgba(16, 185, 129, 0.16)',
+                    },
+                  }}
+                >
+                  Quick Restock
+                </Button>
+
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={handleOpenCreate}
+                  sx={{
+                    fontWeight: 700,
+                    px: 3,
+                    py: 1,
+                    borderRadius: 2.5,
+                    textTransform: 'none',
+                    background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                    boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
+                    '&:hover': {
+                      background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
+                      boxShadow: '0 6px 20px rgba(139, 92, 246, 0.45)',
+                    },
+                  }}
+                >
+                  Add Product
+                </Button>
+              </>
+            )}
+          </Box>
+        </Box>
+
+        <Box sx={{ mb: 3, mt: 3 }}>
           <TextField
             label="Search Products by Name, SKU, or Category..."
             fullWidth
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'text.secondary' }} />
+                </InputAdornment>
+              ),
+            }}
             sx={textFieldStyle}
           />
         </Box>
@@ -299,6 +461,11 @@ export default function ProductCatalog() {
                 <TableCell
                   sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}
                 >
+                  Current Stock Level
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                >
                   Status
                 </TableCell>
                 <TableCell
@@ -316,126 +483,353 @@ export default function ProductCatalog() {
               {filteredProducts.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={7}
                     align="center"
                     sx={{ py: 6, color: 'text.secondary', border: 'none' }}
                   >
-                    No products found matching your search.
+                    No products found matching your search. Click <strong>+ Add Product</strong> to
+                    register an item.
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredProducts.map((p) => (
-                  <TableRow
-                    key={p._id || p.id}
-                    sx={{ '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.01)' } }}
-                  >
-                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', py: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        {p.imageUrl ? (
-                          <img
-                            src={p.imageUrl}
-                            alt={p.name}
-                            style={{
-                              width: 44,
-                              height: 44,
-                              borderRadius: 6,
-                              objectFit: 'cover',
-                              border: '1px solid rgba(255,255,255,0.1)',
-                            }}
-                          />
-                        ) : (
-                          <Box
-                            sx={{
-                              width: 44,
-                              height: 44,
-                              borderRadius: 6,
-                              bgcolor: 'rgba(255,255,255,0.05)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              border: '1px solid rgba(255,255,255,0.08)',
-                              fontWeight: 700,
-                            }}
-                          >
-                            {p.name.slice(0, 1).toUpperCase()}
+                filteredProducts.map((p) => {
+                  const qty = Number(p.quantity ?? (p as any).stock ?? 0);
+                  const alertLevel = Number(p.lowStockAlert ?? 10);
+                  const isOutOfStock = qty <= 0 || p.status === 'OUT_OF_STOCK';
+                  const isLowStock = !isOutOfStock && qty <= alertLevel;
+
+                  return (
+                    <TableRow
+                      key={p._id || p.id}
+                      sx={{ '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.02)' } }}
+                    >
+                      <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', py: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          {p.imageUrl ? (
+                            <img
+                              src={p.imageUrl}
+                              alt={p.name}
+                              style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 6,
+                                objectFit: 'cover',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                              }}
+                            />
+                          ) : (
+                            <Box
+                              sx={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 6,
+                                bgcolor: 'rgba(255,255,255,0.05)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '1px solid rgba(255,255,255,0.08)',
+                                fontWeight: 700,
+                              }}
+                            >
+                              {p.name.slice(0, 1).toUpperCase()}
+                            </Box>
+                          )}
+                          <Box>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                              {p.name}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {p.brand || 'No Brand'} • {p.uom || 'pcs'}
+                            </Typography>
                           </Box>
-                        )}
+                        </Box>
+                      </TableCell>
+                      <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                        <Chip
+                          label={p.sku}
+                          size="small"
+                          variant="outlined"
+                          sx={{ fontWeight: 700, color: 'primary.light' }}
+                        />
+                      </TableCell>
+                      <TableCell
+                        sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontWeight: 500 }}
+                      >
+                        {p.category}
+                      </TableCell>
+                      <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                         <Box>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                            {p.name}
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            {formatAmount(p.costPrice ?? p.cost ?? 0)} (Cost)
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {p.brand || 'No Brand'}
+                            {formatAmount(p.sellingPrice ?? p.price ?? 0)} (Selling)
                           </Typography>
                         </Box>
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                      <Chip
-                        label={p.sku}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontWeight: 700, color: 'primary.light' }}
-                      />
-                    </TableCell>
-                    <TableCell
-                      sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontWeight: 500 }}
-                    >
-                      {p.category}
-                    </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                          ${Number(p.costPrice || p.cost || 0).toFixed(2)} (Cost)
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          ${Number(p.sellingPrice || p.price || 0).toFixed(2)} (Selling)
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                      <Chip
-                        label={p.status}
-                        size="small"
-                        color={
-                          p.status === 'ACTIVE'
-                            ? 'success'
-                            : p.status === 'OUT_OF_STOCK'
-                              ? 'error'
-                              : 'default'
-                        }
-                        sx={{ fontWeight: 700 }}
-                      />
-                    </TableCell>
-                    <TableCell
-                      sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', textAlign: 'right' }}
-                    >
-                      <Tooltip title="Edit Product">
-                        <IconButton
-                          onClick={() => handleOpenEdit(p)}
-                          sx={{ color: 'primary.light' }}
+                      </TableCell>
+
+                      {/* Stock Level Column */}
+                      <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {isOutOfStock ? (
+                            <Chip
+                              icon={<ErrorOutlineIcon fontSize="small" />}
+                              label="0 Out of Stock"
+                              size="small"
+                              color="error"
+                              sx={{ fontWeight: 700 }}
+                            />
+                          ) : isLowStock ? (
+                            <Chip
+                              icon={<WarningAmberIcon fontSize="small" />}
+                              label={`${qty} Low Stock`}
+                              size="small"
+                              color="warning"
+                              sx={{ fontWeight: 700 }}
+                            />
+                          ) : (
+                            <Chip
+                              icon={<CheckCircleOutlineIcon fontSize="small" />}
+                              label={`${qty} in Stock`}
+                              size="small"
+                              color="success"
+                              sx={{ fontWeight: 700 }}
+                            />
+                          )}
+                        </Box>
+                      </TableCell>
+
+                      <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                        <Chip
+                          label={p.status}
                           size="small"
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Deactivate">
-                        <IconButton
-                          onClick={() => p._id && deleteMutation.mutate(p._id)}
-                          sx={{ color: 'error.light', ml: 1 }}
-                          size="small"
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))
+                          color={
+                            p.status === 'ACTIVE'
+                              ? 'success'
+                              : p.status === 'OUT_OF_STOCK'
+                                ? 'error'
+                                : 'default'
+                          }
+                          sx={{ fontWeight: 700 }}
+                        />
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          borderBottom: '1px solid rgba(255,255,255,0.03)',
+                          textAlign: 'right',
+                        }}
+                      >
+                        {canWriteProducts && (
+                          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              startIcon={<FlashOnIcon fontSize="small" />}
+                              onClick={() => handleOpenRestock(p)}
+                              sx={{
+                                textTransform: 'none',
+                                fontWeight: 700,
+                                fontSize: '0.75rem',
+                                py: 0.4,
+                                px: 1.2,
+                                borderRadius: '6px',
+                                borderColor: isOutOfStock ? 'error.main' : 'primary.main',
+                                color: isOutOfStock ? 'error.light' : 'primary.light',
+                                backgroundColor: isOutOfStock
+                                  ? 'rgba(239, 68, 68, 0.08)'
+                                  : 'rgba(99, 102, 241, 0.08)',
+                                '&:hover': {
+                                  backgroundColor: isOutOfStock
+                                    ? 'rgba(239, 68, 68, 0.16)'
+                                    : 'rgba(99, 102, 241, 0.16)',
+                                },
+                              }}
+                            >
+                              Add Stock
+                            </Button>
+
+                            <Tooltip title="Edit Product">
+                              <IconButton
+                                onClick={() => handleOpenEdit(p)}
+                                sx={{ color: 'primary.light' }}
+                                size="small"
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+
+                            <Tooltip title="Deactivate Product">
+                              <IconButton
+                                onClick={async () => {
+                                  const pid = p._id || p.id;
+                                  if (!pid) return;
+                                  const confirmed = await confirm({
+                                    title: 'Deactivate Product',
+                                    message: `Are you sure you want to deactivate "${p.name}" (${p.sku})? It will be removed from active sale registers and POS search.`,
+                                    confirmText: 'Deactivate',
+                                    severity: 'error',
+                                  });
+                                  if (confirmed) {
+                                    deleteMutation.mutate(pid);
+                                  }
+                                }}
+                                sx={{ color: 'error.light' }}
+                                size="small"
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
         </TableContainer>
 
+        {/* Quick Add Stock / Restock Dialog */}
+        <Dialog
+          open={restockDialogOpen}
+          onClose={() => setRestockDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              background:
+                'linear-gradient(135deg, rgba(23, 27, 44, 0.98) 0%, rgba(11, 13, 26, 0.99) 100%)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: 4,
+            },
+          }}
+        >
+          <form onSubmit={handleExecuteRestock}>
+            <DialogTitle
+              sx={{
+                fontWeight: 800,
+                background: 'linear-gradient(90deg, #10b981 0%, #34d399 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+              }}
+            >
+              <Inventory2Icon sx={{ color: '#10b981' }} />
+              Add Stock / Restock Product
+            </DialogTitle>
+            <DialogContent sx={{ pt: 2 }}>
+              {restockProduct && (
+                <Box
+                  sx={{
+                    mb: 3,
+                    p: 2,
+                    borderRadius: 2,
+                    bgcolor: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                  }}
+                >
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#fff' }}>
+                    {restockProduct.name}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: 'block', mt: 0.3 }}
+                  >
+                    SKU: <strong>{restockProduct.sku}</strong> • Category:{' '}
+                    <strong>{restockProduct.category}</strong>
+                  </Typography>
+                  <Divider sx={{ my: 1.5, borderColor: 'rgba(255,255,255,0.06)' }} />
+                  <Box
+                    sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      Current Stock Quantity:
+                    </Typography>
+                    <Chip
+                      label={`${Number(restockProduct.quantity ?? 0)} ${restockProduct.uom || 'units'}`}
+                      size="small"
+                      color={Number(restockProduct.quantity ?? 0) <= 0 ? 'error' : 'default'}
+                      sx={{ fontWeight: 700 }}
+                    />
+                  </Box>
+                </Box>
+              )}
+
+              <Grid container spacing={2.5}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Stock Quantity to Add"
+                    type="number"
+                    fullWidth
+                    required
+                    value={restockQuantity}
+                    onChange={(e) => setRestockQuantity(Math.max(1, Number(e.target.value)))}
+                    inputProps={{ min: 1 }}
+                    helperText="Number of new units received"
+                    InputLabelProps={{ shrink: true }}
+                    sx={textFieldStyle}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label={`Unit Cost Price (${currencySymbol} ${activeCurrency})`}
+                    type="number"
+                    fullWidth
+                    value={restockCostPrice}
+                    onChange={(e) => setRestockCostPrice(Number(e.target.value))}
+                    helperText={`Input in ${activeCurrency} (will convert to ${baseCurrency} base)`}
+                    InputLabelProps={{ shrink: true }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">{currencySymbol}</InputAdornment>
+                      ),
+                    }}
+                    sx={textFieldStyle}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Restock Reason / Reference"
+                    fullWidth
+                    value={restockReason}
+                    onChange={(e) => setRestockReason(e.target.value)}
+                    placeholder="e.g., Supplier PO #4092, Local Market Delivery"
+                    InputLabelProps={{ shrink: true }}
+                    sx={textFieldStyle}
+                  />
+                </Grid>
+              </Grid>
+            </DialogContent>
+            <DialogActions sx={{ p: 3, gap: 1.5 }}>
+              <Button
+                onClick={() => setRestockDialogOpen(false)}
+                sx={{ color: 'text.secondary', textTransform: 'none', fontWeight: 600 }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                type="submit"
+                disabled={restockMutation.isPending}
+                sx={{
+                  px: 4,
+                  py: 1.2,
+                  fontWeight: 700,
+                  background: 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
+                }}
+              >
+                {restockMutation.isPending ? 'Updating...' : 'Confirm Stock Addition'}
+              </Button>
+            </DialogActions>
+          </form>
+        </Dialog>
+
+        {/* Create / Edit Product Modal */}
         <Dialog
           open={open}
           onClose={() => setOpen(false)}
@@ -469,10 +863,12 @@ export default function ProductCatalog() {
                 sx={{ mb: 3, borderBottom: '1px solid rgba(255,255,255,0.08)' }}
               >
                 <Tab label="Identity & Pricing" sx={{ textTransform: 'none', fontWeight: 700 }} />
+                <Tab label="Stock & Inventory" sx={{ textTransform: 'none', fontWeight: 700 }} />
                 <Tab label="Media & Attributes" sx={{ textTransform: 'none', fontWeight: 700 }} />
                 <Tab label="Logistics & Notes" sx={{ textTransform: 'none', fontWeight: 700 }} />
               </Tabs>
 
+              {/* Tab 0: Identity & Pricing */}
               {activeTab === 0 && (
                 <Grid container spacing={3}>
                   <Grid item xs={12} sm={6}>
@@ -527,48 +923,123 @@ export default function ProductCatalog() {
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <TextField
-                      label="Cost Price ($)"
+                      label={`Cost Price (${currencySymbol} ${activeCurrency})`}
                       type="number"
                       fullWidth
                       {...register('costPrice', { required: true })}
                       sx={textFieldStyle}
                       InputLabelProps={{ shrink: true }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">{currencySymbol}</InputAdornment>
+                        ),
+                      }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <TextField
-                      label="Selling Price ($)"
+                      label={`Selling Price (${currencySymbol} ${activeCurrency})`}
                       type="number"
                       fullWidth
                       {...register('sellingPrice', { required: true })}
                       sx={textFieldStyle}
                       InputLabelProps={{ shrink: true }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">{currencySymbol}</InputAdornment>
+                        ),
+                      }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <TextField
-                      label="Wholesale Price ($)"
+                      label={`Wholesale Price (${currencySymbol} ${activeCurrency})`}
                       type="number"
                       fullWidth
                       {...register('wholesalePrice')}
                       sx={textFieldStyle}
                       InputLabelProps={{ shrink: true }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">{currencySymbol}</InputAdornment>
+                        ),
+                      }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <TextField
-                      label="Retail Price ($)"
+                      label={`Retail Price (${currencySymbol} ${activeCurrency})`}
                       type="number"
                       fullWidth
                       {...register('retailPrice')}
                       sx={textFieldStyle}
                       InputLabelProps={{ shrink: true }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">{currencySymbol}</InputAdornment>
+                        ),
+                      }}
                     />
                   </Grid>
                 </Grid>
               )}
 
+              {/* Tab 1: Stock & Inventory */}
               {activeTab === 1 && (
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Initial / Current Stock Quantity"
+                      type="number"
+                      fullWidth
+                      {...register('quantity')}
+                      helperText="Available quantity in inventory"
+                      sx={textFieldStyle}
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Low Stock Alert Threshold"
+                      type="number"
+                      fullWidth
+                      {...register('lowStockAlert')}
+                      helperText="Trigger alert when stock drops to or below this level"
+                      sx={textFieldStyle}
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Unit of Measure (UOM)"
+                      fullWidth
+                      placeholder="e.g., pcs, kg, box, bottle"
+                      {...register('uom')}
+                      sx={textFieldStyle}
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      select
+                      label="Product Catalog Status"
+                      fullWidth
+                      defaultValue="ACTIVE"
+                      {...register('status')}
+                      sx={textFieldStyle}
+                      InputLabelProps={{ shrink: true }}
+                    >
+                      <MenuItem value="ACTIVE">Active</MenuItem>
+                      <MenuItem value="INACTIVE">Inactive</MenuItem>
+                      <MenuItem value="DRAFT">Draft</MenuItem>
+                      <MenuItem value="OUT_OF_STOCK">Out of Stock</MenuItem>
+                    </TextField>
+                  </Grid>
+                </Grid>
+              )}
+
+              {/* Tab 2: Media & Attributes */}
+              {activeTab === 2 && (
                 <Grid container spacing={3}>
                   <Grid item xs={12} sm={6}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -578,6 +1049,7 @@ export default function ProductCatalog() {
                       <Button
                         variant="outlined"
                         component="label"
+                        htmlFor="product-image-upload"
                         startIcon={<CloudUploadIcon />}
                         sx={{
                           textTransform: 'none',
@@ -586,7 +1058,14 @@ export default function ProductCatalog() {
                         }}
                       >
                         Upload Image File
-                        <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
+                        <input
+                          id="product-image-upload"
+                          name="productImage"
+                          type="file"
+                          hidden
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                        />
                       </Button>
                       {imageUrl && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -620,19 +1099,11 @@ export default function ProductCatalog() {
                       InputLabelProps={{ shrink: true }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      label="Unit of Measure (UOM)"
-                      fullWidth
-                      {...register('uom')}
-                      sx={textFieldStyle}
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Grid>
                 </Grid>
               )}
 
-              {activeTab === 2 && (
+              {/* Tab 3: Logistics & Notes */}
+              {activeTab === 3 && (
                 <Grid container spacing={3}>
                   <Grid item xs={12} sm={3}>
                     <TextField
@@ -674,23 +1145,7 @@ export default function ProductCatalog() {
                       InputLabelProps={{ shrink: true }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      select
-                      label="Product Status"
-                      fullWidth
-                      defaultValue="ACTIVE"
-                      {...register('status')}
-                      sx={textFieldStyle}
-                      InputLabelProps={{ shrink: true }}
-                    >
-                      <MenuItem value="ACTIVE">Active</MenuItem>
-                      <MenuItem value="INACTIVE">Inactive</MenuItem>
-                      <MenuItem value="DRAFT">Draft</MenuItem>
-                      <MenuItem value="OUT_OF_STOCK">Out of Stock</MenuItem>
-                    </TextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12}>
                     <TextField
                       label="Product Notes"
                       multiline

@@ -483,3 +483,10 @@ export class ResilientExecutor {
     }
   }
 }
+
+export async function executeWithResiliency<T>(
+  taskFn: () => Promise<T>,
+  options: ResiliencyOptions
+): Promise<T> {
+  return ResilientExecutor.execute(options, taskFn);
+}

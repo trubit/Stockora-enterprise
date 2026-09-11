@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { AIService } from '../services/ai/ai.service.js';
-import { MockAIProvider } from '../services/ai/providers.js';
+import { geminiService } from '../services/ai/gemini/gemini.service.js';
+import { validateGeminiModel } from '../services/ai/gemini/gemini.config.js';
 import { ForecastingEngine } from '../services/ai/forecasting.js';
 import mongoose from 'mongoose';
 import { config } from '../../config/environment.js';
@@ -22,34 +22,18 @@ describe('Phase 18 AI Business Intelligence & Forecasting', () => {
     }
   });
 
-  describe('Mock AI Provider', () => {
-    it('should generate mock reorder response when prompted for restock', async () => {
-      const provider = new MockAIProvider();
-      const res = await provider.generateText('Help me check reorder suggestions');
-      expect(res.text).toContain('Replenishment');
-      expect(res.text).toContain('Reorder');
+  describe('Gemini Model & Service Validation', () => {
+    it('validates supported Gemini production models', () => {
+      expect(validateGeminiModel('gemini-1.5-flash')).toBe('gemini-1.5-flash');
+      expect(validateGeminiModel('gemini-1.5-pro')).toBe('gemini-1.5-pro');
+      expect(validateGeminiModel('gemini-2.0-flash')).toBe('gemini-2.0-flash');
+      expect(() => validateGeminiModel('gpt-fake-model-xyz')).toThrow();
     });
 
-    it('should generate generic fallback summary for standard conversational prompts', async () => {
-      const provider = new MockAIProvider();
-      const res = await provider.generateText('Tell me about the system health status');
-      expect(res.text).toContain('Stockora Enterprise');
-    });
-  });
-
-  describe('AI Service Core & Sanitizer', () => {
-    it('should strip XSS script tags and format query prompts correctly', async () => {
-      const service = AIService.getInstance();
-      const promptText = 'What is our profit? <script>alert(1)</script>';
-      const reply = await service.executePrompt(promptText);
-      expect(reply).toBeDefined();
-    }, 15000);
-
-    it('should log estimated tokens and calculate relative costs correctly', async () => {
-      const service = AIService.getInstance();
-      const summary = await service.getUsageSummary();
-      expect(summary.providerName).toBeDefined();
-      expect(summary.totalRequests).toBeGreaterThanOrEqual(0);
+    it('identifies Gemini configuration status accurately', () => {
+      const isConfigured = geminiService.isConfigured();
+      expect(typeof isConfigured).toBe('boolean');
+      expect(geminiService.getModelName()).toBeDefined();
     });
   });
 
@@ -60,7 +44,9 @@ describe('Phase 18 AI Business Intelligence & Forecasting', () => {
       await Transaction.deleteOne({ transactionNumber: 'TX-AI-TEST-999' });
 
       // Seed temporary product/transaction for verification
+      const testTenant = 'tenant_forecast_test';
       const p = await Product.create({
+        tenantId: testTenant,
         name: 'AI Test Unit Scanner',
         sku: 'AI-TEST-99',
         price: 150,
@@ -74,6 +60,7 @@ describe('Phase 18 AI Business Intelligence & Forecasting', () => {
       });
 
       const t = await Transaction.create({
+        tenantId: testTenant,
         transactionNumber: 'TX-AI-TEST-999',
         type: 'SALE',
         status: 'COMPLETED',
@@ -99,7 +86,7 @@ describe('Phase 18 AI Business Intelligence & Forecasting', () => {
         branchName: 'Toronto HQ',
       });
 
-      const stats = await ForecastingEngine.generateReport();
+      const stats = await ForecastingEngine.generateReport(testTenant);
       expect(stats.totalSalesRevenue).toBeGreaterThan(0);
       expect(stats.reorderProposals.some((item) => item.name === 'AI Test Unit Scanner')).toBe(
         true

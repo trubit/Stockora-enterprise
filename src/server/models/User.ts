@@ -1,11 +1,25 @@
 import mongoose, { Schema, type Document } from 'mongoose';
-import bcrypt from 'bcryptjs';
+import { PasswordService } from '../services/password.service.js';
+
+export interface IUserTenantMembership {
+  tenantId: mongoose.Types.ObjectId;
+  tenantSlug?: string;
+  tenantName?: string;
+  roleName: string;
+  branchId?: string;
+  allowedBranches?: string[];
+  isDefault?: boolean;
+  joinedAt: Date;
+}
 
 export interface IUser extends Document {
   username: string;
   email: string;
   password?: string;
   roleName: string;
+  tenantId?: mongoose.Types.ObjectId;
+  tenants: IUserTenantMembership[];
+  isPlatformAdmin: boolean;
   isActive: boolean;
   isVerified: boolean;
   failedLoginAttempts: number;
@@ -22,13 +36,30 @@ export interface IUser extends Document {
   updatedAt: Date;
 }
 
+const UserTenantMembershipSchema = new Schema<IUserTenantMembership>(
+  {
+    tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true },
+    tenantSlug: { type: String },
+    tenantName: { type: String },
+    roleName: { type: String, required: true, default: 'Employee' },
+    branchId: { type: String },
+    allowedBranches: [{ type: String }],
+    isDefault: { type: Boolean, default: false },
+    joinedAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
 const UserSchema = new Schema<IUser>(
   {
     username: { type: String, required: true, trim: true, minlength: 3 },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
     password: { type: String, required: true, select: false },
-    roleName: { type: String, required: true },
-    isActive: { type: Boolean, default: true },
+    roleName: { type: String, required: true, default: 'Employee' },
+    tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', index: true },
+    tenants: [UserTenantMembershipSchema],
+    isPlatformAdmin: { type: Boolean, default: false, index: true },
+    isActive: { type: Boolean, default: true, index: true },
     isVerified: { type: Boolean, default: false },
     failedLoginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Date },
@@ -43,11 +74,24 @@ const UserSchema = new Schema<IUser>(
   { timestamps: true }
 );
 
+UserSchema.index({ 'tenants.tenantId': 1 });
+
+UserSchema.pre(['deleteMany', 'deleteOne', 'findOneAndDelete'], function (this: any) {
+  const dbName = this.mongooseCollection?.conn?.name || this.model?.db?.name;
+  const filter = this.getFilter();
+  const isUnconstrained = !filter || Object.keys(filter).length === 0;
+
+  if (dbName === 'stockora' && isUnconstrained) {
+    throw new Error(
+      'CRITICAL SAFETY GUARD: Unconstrained deletion of User documents on the "stockora" database is strictly forbidden to protect user accounts.'
+    );
+  }
+});
+
 UserSchema.pre<IUser>('save', async function (next) {
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('password') || !this.password) return next();
   try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password!, salt);
+    this.password = await PasswordService.hashPassword(this.password);
     next();
   } catch (err: unknown) {
     next(err as Error);
@@ -56,7 +100,7 @@ UserSchema.pre<IUser>('save', async function (next) {
 
 UserSchema.methods.comparePassword = async function (password: string): Promise<boolean> {
   if (!this.password) return false;
-  return bcrypt.compare(password, this.password);
+  return PasswordService.comparePassword(password, this.password);
 };
 
-export const User = mongoose.model<IUser>('User', UserSchema);
+export const User = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);

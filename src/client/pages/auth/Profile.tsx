@@ -133,6 +133,7 @@ export default function Profile() {
                 <Button
                   variant="outlined"
                   component="label"
+                  htmlFor="avatar-upload-input"
                   sx={{
                     textTransform: 'none',
                     borderRadius: 2,
@@ -146,7 +147,14 @@ export default function Profile() {
                   }}
                 >
                   Upload New Image
-                  <input type="file" hidden accept="image/*" onChange={handleAvatarChange} />
+                  <input
+                    id="avatar-upload-input"
+                    name="avatarFile"
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                  />
                 </Button>
                 <Box sx={{ textAlign: 'center', mt: 1 }}>
                   <Typography variant="h6" sx={{ fontWeight: 800 }}>
@@ -269,9 +277,147 @@ export default function Profile() {
                 </form>
               </CardContent>
             </Card>
+
+            {/* Change Password Card */}
+            <ChangePasswordCard />
           </Grid>
         </Grid>
       </motion.div>
     </Box>
+  );
+}
+
+function ChangePasswordCard() {
+  const [loading, setLoading] = React.useState(false);
+  const [currentPassword, setCurrentPassword] = React.useState('');
+  const [newPassword, setNewPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('All password fields are required.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('New password and confirm password do not match.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters long.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await apiClient.post('/auth/change-password', {
+        currentPassword,
+        newPassword,
+      });
+      toast.success('Password updated successfully!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      const msg =
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        'Failed to change password. Please verify your current password.';
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card
+      className="glass-panel"
+      sx={{
+        mt: 4,
+        border: '1px solid rgba(255, 255, 255, 0.05)',
+        background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%)',
+        boxShadow: '0 8px 32px rgba(139, 92, 246, 0.08)',
+        borderRadius: 3,
+        position: 'relative',
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '3px',
+          background: 'linear-gradient(90deg, #ec4899, #8b5cf6)',
+        },
+      }}
+    >
+      <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+        <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
+          Security & Password
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3.5, fontWeight: 500 }}>
+          Ensure your account is using a secure, strong password with numbers and special
+          characters.
+        </Typography>
+
+        <form
+          onSubmit={handleChangePassword}
+          style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
+        >
+          <TextField
+            label="Current Password"
+            type="password"
+            fullWidth
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+          />
+
+          <TextField
+            label="New Password"
+            type="password"
+            fullWidth
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            helperText="At least 8 characters with uppercase, lowercase, numbers, and symbols"
+            InputLabelProps={{ shrink: true }}
+          />
+
+          <TextField
+            label="Confirm New Password"
+            type="password"
+            fullWidth
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+          />
+
+          <Button
+            variant="contained"
+            type="submit"
+            disabled={loading}
+            sx={{
+              alignSelf: 'flex-start',
+              px: 5,
+              py: 1.4,
+              fontWeight: 700,
+              borderRadius: 2.5,
+              textTransform: 'none',
+              fontSize: '0.95rem',
+              background: 'linear-gradient(90deg, #ec4899 0%, #8b5cf6 100%)',
+              boxShadow: '0 4px 15px rgba(236, 72, 153, 0.3)',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                background: 'linear-gradient(90deg, #db2777 0%, #7c3aed 100%)',
+                boxShadow: '0 6px 20px rgba(236, 72, 153, 0.45)',
+                transform: 'translateY(-1px)',
+              },
+            }}
+          >
+            {loading ? 'Updating Password...' : 'Update Password'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

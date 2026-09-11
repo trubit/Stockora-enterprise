@@ -30,13 +30,15 @@ export default function DemandForecasting() {
   const [selectedMethod, setSelectedMethod] = useState('WEIGHTED_MOVING_AVERAGE');
   const [period, setPeriod] = useState('MONTHLY');
 
-  const { data: products } = useQuery({
+  const { data: productsData } = useQuery({
     queryKey: ['products-list'],
     queryFn: async () => {
       const res = await apiClient.get('/products');
       return res.data;
     },
   });
+
+  const products = Array.isArray(productsData) ? productsData : productsData?.data || [];
 
   const {
     data: forecasts,

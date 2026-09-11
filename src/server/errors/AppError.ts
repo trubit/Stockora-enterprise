@@ -58,3 +58,29 @@ export class DatabaseError extends AppError {
     super(message, 500, 'DATABASE_ERROR', details, false);
   }
 }
+
+export class PaymentGatewayError extends AppError {
+  constructor(message: string, statusCode: number = 400, details?: string[]) {
+    super(message, statusCode, 'PAYMENT_GATEWAY_ERROR', details);
+  }
+}
+
+export class RateLimitError extends AppError {
+  constructor(
+    message: string = 'Rate limit or AI service quota reached. Please try again later.',
+    statusCode: number = 429,
+    details?: string[]
+  ) {
+    super(message, statusCode, 'RATE_LIMIT_EXCEEDED', details, true);
+  }
+}
+
+export class AIServiceError extends AppError {
+  constructor(
+    message: string = 'AI service temporarily unavailable.',
+    statusCode: number = 503,
+    details?: string[]
+  ) {
+    super(message, statusCode, 'AI_SERVICE_ERROR', details, true);
+  }
+}

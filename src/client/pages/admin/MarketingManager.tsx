@@ -42,6 +42,7 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { toast } from 'react-hot-toast';
+import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 
 // ---- Types ------------------------------------------------------------------
 
@@ -136,6 +137,7 @@ const textFieldStyle = { mt: 1 };
 // ---- Component --------------------------------------------------------------
 
 export default function MarketingManager() {
+  const { formatAmount, currencySymbol } = useRegionalSettings();
   const [activeTab, setActiveTab] = useState(0);
 
   // Promo dialog
@@ -428,12 +430,12 @@ export default function MarketingManager() {
                       {p.type === 'PERCENTAGE'
                         ? `${p.value}%`
                         : p.type === 'FIXED'
-                          ? `$${p.value}`
+                          ? formatAmount(p.value)
                           : p.type === 'BOGO'
                             ? 'BOGO'
                             : `${p.value}%`}
                     </TableCell>
-                    <TableCell>${p.minPurchase}</TableCell>
+                    <TableCell>{formatAmount(p.minPurchase)}</TableCell>
                     <TableCell>
                       {p.usageCount} / {p.usageLimit || '∞'}
                     </TableCell>
@@ -515,14 +517,14 @@ export default function MarketingManager() {
                       <TableCell sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>
                         {gc.purchasedByName || '—'}
                       </TableCell>
-                      <TableCell>${gc.initialBalance.toFixed(2)}</TableCell>
+                      <TableCell>{formatAmount(gc.initialBalance)}</TableCell>
                       <TableCell
                         sx={{
                           color: gc.balance === 0 ? 'error.light' : 'success.light',
                           fontWeight: 600,
                         }}
                       >
-                        ${gc.balance.toFixed(2)}
+                        {formatAmount(gc.balance)}
                         <LinearProgress
                           variant="determinate"
                           value={gc.initialBalance > 0 ? (gc.balance / gc.initialBalance) * 100 : 0}
@@ -594,7 +596,7 @@ export default function MarketingManager() {
                               {gc.transactions.map((tx, i) => (
                                 <ListItem key={i} sx={{ py: 0.25 }}>
                                   <ListItemText
-                                    primary={`${tx.type} — ${tx.amount > 0 ? '+' : ''}$${tx.amount.toFixed(2)} (Balance: $${tx.balanceAfter.toFixed(2)})`}
+                                    primary={`${tx.type} — ${tx.amount > 0 ? '+' : ''}${formatAmount(tx.amount)} (Balance: ${formatAmount(tx.balanceAfter)})`}
                                     secondary={`${tx.transactionNumber} · ${new Date(tx.createdAt).toLocaleString()}${tx.note ? ' · ' + tx.note : ''}`}
                                     primaryTypographyProps={{
                                       variant: 'body2',
@@ -844,7 +846,7 @@ export default function MarketingManager() {
                 sx={textFieldStyle}
               >
                 <MenuItem value="PERCENTAGE">Percentage Discount (%)</MenuItem>
-                <MenuItem value="FIXED">Fixed Amount Discount ($)</MenuItem>
+                <MenuItem value="FIXED">Fixed Amount Discount ({currencySymbol})</MenuItem>
                 <MenuItem value="BOGO">Buy One Get One (BOGO)</MenuItem>
                 <MenuItem value="BUNDLE">Bundle Discount</MenuItem>
               </TextField>
@@ -862,7 +864,7 @@ export default function MarketingManager() {
             <Grid item xs={12} sm={4}>
               <TextField
                 type="number"
-                label="Min Purchase ($)"
+                label={`Min Purchase (${currencySymbol})`}
                 fullWidth
                 value={promoMin}
                 onChange={(e) => setPromoMin(Number(e.target.value))}
@@ -966,7 +968,7 @@ export default function MarketingManager() {
             <Grid item xs={12} sm={6}>
               <TextField
                 type="number"
-                label="Initial Balance ($)"
+                label={`Initial Balance (${currencySymbol})`}
                 fullWidth
                 value={cardBalance}
                 onChange={(e) => setCardBalance(Number(e.target.value))}
@@ -1018,11 +1020,11 @@ export default function MarketingManager() {
         <DialogTitle>Top Up Gift Card — {topUpCard?.code}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Current balance: <strong>${topUpCard?.balance.toFixed(2)}</strong>
+            Current balance: <strong>{topUpCard ? formatAmount(topUpCard.balance) : ''}</strong>
           </Typography>
           <TextField
             type="number"
-            label="Top-Up Amount ($)"
+            label={`Top-Up Amount (${currencySymbol})`}
             fullWidth
             value={topUpAmount}
             onChange={(e) => setTopUpAmount(Number(e.target.value))}

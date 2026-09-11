@@ -4,14 +4,31 @@ import { WorkflowDefinition } from '../models/WorkflowDefinition.js';
 import { WorkflowInstance } from '../models/WorkflowInstance.js';
 import { WorkflowService } from '../services/workflow.service.js';
 import { TaskService } from '../services/task.service.js';
-import { AppError } from '../errors/AppError.js';
+import { AppError, AuthorizationError } from '../errors/AppError.js';
 import { Company } from '../models/Company.js';
+import mongoose from 'mongoose';
 
 export class WorkflowController {
-  private static async getCompanyId(): Promise<string> {
-    const comp = await Company.findOne();
+  private static async getCompanyId(req: AuthenticatedRequest): Promise<string> {
+    const tenantId = req.tenantId || req.user?.tenantId;
+    if (!tenantId) {
+      throw new AuthorizationError('Tenant context required for workflow operations.');
+    }
+
+    if (mongoose.Types.ObjectId.isValid(tenantId)) {
+      const comp = await Company.findOne({
+        $or: [
+          { tenantId: new mongoose.Types.ObjectId(tenantId) },
+          { _id: new mongoose.Types.ObjectId(tenantId) },
+        ],
+      });
+      if (comp) return comp._id.toString();
+      return tenantId;
+    }
+
+    const comp = await Company.findOne({ tenantId });
     if (comp) return comp._id.toString();
-    return '64d4b1a4c9b841a4c9b84000';
+    return tenantId;
   }
   /**
    * Create or update a workflow definition
@@ -22,7 +39,7 @@ export class WorkflowController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = await WorkflowController.getCompanyId();
+      const companyId = await WorkflowController.getCompanyId(req);
 
       const { name, description, triggerEvent, steps, isActive } = req.body;
 
@@ -47,7 +64,7 @@ export class WorkflowController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = await WorkflowController.getCompanyId();
+      const companyId = await WorkflowController.getCompanyId(req);
 
       const definitions = await WorkflowDefinition.find({ companyId });
       res.status(200).json({ success: true, data: definitions });
@@ -65,7 +82,7 @@ export class WorkflowController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = await WorkflowController.getCompanyId();
+      const companyId = await WorkflowController.getCompanyId(req);
 
       const { triggerEvent, variables } = req.body;
 
@@ -89,7 +106,7 @@ export class WorkflowController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = await WorkflowController.getCompanyId();
+      const companyId = await WorkflowController.getCompanyId(req);
       const roleName = req.user?.roleName;
       const userId = req.user?.id;
 
@@ -143,7 +160,7 @@ export class WorkflowController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = await WorkflowController.getCompanyId();
+      const companyId = await WorkflowController.getCompanyId(req);
 
       const instances = await WorkflowInstance.find({ companyId }).sort({ createdAt: -1 });
       res.status(200).json({ success: true, data: instances });

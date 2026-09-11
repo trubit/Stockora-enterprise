@@ -45,16 +45,23 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import LoyaltyIcon from '@mui/icons-material/Loyalty';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import UsbIcon from '@mui/icons-material/Usb';
-import CloudQueueIcon from '@mui/icons-material/CloudQueue';
 import WarehouseIcon from '@mui/icons-material/Warehouse';
+import CloudQueueIcon from '@mui/icons-material/CloudQueue';
+import PublicIcon from '@mui/icons-material/Public';
 import { useAuthStore } from '../store/auth.ts';
+import { hasPermission, isPlatformSuperAdmin } from '../../shared/permissions.js';
 import { apiClient } from '../api/client.ts';
 import QuickSearchModal from './QuickSearchModal.tsx';
 import SearchIcon from '@mui/icons-material/Search';
+import { TenantSwitcher } from './Tenant/TenantSwitcher.tsx';
+import { LanguageSelector } from './LanguageSelector.tsx';
+import { CurrencySelector } from './CurrencySelector.tsx';
+import { useTranslation } from '../hooks/useTranslation.js';
 
 const drawerWidth = 260;
 
 export default function Layout() {
+  const { t } = useTranslation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -77,11 +84,19 @@ export default function Layout() {
     const fetchUserProfile = async () => {
       if (accessToken && !user) {
         try {
-          const { data } = await apiClient.get('/users/profile');
+          // Use /auth/me to re-hydrate user on page refresh.
+          // The 401 interceptor in apiClient will handle expired tokens automatically.
+          const { data } = await apiClient.get('/auth/me');
           setUser(data);
-        } catch {
-          clearSession();
-          navigate('/login');
+        } catch (err: unknown) {
+          // Only clear session if it's a genuine 401 (handled by the interceptor).
+          // Network or server errors should NOT log the user out.
+          const status = (err as { response?: { status?: number } })?.response?.status;
+          if (status === 401) {
+            clearSession();
+            navigate('/login');
+          }
+          // For all other errors (500, network), keep the session alive and let the user retry.
         }
       }
     };
@@ -106,9 +121,21 @@ export default function Layout() {
   };
 
   const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+    { text: t('common.dashboard'), icon: <DashboardIcon />, path: '/' },
     {
-      text: 'POS Terminal',
+      text: 'AI Intelligence Console',
+      icon: <AutoAwesomeIcon />,
+      path: '/ai/intelligence',
+      permission: 'ai:view',
+    },
+    {
+      text: t('common.pos'),
+      icon: <PosIcon />,
+      path: '/pos',
+      permission: 'transactions:write',
+    },
+    {
+      text: t('pos.terminal'),
       icon: <PosIcon />,
       path: '/pos/terminal',
       permission: 'transactions:write',
@@ -120,22 +147,64 @@ export default function Layout() {
       permission: 'transactions:write',
     },
     {
+      text: 'POS Held Sales Queue',
+      icon: <ShoppingCartIcon />,
+      path: '/pos/held-sales',
+      permission: 'transactions:read',
+    },
+    {
       text: 'Omnichannel Orders',
       icon: <ShoppingCartIcon />,
-      path: '/orders/omnichannel',
+      path: '/commerce/orders',
       permission: 'transactions:read',
     },
     {
-      text: 'Order Fulfillment',
-      icon: <LocalShippingIcon />,
-      path: '/orders/fulfillment',
-      permission: 'transactions:read',
-    },
-    {
-      text: 'Returns & Refunds',
+      text: 'Commerce Returns & Refunds',
       icon: <AssignmentReturnIcon />,
-      path: '/orders/returns',
+      path: '/commerce/returns',
       permission: 'returns:read',
+    },
+    {
+      text: 'Commerce Analytics & AI',
+      icon: <AutoAwesomeIcon />,
+      path: '/commerce/analytics',
+      permission: 'products:read',
+    },
+    {
+      text: 'Sales Analytics',
+      icon: <AutoAwesomeIcon />,
+      path: '/sales/analytics',
+      permission: 'products:read',
+    },
+    {
+      text: 'Sales Order Builder',
+      icon: <ShoppingCartIcon />,
+      path: '/sales/builder',
+      permission: 'products:write',
+    },
+    {
+      text: 'Sales Quotations',
+      icon: <ReceiptIcon />,
+      path: '/sales/quotes',
+      permission: 'products:read',
+    },
+    {
+      text: 'Tiered Price Lists',
+      icon: <CategoryIcon />,
+      path: '/sales/price-lists',
+      permission: 'products:read',
+    },
+    {
+      text: 'Sales Channels',
+      icon: <OnlineIcon />,
+      path: '/sales/channels',
+      permission: 'products:read',
+    },
+    {
+      text: 'Sales Reps & Territories',
+      icon: <CategoryIcon />,
+      path: '/sales/territories',
+      permission: 'products:read',
     },
     {
       text: 'Products Catalog',
@@ -144,7 +213,7 @@ export default function Layout() {
       permission: 'products:read',
     },
     {
-      text: 'Inventory Catalog',
+      text: t('common.inventory'),
       icon: <InventoryIcon />,
       path: '/inventory',
       permission: 'products:read',
@@ -216,6 +285,18 @@ export default function Layout() {
       permission: 'promotions:read',
     },
     {
+      text: 'Customer Retention & Churn',
+      icon: <AutoAwesomeIcon />,
+      path: '/crm/retention',
+      permission: 'customers:read',
+    },
+    {
+      text: 'Customer Journeys',
+      icon: <OnlineIcon />,
+      path: '/crm/journeys',
+      permission: 'customers:read',
+    },
+    {
       text: 'Stock Adjustments',
       icon: <AdjustIcon />,
       path: '/adjustments',
@@ -228,6 +309,12 @@ export default function Layout() {
       permission: 'warehouses:read',
     },
     {
+      text: 'Warehouses Directory',
+      icon: <WarehouseIcon />,
+      path: '/warehouse/warehouses',
+      permission: 'warehouses:read',
+    },
+    {
       text: 'WMS Operations Center',
       icon: <WarehouseIcon />,
       path: '/warehouse/dashboard',
@@ -237,6 +324,12 @@ export default function Layout() {
       text: 'WMS Hierarchy & Bins',
       icon: <CategoryIcon />,
       path: '/warehouse/locations',
+      permission: 'warehouses:read',
+    },
+    {
+      text: 'WMS Stock Transfers',
+      icon: <SwapHorizIcon />,
+      path: '/warehouse/transfers',
       permission: 'warehouses:read',
     },
     {
@@ -264,9 +357,21 @@ export default function Layout() {
       permission: 'warehouses:read',
     },
     {
+      text: 'WMS Package Manifests',
+      icon: <ReceiptIcon />,
+      path: '/warehouse/manifests',
+      permission: 'warehouses:read',
+    },
+    {
       text: 'WMS Cycle Count & Audits',
       icon: <AdjustIcon />,
       path: '/warehouse/counting',
+      permission: 'warehouses:read',
+    },
+    {
+      text: 'WMS Inventory Exceptions',
+      icon: <AdjustIcon />,
+      path: '/warehouse/exceptions',
       permission: 'warehouses:read',
     },
     {
@@ -294,6 +399,18 @@ export default function Layout() {
       permission: 'suppliers:read',
     },
     {
+      text: 'Supplier Comparison Matrix',
+      icon: <AutoAwesomeIcon />,
+      path: '/procurement/supplier-comparison',
+      permission: 'suppliers:read',
+    },
+    {
+      text: 'Automated Replenishment',
+      icon: <AutoAwesomeIcon />,
+      path: '/procurement/replenishment',
+      permission: 'suppliers:read',
+    },
+    {
       text: 'Purchase Requests',
       icon: <ReceiptIcon />,
       path: '/procurement/requests',
@@ -303,6 +420,18 @@ export default function Layout() {
       text: 'PO Management Console',
       icon: <ShoppingCartIcon />,
       path: '/procurement/purchase-orders',
+      permission: 'suppliers:read',
+    },
+    {
+      text: 'Landed Cost Allocation',
+      icon: <PaymentsIcon />,
+      path: '/procurement/landed-cost',
+      permission: 'suppliers:read',
+    },
+    {
+      text: 'Procurement Budgets',
+      icon: <BusinessIcon />,
+      path: '/procurement/budgets',
       permission: 'suppliers:read',
     },
     {
@@ -327,6 +456,24 @@ export default function Layout() {
       text: 'Procurement Analytics AI',
       icon: <AutoAwesomeIcon />,
       path: '/procurement/analytics',
+      permission: 'suppliers:read',
+    },
+    {
+      text: 'Supplier Products Catalog',
+      icon: <CategoryIcon />,
+      path: '/procurement/products',
+      permission: 'suppliers:read',
+    },
+    {
+      text: 'Quality Inspection Console',
+      icon: <AdjustIcon />,
+      path: '/procurement/inspections',
+      permission: 'suppliers:read',
+    },
+    {
+      text: 'Procurement Settings',
+      icon: <CategoryIcon />,
+      path: '/procurement/settings',
       permission: 'suppliers:read',
     },
     {
@@ -357,78 +504,126 @@ export default function Layout() {
       text: 'Financial Reports',
       icon: <PaymentsIcon />,
       path: '/finance',
-      permission: 'finance:read',
+      permission: 'transactions:read',
     },
     {
       text: 'Finance Dashboard',
       icon: <PaymentsIcon />,
       path: '/finance/dashboard',
-      permission: 'finance:read',
+      permission: 'transactions:read',
     },
     {
       text: 'Chart of Accounts',
       icon: <PaymentsIcon />,
       path: '/finance/accounts',
-      permission: 'finance:read',
+      permission: 'transactions:read',
     },
     {
       text: 'Journal Entries',
       icon: <PaymentsIcon />,
       path: '/finance/journals',
-      permission: 'finance:read',
+      permission: 'transactions:read',
     },
     {
       text: 'General Ledger',
       icon: <PaymentsIcon />,
       path: '/finance/ledger',
-      permission: 'finance:read',
+      permission: 'transactions:read',
     },
     {
       text: 'Financial Statements',
       icon: <PaymentsIcon />,
       path: '/finance/statements',
-      permission: 'finance:read',
+      permission: 'transactions:read',
     },
     {
       text: 'Expenses Manager',
       icon: <PaymentsIcon />,
       path: '/finance/expenses',
-      permission: 'finance:read',
+      permission: 'transactions:read',
     },
     {
       text: 'AR & AP Management',
       icon: <PaymentsIcon />,
       path: '/finance/ar-ap',
-      permission: 'finance:read',
+      permission: 'transactions:read',
     },
     {
       text: 'Bank Reconciliation',
       icon: <PaymentsIcon />,
       path: '/finance/banking',
-      permission: 'finance:read',
+      permission: 'transactions:read',
     },
     {
       text: 'Tax Management',
       icon: <PaymentsIcon />,
       path: '/finance/tax',
-      permission: 'finance:read',
+      permission: 'transactions:read',
     },
     {
       text: 'Fiscal Periods',
       icon: <PaymentsIcon />,
       path: '/finance/periods',
-      permission: 'finance:read',
+      permission: 'transactions:read',
     },
     {
       text: 'Budgeting & Variance',
       icon: <PaymentsIcon />,
       path: '/finance/budgets',
-      permission: 'finance:read',
+      permission: 'transactions:read',
     },
     {
       text: 'Executive Dashboard',
       icon: <PaymentsIcon />,
-      path: '/reports/executive',
+      path: '/company/analytics/executive',
+      permission: 'reports:read',
+    },
+    {
+      text: 'Sales Intelligence',
+      icon: <AutoAwesomeIcon />,
+      path: '/company/analytics/sales',
+      permission: 'reports:read',
+    },
+    {
+      text: 'Inventory Intelligence',
+      icon: <CategoryIcon />,
+      path: '/company/analytics/inventory',
+      permission: 'products:read',
+    },
+    {
+      text: 'Customer Retention',
+      icon: <PeopleIcon />,
+      path: '/company/analytics/customers',
+      permission: 'customers:read',
+    },
+    {
+      text: 'Supplier Intelligence',
+      icon: <LocalShippingIcon />,
+      path: '/company/analytics/suppliers',
+      permission: 'suppliers:read',
+    },
+    {
+      text: 'Financial Margins',
+      icon: <PaymentsIcon />,
+      path: '/company/analytics/finance',
+      permission: 'transactions:read',
+    },
+    {
+      text: 'Demand Forecasting',
+      icon: <AutoAwesomeIcon />,
+      path: '/company/analytics/forecast',
+      permission: 'reports:read',
+    },
+    {
+      text: 'Anomaly Signals',
+      icon: <CategoryIcon />,
+      path: '/company/analytics/anomalies',
+      permission: 'reports:read',
+    },
+    {
+      text: 'Strategic KPI Console',
+      icon: <DashboardIcon />,
+      path: '/company/analytics/kpis',
       permission: 'reports:read',
     },
     {
@@ -447,18 +642,6 @@ export default function Layout() {
       text: 'Scheduled Reports',
       icon: <QueryBuilderIcon />,
       path: '/reports/scheduled',
-      permission: 'reports:read',
-    },
-    {
-      text: 'KPI Targets',
-      icon: <DashboardIcon />,
-      path: '/reports/kpis',
-      permission: 'reports:read',
-    },
-    {
-      text: 'Analytics Hub',
-      icon: <AutoAwesomeIcon />,
-      path: '/reports/analytics',
       permission: 'reports:read',
     },
     {
@@ -507,21 +690,65 @@ export default function Layout() {
     { text: 'My Profile', icon: <AccountCircleIcon />, path: '/profile' },
   ];
 
-  const isAdmin = user?.roleName === 'Company Owner' || user?.roleName === 'Super Administrator';
+  const isSuperAdmin = isPlatformSuperAdmin(user);
+
+  const isAdmin =
+    user?.roleName === 'Company Owner' ||
+    user?.roleName === 'Super Administrator' ||
+    Boolean((user as any)?.isPlatformAdmin);
 
   const hasAccess = (permission?: string) => {
-    if (!permission) return true;
-    if (!user) return false;
-    if (user.roleName === 'Company Owner' || user.roleName === 'Super Administrator') return true;
-    return user.permissions?.includes(permission) || false;
+    return hasPermission(user, permission);
   };
 
   const adminItems = [
     {
-      text: 'Company Settings',
+      text: 'Company SaaS Settings',
       icon: <BusinessIcon />,
-      path: '/company',
+      path: '/company/settings',
       permission: 'companies:read',
+    },
+    {
+      text: t('common.regionalSettings'),
+      icon: <PublicIcon />,
+      path: '/company/settings/regional',
+      permission: 'companies:read',
+    },
+    {
+      text: 'SaaS Billing & Invoices',
+      icon: <PaymentsIcon />,
+      path: '/company/billing',
+      permission: 'companies:read',
+    },
+    {
+      text: 'Resource Usage & Quotas',
+      icon: <DashboardIcon />,
+      path: '/company/usage',
+      permission: 'companies:read',
+    },
+    {
+      text: 'Pricing & Plans Catalog',
+      icon: <AutoAwesomeIcon />,
+      path: '/pricing',
+    },
+    {
+      text: 'Platform Billing Admin',
+      icon: <AdminPanelSettingsIcon />,
+      path: '/admin/billing',
+      platformOnly: true,
+    },
+    {
+      text: 'Onboard New Company',
+      icon: <BusinessIcon />,
+      path: '/onboarding',
+      permission: 'companies:write',
+    },
+
+    {
+      text: 'Platform Admin Hub',
+      icon: <AdminPanelSettingsIcon />,
+      path: '/admin/platform',
+      platformOnly: true,
     },
     { text: 'Branches List', icon: <BranchIcon />, path: '/branches', permission: 'branches:read' },
     {
@@ -537,10 +764,34 @@ export default function Layout() {
       permission: 'security:read',
     },
     {
-      text: 'Integrations & ERP',
+      text: 'Integration Hub',
       icon: <CloudQueueIcon />,
-      path: '/integrations',
+      path: '/company/integrations',
       permission: 'security:read',
+    },
+    {
+      text: 'Developer API Keys',
+      icon: <SettingsIcon />,
+      path: '/company/developer/api-keys',
+      permission: 'security:read',
+    },
+    {
+      text: 'Webhooks & Events',
+      icon: <AutoAwesomeIcon />,
+      path: '/company/developer/webhooks',
+      permission: 'security:read',
+    },
+    {
+      text: 'Data Import Wizard',
+      icon: <CategoryIcon />,
+      path: '/company/import',
+      permission: 'master_data:read',
+    },
+    {
+      text: 'Data Export Center',
+      icon: <ReceiptIcon />,
+      path: '/company/export',
+      permission: 'reports:read',
     },
     {
       text: '3D Warehouse Visualizer',
@@ -576,11 +827,13 @@ export default function Layout() {
       text: 'Admin Console',
       icon: <AdminPanelSettingsIcon />,
       path: '/console',
-      permission: 'security:read',
+      platformOnly: true,
     },
   ];
 
-  const showAdminSection = isAdmin || adminItems.some((item) => hasAccess(item.permission));
+  const showAdminSection =
+    isAdmin ||
+    adminItems.some((item: any) => (item.platformOnly ? isSuperAdmin : hasAccess(item.permission)));
 
   const drawerContent = (
     <Box
@@ -638,7 +891,7 @@ export default function Layout() {
               letterSpacing: '0.02em',
             }}
           >
-            ENTERPRISE PLATFORM
+            {t('ENTERPRISE PLATFORM')}
           </Typography>
         </Box>
       </Box>
@@ -652,7 +905,7 @@ export default function Layout() {
             .map((item) => {
               const isActive = location.pathname === item.path;
               return (
-                <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+                <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
                   <ListItemButton
                     className={isActive ? 'premium-sidebar-item active' : 'premium-sidebar-item'}
                     onClick={() => {
@@ -678,7 +931,7 @@ export default function Layout() {
                       {item.icon}
                     </ListItemIcon>
                     <ListItemText
-                      primary={item.text}
+                      primary={t(item.text)}
                       primaryTypographyProps={{
                         fontSize: '0.85rem',
                         fontWeight: isActive ? 700 : 500,
@@ -705,14 +958,16 @@ export default function Layout() {
                   fontSize: '0.68rem',
                 }}
               >
-                ADMINISTRATION
+                {t('ADMINISTRATION')}
               </Typography>
               {adminItems
-                .filter((item) => hasAccess(item.permission))
+                .filter((item: any) =>
+                  item.platformOnly ? isSuperAdmin : hasAccess(item.permission)
+                )
                 .map((item) => {
                   const isActive = location.pathname === item.path;
                   return (
-                    <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+                    <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
                       <ListItemButton
                         className={
                           isActive ? 'premium-sidebar-item active' : 'premium-sidebar-item'
@@ -743,7 +998,7 @@ export default function Layout() {
                           {item.icon}
                         </ListItemIcon>
                         <ListItemText
-                          primary={item.text}
+                          primary={t(item.text)}
                           primaryTypographyProps={{
                             fontSize: '0.85rem',
                             fontWeight: isActive ? 700 : 500,
@@ -760,7 +1015,16 @@ export default function Layout() {
           <Divider sx={{ my: 2.5, borderColor: 'rgba(255,255,255,0.03)' }} />
           <ListItem disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton
-              onClick={() => {
+              onClick={async () => {
+                try {
+                  const refreshToken = localStorage.getItem('stockora_refresh_token');
+                  // Tell the server to revoke the session and refresh token
+                  await apiClient.post('/auth/logout', { refreshToken }, {
+                    _skipGlobalErrorToast: true,
+                  } as any);
+                } catch {
+                  // Even if the server call fails, clean up client state
+                }
                 clearSession();
                 navigate('/login');
               }}
@@ -848,28 +1112,26 @@ export default function Layout() {
           borderBottom: '1px solid rgba(255, 255, 255, 0.05) !important',
         }}
       >
-        <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, sm: 3 }, minHeight: 64 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Toolbar
+          sx={{
+            justifyContent: 'space-between',
+            px: { xs: 1.5, sm: 3 },
+            minHeight: { xs: 56, sm: 64 },
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
             <IconButton
               color="inherit"
               aria-label="open drawer"
               edge="start"
               onClick={handleDrawerToggle}
-              sx={{ mr: 2, display: { md: 'none' } }}
+              sx={{ mr: { xs: 0.5, sm: 1 }, display: { md: 'none' } }}
             >
               <MenuIcon />
             </IconButton>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <BranchIcon sx={{ color: 'primary.light', fontSize: '1.25rem' }} />
-              <Typography
-                variant="h6"
-                noWrap
-                component="div"
-                sx={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '0.01em' }}
-              >
-                HQ Division (Toronto)
-              </Typography>
-            </Box>
+
+            {/* SaaS Multi-Tenant Organization Switcher */}
+            <TenantSwitcher />
           </Box>
 
           {/* Quick Search Jump Bar */}
@@ -878,7 +1140,7 @@ export default function Layout() {
             label="Search modules... (Ctrl+K)"
             onClick={() => setSearchOpen(true)}
             sx={{
-              display: { xs: 'none', sm: 'flex' },
+              display: { xs: 'none', md: 'flex' },
               backgroundColor: 'rgba(255, 255, 255, 0.04)',
               color: '#9ca3af',
               border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -895,7 +1157,7 @@ export default function Layout() {
             }}
           />
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
             {/* System Status Indicators */}
             <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1.5 }}>
               <Tooltip
@@ -939,6 +1201,12 @@ export default function Layout() {
               flexItem
               sx={{ display: { xs: 'none', sm: 'block' }, borderColor: 'rgba(255,255,255,0.06)' }}
             />
+
+            {/* Dynamic Multi-Currency Selector */}
+            <CurrencySelector />
+
+            {/* Globalization Language Selector */}
+            <LanguageSelector />
 
             {/* Shift/Operational Info */}
             <Typography
@@ -998,14 +1266,20 @@ export default function Layout() {
         component="main"
         sx={{
           flexGrow: 1,
-          p: { xs: 3, sm: 4 },
-          width: { md: `calc(100% - ${drawerWidth}px)` },
-          mt: '64px',
+          p: { xs: 1.5, sm: 2.5, md: 3.5 },
+          width: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` },
+          maxWidth: '100vw',
+          boxSizing: 'border-box',
+          mt: { xs: '56px', sm: '64px' },
           overflowY: 'auto',
-          minHeight: 'calc(100vh - 64px)',
+          overflowX: 'hidden',
+          minHeight: { xs: 'calc(100vh - 56px)', sm: 'calc(100vh - 64px)' },
         }}
       >
-        <Box className="animate-fade-in">
+        <Box
+          className="animate-fade-in"
+          sx={{ width: '100%', maxWidth: '100%', overflowX: 'hidden' }}
+        >
           <Outlet />
         </Box>
       </Box>

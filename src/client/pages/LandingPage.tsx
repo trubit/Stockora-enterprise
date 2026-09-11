@@ -24,8 +24,9 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import { useRegionalSettings } from '../hooks/useRegionalSettings.js';
 
-// Mock items for interactive landing page POS preview
+// Interactive preview catalog items for unauthenticated marketing landing page hero
 const demoProducts = [
   { id: '1', name: 'Whole Milk 1L', category: 'Dairy', price: 2.49 },
   { id: '2', name: 'Sourdough Bread', category: 'Bakery', price: 3.99 },
@@ -34,6 +35,7 @@ const demoProducts = [
 ];
 
 export const LandingPage: React.FC = () => {
+  const { formatAmount } = useRegionalSettings();
   const navigate = useNavigate();
   const [cart, setCart] = useState<{ id: string; name: string; price: number; qty: number }[]>([
     { id: '1', name: 'Whole Milk 1L', price: 2.49, qty: 2 },
@@ -126,7 +128,7 @@ export const LandingPage: React.FC = () => {
                 Features
               </Button>
               <Button
-                href="#demo"
+                href="#pos-preview"
                 sx={{ color: '#9ca3af', fontWeight: 600, '&:hover': { color: '#ffffff' } }}
               >
                 Interactive POS
@@ -271,7 +273,7 @@ export const LandingPage: React.FC = () => {
         </Box>
 
         {/* Hero Interactive Mini POS Preview */}
-        <Box id="demo" sx={{ mt: 4 }}>
+        <Box id="pos-preview" sx={{ mt: 4 }}>
           <Card
             className="glass-panel"
             sx={{
@@ -297,7 +299,7 @@ export const LandingPage: React.FC = () => {
                 </Typography>
               </Box>
               <Chip
-                label="Interactive Demo Mode"
+                label="Interactive Terminal Preview"
                 color="secondary"
                 size="small"
                 sx={{ fontWeight: 700 }}
@@ -350,7 +352,7 @@ export const LandingPage: React.FC = () => {
                             variant="h6"
                             sx={{ fontWeight: 800, color: '#34d399', mt: 0.5 }}
                           >
-                            ${p.price.toFixed(2)}
+                            {formatAmount(p.price)}
                           </Typography>
                         </CardContent>
                       </Card>
@@ -390,12 +392,12 @@ export const LandingPage: React.FC = () => {
                             {item.name}
                           </Typography>
                           <Typography variant="caption" sx={{ color: '#9ca3af' }}>
-                            ${item.price.toFixed(2)} x {item.qty}
+                            {formatAmount(item.price)} x {item.qty}
                           </Typography>
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Typography variant="body2" sx={{ fontWeight: 700, color: '#34d399' }}>
-                            ${(item.price * item.qty).toFixed(2)}
+                            {formatAmount(item.price * item.qty)}
                           </Typography>
                           <IconButton
                             size="small"
@@ -415,7 +417,7 @@ export const LandingPage: React.FC = () => {
                       Subtotal
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#f8fafc', fontWeight: 600 }}>
-                      ${subtotal.toFixed(2)}
+                      {formatAmount(subtotal)}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
@@ -423,7 +425,7 @@ export const LandingPage: React.FC = () => {
                       VAT (7.5%)
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#f8fafc', fontWeight: 600 }}>
-                      ${tax.toFixed(2)}
+                      {formatAmount(tax)}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
@@ -431,7 +433,7 @@ export const LandingPage: React.FC = () => {
                       Total Amount
                     </Typography>
                     <Typography variant="h5" sx={{ fontWeight: 900, color: '#10b981' }}>
-                      ${total.toFixed(2)}
+                      {formatAmount(total)}
                     </Typography>
                   </Box>
 
@@ -786,7 +788,7 @@ export const LandingPage: React.FC = () => {
                 onClick={() => navigate('/pos')}
                 sx={{ color: '#10b981', fontSize: '0.85rem', fontWeight: 700 }}
               >
-                POS Demo
+                POS Terminal
               </Button>
             </Box>
           </Box>

@@ -78,24 +78,29 @@ describe('Resiliency, Proxy IP, and Reconnection Audits', () => {
       await sessionGuard(reqSuccess, {} as Response, nextSuccess);
       expect(nextErrorThrown).toBeNull();
 
-      // 2. Failure case: Hijacked session (IP changes)
-      const reqHijack = {
+      // 2. IP change case: sessionGuard now uses non-destructive risk-flagging.
+      // Legitimate network changes (WiFi handover, VPN, proxy) must not terminate sessions.
+      // The session stays active and the request proceeds normally.
+      const reqIpChange = {
         user: { id: 'user-1' },
         sessionId: session._id,
         headers: {
-          'x-forwarded-for': '99.99.99.99, 10.0.0.1', // Spoofed or hijacked IP
+          'x-forwarded-for': '99.99.99.99, 10.0.0.1', // IP changed (VPN, network switch, etc.)
           'user-agent': 'Mozilla/TestAgent',
         },
         socket: {},
       } as unknown as AuthenticatedRequest;
 
-      await sessionGuard(reqHijack, {} as Response, nextFailure);
-      expect(nextErrorThrown).toBeDefined();
-      expect(nextErrorThrown?.message).toContain('Security violation: session properties changed');
+      let ipChangeError: unknown = null;
+      await sessionGuard(reqIpChange, {} as Response, (err?: unknown) => {
+        ipChangeError = err;
+      });
+      // Risk is logged but session is NOT destroyed — no error should be thrown
+      expect(ipChangeError).toBeUndefined();
 
-      // Check that hijacked session was deactivated
-      const updatedSession = await Session.findById(session._id);
-      expect(updatedSession?.isActive).toBe(false);
+      // Session must remain active after an IP change (non-destructive risk-flag policy)
+      const sessionAfterIpChange = await Session.findById(session._id);
+      expect(sessionAfterIpChange?.isActive).toBe(true);
     });
   });
 });

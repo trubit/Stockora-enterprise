@@ -22,8 +22,10 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import { apiClient } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
+import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 
 export default function OrderFulfillmentManager() {
+  const { formatAmount } = useRegionalSettings();
   const [orders, setOrders] = useState<any[]>([]);
   const [pickupCodeModalOpen, setPickupCodeModalOpen] = useState(false);
   const [pickupOrderNumber, setPickupOrderNumber] = useState<string>('');
@@ -126,7 +128,7 @@ export default function OrderFulfillmentManager() {
                     <Chip label={o.fulfillmentMethod} size="small" color="info" />
                   </TableCell>
                   <TableCell>{o.items.length} items</TableCell>
-                  <TableCell>${o.grandTotal.toFixed(2)}</TableCell>
+                  <TableCell>{formatAmount(o.grandTotal)}</TableCell>
                   <TableCell>
                     <Chip label={o.fulfillmentStatus} color="warning" size="small" />
                   </TableCell>

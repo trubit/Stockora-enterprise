@@ -16,13 +16,18 @@ import {
   TableCell,
   TableBody,
   Chip,
+  InputAdornment,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import PageHeader from '../../components/PageHeader';
 import { apiClient } from '../../api/client';
 import { toast } from 'react-hot-toast';
+import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
+import { CurrencySelector } from '../../components/CurrencySelector.tsx';
 
 export default function ExpenseManager() {
+  const { formatAmount, convertAmount, activeCurrency, baseCurrency, currencySymbol } =
+    useRegionalSettings();
   const [expenses, setExpenses] = useState<any[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -33,10 +38,13 @@ export default function ExpenseManager() {
 
   const fetchExpenses = async () => {
     try {
-      const res = await apiClient.get('/expenses');
-      setExpenses(res.data?.data || []);
+      const res = await apiClient.get('/finance/expenses');
+      const resData = res.data?.data;
+      const list = Array.isArray(resData) ? resData : Array.isArray(res.data) ? res.data : [];
+      setExpenses(list);
     } catch {
       toast.error('Failed to load expenses.');
+      setExpenses([]);
     }
   };
 
@@ -51,10 +59,19 @@ export default function ExpenseManager() {
     }
 
     try {
-      await apiClient.post('/expenses', {
-        categoryCode,
+      const baseAmount = convertAmount(Number(amount), activeCurrency, baseCurrency);
+      await apiClient.post('/finance/expenses', {
+        categoryId: '65f000000000000000000001',
+        categoryName:
+          categoryCode === '6000'
+            ? 'Rent'
+            : categoryCode === '6100'
+              ? 'Utilities'
+              : categoryCode === '6200'
+                ? 'Salaries'
+                : 'General Expense',
         vendorName,
-        amount: Number(amount),
+        amount: baseAmount,
         notes,
       });
       toast.success('Expense Submitted Successfully!');
@@ -62,18 +79,18 @@ export default function ExpenseManager() {
       setVendorName('');
       setNotes('');
       fetchExpenses();
-    } catch {
-      toast.error('Failed to submit expense.');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to submit expense.');
     }
   };
 
   const handleApproveExpense = async (id: string) => {
     try {
-      await apiClient.post(`/expenses/${id}/approve`);
+      await apiClient.post(`/finance/expenses/${id}/approve`, { action: 'APPROVE' });
       toast.success('Expense Approved & Posted to General Ledger!');
       fetchExpenses();
-    } catch {
-      toast.error('Failed to approve expense.');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to approve expense.');
     }
   };
 
@@ -83,9 +100,12 @@ export default function ExpenseManager() {
         title="Corporate Expense Management"
         subtitle="Submit, review & approve operational expenses with Phase 26 workflow triggers"
         action={
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setModalOpen(true)}>
-            Submit Expense
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+            <CurrencySelector size="small" />
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setModalOpen(true)}>
+              Submit Expense
+            </Button>
+          </Box>
         }
       />
 
@@ -111,7 +131,7 @@ export default function ExpenseManager() {
                   <TableCell>{e.vendorName || 'N/A'}</TableCell>
                   <TableCell>{new Date(e.expenseDate).toLocaleDateString()}</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>
-                    ${(e.totalAmount || 0).toFixed(2)}
+                    {formatAmount(e.totalAmount || 0)}
                   </TableCell>
                   <TableCell>
                     <Chip
@@ -168,11 +188,15 @@ export default function ExpenseManager() {
             fullWidth
           />
           <TextField
-            label="Expense Amount ($)"
+            label={`Expense Amount (${currencySymbol} ${activeCurrency})`}
             type="number"
             size="small"
             value={amount}
             onChange={(e) => setAmount(Number(e.target.value))}
+            helperText={`Input in ${activeCurrency} (will convert to ${baseCurrency} base)`}
+            InputProps={{
+              startAdornment: <InputAdornment position="start">{currencySymbol}</InputAdornment>,
+            }}
             fullWidth
           />
           <TextField

@@ -6,6 +6,7 @@ import { ScheduledReport } from '../models/ScheduledReport.js';
 import { ExportHistory } from '../models/ExportHistory.js';
 import { AuditLog } from '../models/AuditLog.js';
 import { Company } from '../models/Company.js';
+import { AuthorizationError } from '../errors/AppError.js';
 import { z } from 'zod';
 import mongoose from 'mongoose';
 
@@ -32,10 +33,26 @@ const scheduleReportSchema = z.object({
 });
 
 export class ReportingController {
-  private static async getCompanyId(): Promise<string> {
-    const comp = await Company.findOne();
+  private static async getCompanyId(req: AuthenticatedRequest): Promise<string> {
+    const tenantId = req.tenantId || req.user?.tenantId;
+    if (!tenantId) {
+      throw new AuthorizationError('Tenant context required for reporting operations.');
+    }
+
+    if (mongoose.Types.ObjectId.isValid(tenantId)) {
+      const comp = await Company.findOne({
+        $or: [
+          { tenantId: new mongoose.Types.ObjectId(tenantId) },
+          { _id: new mongoose.Types.ObjectId(tenantId) },
+        ],
+      });
+      if (comp) return comp._id.toString();
+      return tenantId;
+    }
+
+    const comp = await Company.findOne({ tenantId });
     if (comp) return comp._id.toString();
-    return '64d4b1a4c9b841a4c9b84000';
+    return tenantId;
   }
 
   /**
@@ -47,7 +64,7 @@ export class ReportingController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = await ReportingController.getCompanyId();
+      const companyId = await ReportingController.getCompanyId(req);
       const roleName = req.user?.roleName || 'Employee';
 
       const summary = await ReportingService.getExecutiveSummary(companyId, roleName);
@@ -66,7 +83,7 @@ export class ReportingController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = await ReportingController.getCompanyId();
+      const companyId = await ReportingController.getCompanyId(req);
       const report = await ReportingService.getInventoryReport(companyId);
       res.json(report);
     } catch (err) {
@@ -83,7 +100,7 @@ export class ReportingController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = await ReportingController.getCompanyId();
+      const companyId = await ReportingController.getCompanyId(req);
       const { startDate, endDate } = req.query;
       const report = await ReportingService.getSalesReport(
         companyId,
@@ -105,7 +122,7 @@ export class ReportingController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = await ReportingController.getCompanyId();
+      const companyId = await ReportingController.getCompanyId(req);
       const kpis = await ReportingService.getKPIs(companyId);
       res.json(kpis);
     } catch (err) {
@@ -122,7 +139,7 @@ export class ReportingController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = await ReportingController.getCompanyId();
+      const companyId = await ReportingController.getCompanyId(req);
       const userId = req.user?.id;
 
       if (!userId) {
@@ -173,7 +190,7 @@ export class ReportingController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = await ReportingController.getCompanyId();
+      const companyId = await ReportingController.getCompanyId(req);
       const list = await SavedReport.find({ companyId, isArchived: false }).sort({ createdAt: -1 });
       res.json(list);
     } catch (err) {
@@ -190,7 +207,7 @@ export class ReportingController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = await ReportingController.getCompanyId();
+      const companyId = await ReportingController.getCompanyId(req);
       const userId = req.user?.id;
 
       if (!userId) {
@@ -225,7 +242,7 @@ export class ReportingController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = await ReportingController.getCompanyId();
+      const companyId = await ReportingController.getCompanyId(req);
       const list = await ScheduledReport.find({ companyId }).sort({ createdAt: -1 });
       res.json(list);
     } catch (err) {
@@ -242,7 +259,7 @@ export class ReportingController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const companyId = await ReportingController.getCompanyId();
+      const companyId = await ReportingController.getCompanyId(req);
       const list = await ExportHistory.find({ companyId }).sort({ createdAt: -1 });
       res.json(list);
     } catch (err) {

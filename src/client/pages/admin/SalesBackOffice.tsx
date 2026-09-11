@@ -27,9 +27,13 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { apiClient } from '../../api/client.ts';
+import { useAuthStore } from '../../store/auth.ts';
+import { SYSTEM_PERMISSIONS, hasAnyPermission } from '../../../shared/permissions.js';
 import { toast } from 'react-hot-toast';
 import type { Product, Customer } from '../../../shared/types.js';
 import { motion } from 'framer-motion';
+import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
+import { CurrencySelector } from '../../components/CurrencySelector.tsx';
 
 const textFieldStyle = {};
 
@@ -84,15 +88,52 @@ const DEFAULT_VALID_UNTIL = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
   .split('T')[0];
 
 export default function SalesBackOffice() {
+  const { user } = useAuthStore();
+  const { formatAmount, convertAmount, activeCurrency, baseCurrency, currencySymbol } =
+    useRegionalSettings();
   const [activeTab, setActiveTab] = useState(0);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [orderOpen, setOrderOpen] = useState(false);
   const [shipOpen, setShipOpen] = useState(false);
   const [selectedSO, setSelectedSO] = useState<SalesOrder | null>(null);
 
+  const canCreateQuote = hasAnyPermission(user, [
+    SYSTEM_PERMISSIONS.TRANSACTIONS_WRITE,
+    SYSTEM_PERMISSIONS.PRODUCTS_WRITE,
+  ]);
+  const canCreateOrder = hasAnyPermission(user, [
+    SYSTEM_PERMISSIONS.TRANSACTIONS_WRITE,
+    SYSTEM_PERMISSIONS.PRODUCTS_WRITE,
+  ]);
+  const canShip = hasAnyPermission(user, [
+    SYSTEM_PERMISSIONS.TRANSACTIONS_WRITE,
+    SYSTEM_PERMISSIONS.WAREHOUSES_WRITE,
+    SYSTEM_PERMISSIONS.PRODUCTS_WRITE,
+  ]);
+
+  const canReadQuotes = hasAnyPermission(user, [
+    SYSTEM_PERMISSIONS.TRANSACTIONS_READ,
+    SYSTEM_PERMISSIONS.PRODUCTS_READ,
+  ]);
+  const canReadOrders = hasAnyPermission(user, [
+    SYSTEM_PERMISSIONS.TRANSACTIONS_READ,
+    SYSTEM_PERMISSIONS.PRODUCTS_READ,
+  ]);
+  const canReadCustomers = hasAnyPermission(user, [
+    SYSTEM_PERMISSIONS.CUSTOMERS_READ,
+    SYSTEM_PERMISSIONS.TRANSACTIONS_READ,
+  ]);
+  const canReadProducts = hasAnyPermission(user, [
+    SYSTEM_PERMISSIONS.PRODUCTS_READ,
+    SYSTEM_PERMISSIONS.TRANSACTIONS_READ,
+  ]);
+
   // Fetch Quotes
   const { data: quotes = [], refetch: refetchQuotes } = useQuery<Quote[]>({
     queryKey: ['quotes'],
+    enabled: !!user && Boolean(canReadQuotes),
+    retry: (failureCount, error: any) =>
+      error?.response?.status !== 403 && error?.response?.status !== 401 && failureCount < 2,
     queryFn: async () => {
       const { data } = await apiClient.get<Quote[]>('/quotes');
       return data;
@@ -102,24 +143,33 @@ export default function SalesBackOffice() {
   // Fetch Sales Orders
   const { data: orders = [], refetch: refetchOrders } = useQuery<SalesOrder[]>({
     queryKey: ['sales-orders'],
+    enabled: !!user && Boolean(canReadOrders),
+    retry: (failureCount, error: any) =>
+      error?.response?.status !== 403 && error?.response?.status !== 401 && failureCount < 2,
     queryFn: async () => {
       const { data } = await apiClient.get<SalesOrder[]>('/sales-orders');
       return data;
     },
   });
 
-  // Fetch Customers
+  // Fetch Customers (only needed when creating a quote or order dialog is open, and user has customer read permission)
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ['customers'],
+    enabled: !!user && Boolean(canReadCustomers) && (quoteOpen || orderOpen),
+    retry: (failureCount, error: any) =>
+      error?.response?.status !== 403 && error?.response?.status !== 401 && failureCount < 2,
     queryFn: async () => {
       const { data } = await apiClient.get<Customer[]>('/customers');
       return data;
     },
   });
 
-  // Fetch Products
+  // Fetch Products (only needed when creating a quote or order dialog is open, and user has product read permission)
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ['products'],
+    enabled: !!user && Boolean(canReadProducts) && (quoteOpen || orderOpen),
+    retry: (failureCount, error: any) =>
+      error?.response?.status !== 403 && error?.response?.status !== 401 && failureCount < 2,
     queryFn: async () => {
       const { data } = await apiClient.get<Product[]>('/products');
       return data;
@@ -266,11 +316,11 @@ export default function SalesBackOffice() {
   const onQuoteSubmit = (data: QuoteForm) => {
     createQuoteMutation.mutate({
       ...data,
-      discount: Number(data.discount),
+      discount: convertAmount(Number(data.discount || 0), activeCurrency, baseCurrency),
       items: data.items.map((i) => ({
         ...i,
         quantity: Number(i.quantity),
-        price: Number(i.price),
+        price: convertAmount(Number(i.price || 0), activeCurrency, baseCurrency),
       })),
     });
   };
@@ -278,11 +328,11 @@ export default function SalesBackOffice() {
   const onOrderSubmit = (data: OrderForm) => {
     createOrderMutation.mutate({
       ...data,
-      discount: Number(data.discount),
+      discount: convertAmount(Number(data.discount || 0), activeCurrency, baseCurrency),
       items: data.items.map((i) => ({
         ...i,
         quantity: Number(i.quantity),
-        price: Number(i.price),
+        price: convertAmount(Number(i.price || 0), activeCurrency, baseCurrency),
       })),
     });
   };
@@ -336,35 +386,40 @@ export default function SalesBackOffice() {
           >
             Commercial Sales & Back Office
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
-              variant="outlined"
-              startIcon={<AddIcon />}
-              onClick={() => setQuoteOpen(true)}
-              sx={{ textTransform: 'none', px: 2, borderColor: 'rgba(255,255,255,0.08)' }}
-            >
-              New Sales Quote
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setOrderOpen(true)}
-              sx={{
-                fontWeight: 700,
-                px: 3,
-                py: 1.2,
-                borderRadius: 2.5,
-                textTransform: 'none',
-                background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
-                boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
-                '&:hover': {
-                  background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
-                  boxShadow: '0 6px 20px rgba(139, 92, 246, 0.45)',
-                },
-              }}
-            >
-              Confirm Sales Order
-            </Button>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+            <CurrencySelector size="small" />
+            {canCreateQuote && (
+              <Button
+                variant="outlined"
+                startIcon={<AddIcon />}
+                onClick={() => setQuoteOpen(true)}
+                sx={{ textTransform: 'none', px: 2, borderColor: 'rgba(255,255,255,0.08)' }}
+              >
+                New Sales Quote
+              </Button>
+            )}
+            {canCreateOrder && (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setOrderOpen(true)}
+                sx={{
+                  fontWeight: 700,
+                  px: 3,
+                  py: 1.2,
+                  borderRadius: 2.5,
+                  textTransform: 'none',
+                  background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                  boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
+                  '&:hover': {
+                    background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
+                    boxShadow: '0 6px 20px rgba(139, 92, 246, 0.45)',
+                  },
+                }}
+              >
+                Confirm Sales Order
+              </Button>
+            )}
           </Box>
         </Box>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
@@ -419,8 +474,8 @@ export default function SalesBackOffice() {
                     <TableRow key={q._id} sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.01)' } }}>
                       <TableCell sx={{ fontWeight: 700 }}>{q.quoteNumber}</TableCell>
                       <TableCell>{q.customerId?.name || 'Walk-in Customer'}</TableCell>
-                      <TableCell>${q.subtotal.toFixed(2)}</TableCell>
-                      <TableCell sx={{ fontWeight: 800 }}>${q.total.toFixed(2)}</TableCell>
+                      <TableCell>{formatAmount(q.subtotal)}</TableCell>
+                      <TableCell sx={{ fontWeight: 800 }}>{formatAmount(q.total)}</TableCell>
                       <TableCell>{new Date(q.validUntil).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <Chip
@@ -431,7 +486,7 @@ export default function SalesBackOffice() {
                         />
                       </TableCell>
                       <TableCell sx={{ textAlign: 'right' }}>
-                        {q.status === 'PENDING' && (
+                        {q.status === 'PENDING' && canCreateOrder && (
                           <Button
                             variant="contained"
                             size="small"
@@ -445,6 +500,11 @@ export default function SalesBackOffice() {
                           >
                             Accept
                           </Button>
+                        )}
+                        {q.status === 'PENDING' && !canCreateOrder && (
+                          <Typography variant="caption" color="text.secondary">
+                            Pending Approval
+                          </Typography>
                         )}
                         {q.status !== 'PENDING' && (
                           <Typography variant="caption" color="text.secondary">
@@ -501,7 +561,7 @@ export default function SalesBackOffice() {
                     >
                       <TableCell sx={{ fontWeight: 700 }}>{so.orderNumber}</TableCell>
                       <TableCell>{so.customerId?.name || 'Walk-in Customer'}</TableCell>
-                      <TableCell sx={{ fontWeight: 800 }}>${so.total.toFixed(2)}</TableCell>
+                      <TableCell sx={{ fontWeight: 800 }}>{formatAmount(so.total)}</TableCell>
                       <TableCell>
                         {so.items.reduce((acc, i) => acc + i.shippedQuantity, 0)} /{' '}
                         {so.items.reduce((acc, i) => acc + i.quantity, 0)} shipped
@@ -515,20 +575,27 @@ export default function SalesBackOffice() {
                         />
                       </TableCell>
                       <TableCell sx={{ textAlign: 'right' }}>
-                        {['PENDING', 'APPROVED', 'PARTIALLY_SHIPPED'].includes(so.status) && (
-                          <Button
-                            variant="contained"
-                            size="small"
-                            startIcon={<LocalShippingIcon />}
-                            onClick={() => handleOpenShip(so)}
-                            sx={{
-                              textTransform: 'none',
-                              background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
-                            }}
-                          >
-                            Dispatch Shipment
-                          </Button>
-                        )}
+                        {['PENDING', 'APPROVED', 'PARTIALLY_SHIPPED'].includes(so.status) &&
+                          canShip && (
+                            <Button
+                              variant="contained"
+                              size="small"
+                              startIcon={<LocalShippingIcon />}
+                              onClick={() => handleOpenShip(so)}
+                              sx={{
+                                textTransform: 'none',
+                                background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                              }}
+                            >
+                              Dispatch Shipment
+                            </Button>
+                          )}
+                        {['PENDING', 'APPROVED', 'PARTIALLY_SHIPPED'].includes(so.status) &&
+                          !canShip && (
+                            <Typography variant="caption" color="text.secondary">
+                              Awaiting Dispatch
+                            </Typography>
+                          )}
                         {so.status === 'SHIPPED' && (
                           <Typography variant="caption" color="text.secondary">
                             All Dispatched
@@ -621,7 +688,7 @@ export default function SalesBackOffice() {
                         >
                           {products.map((p) => (
                             <MenuItem key={p._id || p.id} value={p._id || p.id}>
-                              {p.name} (${p.price})
+                              {p.name} ({formatAmount(p.price)})
                             </MenuItem>
                           ))}
                         </TextField>
@@ -638,7 +705,7 @@ export default function SalesBackOffice() {
                       </Grid>
                       <Grid item xs={3}>
                         <TextField
-                          label="Unit Price ($)"
+                          label={`Unit Price (${currencySymbol})`}
                           type="number"
                           fullWidth
                           {...qReg(`items.${index}.price` as const, { required: true })}
@@ -663,7 +730,7 @@ export default function SalesBackOffice() {
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField
-                    label="Discount ($)"
+                    label={`Discount (${currencySymbol})`}
                     type="number"
                     fullWidth
                     {...qReg('discount')}
@@ -775,7 +842,7 @@ export default function SalesBackOffice() {
                         >
                           {products.map((p) => (
                             <MenuItem key={p._id || p.id} value={p._id || p.id}>
-                              {p.name} (${p.price})
+                              {p.name} ({formatAmount(p.price)})
                             </MenuItem>
                           ))}
                         </TextField>
@@ -792,7 +859,7 @@ export default function SalesBackOffice() {
                       </Grid>
                       <Grid item xs={3}>
                         <TextField
-                          label="Unit Price ($)"
+                          label={`Unit Price (${currencySymbol})`}
                           type="number"
                           fullWidth
                           {...oReg(`items.${index}.price` as const, { required: true })}
@@ -817,7 +884,7 @@ export default function SalesBackOffice() {
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField
-                    label="Discount ($)"
+                    label={`Discount (${currencySymbol})`}
                     type="number"
                     fullWidth
                     {...oReg('discount')}

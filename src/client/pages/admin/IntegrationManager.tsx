@@ -205,10 +205,12 @@ export default function IntegrationManager() {
             </Box>
             <Box>
               <Typography variant="caption" display="block" color="text.secondary">
-                Stripe listener: `http://localhost:8080/api/v1/integrations/stripe-webhook`
+                Stripe listener:{' '}
+                <code>{`${typeof window !== 'undefined' ? window.location.origin : ''}/api/v1/integrations/stripe-webhook`}</code>
               </Typography>
               <Typography variant="caption" display="block" color="text.secondary">
-                Paystack listener: `http://localhost:8080/api/v1/integrations/paystack-webhook`
+                Paystack listener:{' '}
+                <code>{`${typeof window !== 'undefined' ? window.location.origin : ''}/api/v1/integrations/paystack-webhook`}</code>
               </Typography>
             </Box>
             <Box

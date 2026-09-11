@@ -2,9 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
-  Grid,
-  Card,
-  CardContent,
+  Paper,
   Button,
   TextField,
   Dialog,
@@ -12,358 +10,333 @@ import {
   DialogContent,
   DialogActions,
   Chip,
-  LinearProgress,
-  MenuItem,
+  Grid,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import LocationIcon from '@mui/icons-material/LocationOn';
-import ZoneIcon from '@mui/icons-material/Layers';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { api } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 
 export default function WarehouseLocationManager() {
   const [warehouses, setWarehouses] = useState<any[]>([]);
-  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
-  const [zones, setZones] = useState<any[]>([]);
   const [locations, setLocations] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  // Modal dialog state
-  const [openZoneDialog, setOpenZoneDialog] = useState(false);
-  const [openLocDialog, setOpenLocDialog] = useState(false);
-
-  const [zoneForm, setZoneForm] = useState({
-    name: '',
-    code: '',
-    zoneType: 'STORAGE',
-    description: '',
-  });
-  const [locForm, setLocForm] = useState({
-    zoneId: '',
+  const [openModal, setOpenModal] = useState(false);
+  const [formData, setFormData] = useState({
+    warehouseId: '',
     locationCode: '',
     aisle: 'A',
     rack: '01',
     shelf: '01',
     bin: '01',
     locationType: 'STORAGE',
-    capacityUnits: 100,
+    capacityUnits: 500,
+    capacityWeight: 2000,
   });
 
-  const fetchData = async (whId: string) => {
-    if (!whId) return;
+  const fetchData = async () => {
     try {
-      setLoading(true);
-      const [zRes, lRes] = await Promise.all([
-        api.get(`/warehouses/${whId}/zones`),
-        api.get(`/warehouses/${whId}/locations`),
+      const [whRes, locRes] = await Promise.all([
+        api.get('/warehouse-advanced/warehouses'),
+        api.get('/warehouse-advanced/locations'),
       ]);
-      setZones(zRes.data || []);
-      setLocations(lRes.data || []);
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to load warehouse zones and locations');
-    } finally {
-      setLoading(false);
+      setWarehouses(whRes.data || []);
+      setLocations(locRes.data || []);
+    } catch {
+      toast.error('Failed to load warehouse locations.');
     }
   };
 
   useEffect(() => {
-    api.get('/warehouses').then((res: any) => {
-      setWarehouses(res.data || []);
-      if (res.data && res.data.length > 0) {
-        setSelectedWarehouseId(res.data[0]._id);
-      }
-    });
+    fetchData();
   }, []);
-
-  useEffect(() => {
-    if (selectedWarehouseId) {
-      fetchData(selectedWarehouseId);
-    }
-  }, [selectedWarehouseId]);
-
-  const handleCreateZone = async () => {
-    try {
-      await api.post(`/warehouses/${selectedWarehouseId}/zones`, zoneForm);
-      toast.success(`Zone [${zoneForm.code}] created successfully`);
-      setOpenZoneDialog(false);
-      fetchData(selectedWarehouseId);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to create zone');
-    }
-  };
 
   const handleCreateLocation = async () => {
     try {
-      await api.post(`/warehouses/${selectedWarehouseId}/locations`, locForm);
-      toast.success(`Location [${locForm.locationCode}] created successfully`);
-      setOpenLocDialog(false);
-      fetchData(selectedWarehouseId);
+      if (!formData.warehouseId || !formData.locationCode) {
+        toast.error('Warehouse and Location Code are required.');
+        return;
+      }
+      await api.post('/warehouse-advanced/locations', {
+        ...formData,
+        capacityUnits: Number(formData.capacityUnits),
+        capacityWeight: Number(formData.capacityWeight),
+      });
+      toast.success('Storage location created!');
+      setOpenModal(false);
+      fetchData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to create location');
+      toast.error(err.response?.data?.message || 'Failed to create location.');
     }
   };
 
   return (
-    <Box sx={{ p: 3, background: '#0b0f19', minHeight: '100vh', color: '#f3f4f6' }}>
-      {/* Header */}
+    <Box sx={{ p: 3, background: '#0b0f19', minHeight: '100vh', color: '#f8fafc' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
           <Typography
             variant="h4"
             sx={{
-              fontWeight: 700,
-              color: '#6366f1',
+              fontWeight: 800,
+              color: '#8b5cf6',
               display: 'flex',
               alignItems: 'center',
               gap: 1.5,
             }}
           >
-            <LocationIcon fontSize="large" /> Warehouse Hierarchy & Bins
+            <LocationOnIcon fontSize="large" /> Storage Location Hierarchy & Capacity
           </Typography>
-          <Typography variant="body2" sx={{ color: '#9ca3af' }}>
-            Manage warehouse physical zones, aisles, racks, shelves, and storage bin capacity.
+          <Typography variant="body2" sx={{ color: '#9ca3af', mt: 0.5 }}>
+            Configure Zone → Aisle → Rack → Shelf → Bin hierarchy and monitor capacity utilization %
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined"
-            startIcon={<ZoneIcon />}
-            onClick={() => setOpenZoneDialog(true)}
-            sx={{ borderColor: '#6366f1', color: '#818cf8' }}
-          >
-            + Add Zone
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setOpenModal(true)}
+          sx={{
+            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+            color: '#ffffff',
+            fontWeight: 600,
+            borderRadius: '9999px',
+            px: 3,
+            '&:hover': {
+              background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+            },
+          }}
+        >
+          Add Location
+        </Button>
+      </Box>
+
+      <Paper
+        sx={{
+          p: 3,
+          background: '#111827',
+          border: '1px solid #1f2937',
+          borderRadius: 3,
+          color: '#f8fafc',
+        }}
+      >
+        <TableContainer>
+          <Table>
+            <TableHead sx={{ background: '#1f2937' }}>
+              <TableRow>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Location Code</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Type</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>
+                  Aisle / Rack / Shelf / Bin
+                </TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Occupancy</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Status</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {locations.map((loc) => (
+                <TableRow key={loc._id} sx={{ '&:hover': { background: '#1e293b' } }}>
+                  <TableCell sx={{ color: '#818cf8', fontWeight: 700 }}>
+                    {loc.locationCode}
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={loc.locationType}
+                      size="small"
+                      sx={{ background: '#374151', color: '#cbd5e1', fontWeight: 600 }}
+                    />
+                  </TableCell>
+                  <TableCell sx={{ color: '#cbd5e1' }}>
+                    Aisle {loc.aisle || 'A'} • Rack {loc.rack || '01'} • Shelf {loc.shelf || '01'} •
+                    Bin {loc.bin || '01'}
+                  </TableCell>
+                  <TableCell sx={{ color: '#34d399', fontWeight: 700 }}>
+                    {loc.currentUnits || 0} / {loc.capacityUnits || 500} units
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={loc.isActive ? 'ACTIVE' : 'INACTIVE'}
+                      size="small"
+                      sx={{
+                        fontWeight: 600,
+                        background: loc.isActive
+                          ? 'rgba(16, 185, 129, 0.2)'
+                          : 'rgba(239, 68, 68, 0.2)',
+                        color: loc.isActive ? '#34d399' : '#f87171',
+                      }}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+
+      {/* Add Location Modal */}
+      <Dialog
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { background: '#111827', color: '#f8fafc', border: '1px solid #1f2937' },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, borderBottom: '1px solid #1f2937' }}>
+          Add Storage Location
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                select
+                fullWidth
+                label="Target Warehouse"
+                value={formData.warehouseId}
+                onChange={(e) => setFormData({ ...formData, warehouseId: e.target.value })}
+                SelectProps={{ native: true }}
+                InputLabelProps={{ shrink: true, style: { color: '#9ca3af' } }}
+                InputProps={{ style: { color: '#fff' } }}
+              >
+                <option value="" style={{ background: '#111827' }}>
+                  -- Select Warehouse --
+                </option>
+                {warehouses.map((w) => (
+                  <option key={w._id} value={w._id} style={{ background: '#111827' }}>
+                    {w.name} ({w.code})
+                  </option>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Location Code (e.g. A-01-02-B1)"
+                value={formData.locationCode}
+                onChange={(e) => setFormData({ ...formData, locationCode: e.target.value })}
+                InputLabelProps={{ shrink: true, style: { color: '#9ca3af' } }}
+                InputProps={{ style: { color: '#fff' } }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                select
+                fullWidth
+                label="Location Type"
+                value={formData.locationType}
+                onChange={(e) => setFormData({ ...formData, locationType: e.target.value as any })}
+                SelectProps={{ native: true }}
+                InputLabelProps={{ shrink: true, style: { color: '#9ca3af' } }}
+                InputProps={{ style: { color: '#fff' } }}
+              >
+                <option value="STORAGE" style={{ background: '#111827' }}>
+                  STORAGE - Pallet / Shelf
+                </option>
+                <option value="PICKING" style={{ background: '#111827' }}>
+                  PICKING - Fast Pick
+                </option>
+                <option value="RECEIVING" style={{ background: '#111827' }}>
+                  RECEIVING - Inbound Dock
+                </option>
+                <option value="PACKING" style={{ background: '#111827' }}>
+                  PACKING - Station
+                </option>
+                <option value="DISPATCH" style={{ background: '#111827' }}>
+                  DISPATCH - Staging Dock
+                </option>
+                <option value="QUARANTINE" style={{ background: '#111827' }}>
+                  QUARANTINE - Hold
+                </option>
+                <option value="DAMAGED" style={{ background: '#111827' }}>
+                  DAMAGED - Defective Hold
+                </option>
+                <option value="RETURNS" style={{ background: '#111827' }}>
+                  RETURNS - Customer Return Staging
+                </option>
+              </TextField>
+            </Grid>
+            <Grid item xs={3}>
+              <TextField
+                fullWidth
+                label="Aisle"
+                value={formData.aisle}
+                onChange={(e) => setFormData({ ...formData, aisle: e.target.value })}
+                InputLabelProps={{ shrink: true, style: { color: '#9ca3af' } }}
+                InputProps={{ style: { color: '#fff' } }}
+              />
+            </Grid>
+            <Grid item xs={3}>
+              <TextField
+                fullWidth
+                label="Rack"
+                value={formData.rack}
+                onChange={(e) => setFormData({ ...formData, rack: e.target.value })}
+                InputLabelProps={{ shrink: true, style: { color: '#9ca3af' } }}
+                InputProps={{ style: { color: '#fff' } }}
+              />
+            </Grid>
+            <Grid item xs={3}>
+              <TextField
+                fullWidth
+                label="Shelf"
+                value={formData.shelf}
+                onChange={(e) => setFormData({ ...formData, shelf: e.target.value })}
+                InputLabelProps={{ shrink: true, style: { color: '#9ca3af' } }}
+                InputProps={{ style: { color: '#fff' } }}
+              />
+            </Grid>
+            <Grid item xs={3}>
+              <TextField
+                fullWidth
+                label="Bin"
+                value={formData.bin}
+                onChange={(e) => setFormData({ ...formData, bin: e.target.value })}
+                InputLabelProps={{ shrink: true, style: { color: '#9ca3af' } }}
+                InputProps={{ style: { color: '#fff' } }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                type="number"
+                label="Max Unit Capacity"
+                value={formData.capacityUnits}
+                onChange={(e) =>
+                  setFormData({ ...formData, capacityUnits: Number(e.target.value) })
+                }
+                InputLabelProps={{ shrink: true, style: { color: '#9ca3af' } }}
+                InputProps={{ style: { color: '#fff' } }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                type="number"
+                label="Max Weight (kg)"
+                value={formData.capacityWeight}
+                onChange={(e) =>
+                  setFormData({ ...formData, capacityWeight: Number(e.target.value) })
+                }
+                InputLabelProps={{ shrink: true, style: { color: '#9ca3af' } }}
+                InputProps={{ style: { color: '#fff' } }}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, borderTop: '1px solid #1f2937' }}>
+          <Button onClick={() => setOpenModal(false)} sx={{ color: '#9ca3af' }}>
+            Cancel
           </Button>
           <Button
             variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setOpenLocDialog(true)}
-            sx={{ background: '#6366f1' }}
+            onClick={handleCreateLocation}
+            sx={{ background: '#8b5cf6', color: '#fff' }}
           >
-            + Create Bin Location
-          </Button>
-        </Box>
-      </Box>
-
-      {/* Warehouse Selector */}
-      <Box sx={{ mb: 3, display: 'flex', gap: 1 }}>
-        {warehouses.map((wh) => (
-          <Button
-            key={wh._id}
-            variant={selectedWarehouseId === wh._id ? 'contained' : 'outlined'}
-            onClick={() => setSelectedWarehouseId(wh._id)}
-            sx={{ borderRadius: '8px' }}
-          >
-            {wh.name} ({wh.code})
-          </Button>
-        ))}
-      </Box>
-
-      {loading ? (
-        <LinearProgress sx={{ my: 4 }} />
-      ) : (
-        <Grid container spacing={3}>
-          {/* Zones Summary */}
-          <Grid item xs={12}>
-            <Typography variant="h6" sx={{ color: '#fff', mb: 1.5, fontWeight: 600 }}>
-              Warehouse Zones ({zones.length})
-            </Typography>
-            <Grid container spacing={2}>
-              {zones.map((z) => (
-                <Grid item xs={12} sm={6} md={3} key={z._id}>
-                  <Card
-                    sx={{
-                      background: '#1e293b',
-                      border: '1px solid rgba(255,255,255,0.05)',
-                      color: '#fff',
-                    }}
-                  >
-                    <CardContent>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                          {z.code}
-                        </Typography>
-                        <Chip label={z.zoneType} size="small" color="primary" />
-                      </Box>
-                      <Typography variant="body2" sx={{ color: '#9ca3af', my: 0.5 }}>
-                        {z.name}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          </Grid>
-
-          {/* Locations Bins Grid */}
-          <Grid item xs={12}>
-            <Typography variant="h6" sx={{ color: '#fff', my: 1.5, fontWeight: 600 }}>
-              Active Storage Locations / Bins ({locations.length})
-            </Typography>
-            <Grid container spacing={2}>
-              {locations.map((loc) => {
-                const util =
-                  loc.capacityUnits > 0
-                    ? Math.round((loc.currentUnits / loc.capacityUnits) * 100)
-                    : 0;
-                return (
-                  <Grid item xs={12} sm={6} md={3} key={loc._id}>
-                    <Card
-                      sx={{
-                        background: 'rgba(30, 41, 59, 0.7)',
-                        border: '1px solid rgba(255,255,255,0.05)',
-                        color: '#fff',
-                      }}
-                    >
-                      <CardContent>
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                          }}
-                        >
-                          <Typography
-                            variant="subtitle1"
-                            sx={{ fontWeight: 700, color: '#818cf8' }}
-                          >
-                            {loc.locationCode}
-                          </Typography>
-                          <Chip
-                            label={loc.locationType}
-                            size="small"
-                            variant="outlined"
-                            sx={{ borderColor: '#6366f1', color: '#a5b4fc' }}
-                          />
-                        </Box>
-                        <Box sx={{ my: 1.5 }}>
-                          <Typography variant="caption" sx={{ color: '#9ca3af', display: 'block' }}>
-                            Capacity Utilization: {util}% ({loc.currentUnits}/
-                            {loc.capacityUnits || '∞'} units)
-                          </Typography>
-                          <LinearProgress
-                            variant="determinate"
-                            value={util}
-                            sx={{
-                              height: 6,
-                              borderRadius: 3,
-                              bgcolor: '#334155',
-                              '& .MuiLinearProgress-bar': {
-                                bgcolor: util > 90 ? '#ef4444' : '#10b981',
-                              },
-                            }}
-                          />
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                );
-              })}
-            </Grid>
-          </Grid>
-        </Grid>
-      )}
-
-      {/* Zone Dialog */}
-      <Dialog
-        open={openZoneDialog}
-        onClose={() => setOpenZoneDialog(false)}
-        PaperProps={{ sx: { background: '#1e293b', color: '#fff' } }}
-      >
-        <DialogTitle>Add Warehouse Zone</DialogTitle>
-        <DialogContent
-          sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 360, pt: 1 }}
-        >
-          <TextField
-            label="Zone Code (e.g. Z-A)"
-            value={zoneForm.code}
-            onChange={(e) => setZoneForm({ ...zoneForm, code: e.target.value })}
-            fullWidth
-          />
-          <TextField
-            label="Zone Name (e.g. Storage Zone A)"
-            value={zoneForm.name}
-            onChange={(e) => setZoneForm({ ...zoneForm, name: e.target.value })}
-            fullWidth
-          />
-          <TextField
-            select
-            label="Zone Type"
-            value={zoneForm.zoneType}
-            onChange={(e) => setZoneForm({ ...zoneForm, zoneType: e.target.value })}
-            fullWidth
-          >
-            {[
-              'RECEIVING',
-              'STORAGE',
-              'PICKING',
-              'PACKING',
-              'QUARANTINE',
-              'DAMAGED',
-              'RETURNS',
-              'DISPATCH',
-              'COLD_STORAGE',
-              'HAZMAT',
-            ].map((t) => (
-              <MenuItem key={t} value={t}>
-                {t}
-              </MenuItem>
-            ))}
-          </TextField>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenZoneDialog(false)} sx={{ color: '#9ca3af' }}>
-            Cancel
-          </Button>
-          <Button onClick={handleCreateZone} variant="contained">
-            Create Zone
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Location Dialog */}
-      <Dialog
-        open={openLocDialog}
-        onClose={() => setOpenLocDialog(false)}
-        PaperProps={{ sx: { background: '#1e293b', color: '#fff' } }}
-      >
-        <DialogTitle>Create Storage Location / Bin</DialogTitle>
-        <DialogContent
-          sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 360, pt: 1 }}
-        >
-          <TextField
-            select
-            label="Parent Zone"
-            value={locForm.zoneId}
-            onChange={(e) => setLocForm({ ...locForm, zoneId: e.target.value })}
-            fullWidth
-          >
-            {zones.map((z) => (
-              <MenuItem key={z._id} value={z._id}>
-                {z.code} ({z.name})
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            label="Location Code (e.g. A-01-02-03)"
-            value={locForm.locationCode}
-            onChange={(e) => setLocForm({ ...locForm, locationCode: e.target.value })}
-            fullWidth
-          />
-          <TextField
-            label="Capacity Units"
-            type="number"
-            value={locForm.capacityUnits}
-            onChange={(e) => setLocForm({ ...locForm, capacityUnits: Number(e.target.value) })}
-            fullWidth
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenLocDialog(false)} sx={{ color: '#9ca3af' }}>
-            Cancel
-          </Button>
-          <Button onClick={handleCreateLocation} variant="contained">
-            Create Location
+            Save Location
           </Button>
         </DialogActions>
       </Dialog>

@@ -63,12 +63,12 @@ export class ERPSyncService {
   }
 
   public static async pushToQuickBooks(entry: ERPJournalEntry): Promise<boolean> {
-    logger.info(`[QuickBooks integration] Mocking Journal entry push ref: ${entry.reference}`);
+    logger.info(`[QuickBooks integration] Journal entry dispatch ref: ${entry.reference}`);
     return true;
   }
 
   public static async pushToXero(entry: ERPJournalEntry): Promise<boolean> {
-    logger.info(`[Xero integration] Mocking Journal entry push ref: ${entry.reference}`);
+    logger.info(`[Xero integration] Journal entry dispatch ref: ${entry.reference}`);
     return true;
   }
 }

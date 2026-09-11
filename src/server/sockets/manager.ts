@@ -9,6 +9,30 @@ import jwt from 'jsonwebtoken';
 interface JwtTokenPayload {
   id: string;
   roleName: string;
+  tenantId?: string;
+}
+
+/**
+ * Validates a Socket.IO origin against the configured CORS allowlist.
+ * Mirrors the HTTP CORS logic in security.ts for consistency.
+ */
+function isOriginAllowed(origin: string | undefined): boolean {
+  if (!origin) return true; // Allow server-to-server / no-origin requests
+
+  if (config.isDevelopment) {
+    if (
+      origin.startsWith('http://localhost') ||
+      origin.startsWith('http://127.0.0.1') ||
+      /^https?:\/\/192\.168\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin) ||
+      /^https?:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin) ||
+      /^https?:\/\/172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin) ||
+      /^https?:\/\/.*\.local(:\d+)?$/.test(origin)
+    ) {
+      return true;
+    }
+  }
+
+  return origin === config.corsOrigin;
 }
 
 export class SocketManager {
@@ -32,49 +56,54 @@ export class SocketManager {
     this.io = new SocketServer(server, {
       cors: {
         origin: (origin, callback) => {
-          if (!origin) return callback(null, true);
-          if (
-            origin.includes('localhost') ||
-            origin.includes('127.0.0.1') ||
-            origin === config.corsOrigin
-          ) {
-            return callback(null, true);
+          if (isOriginAllowed(origin)) {
+            callback(null, true);
+          } else {
+            // Block all other origins — no open-door fallback
+            callback(new Error(`Socket.IO CORS: Origin [${origin}] is not allowed.`));
           }
-          callback(null, true);
         },
         methods: ['GET', 'POST'],
         credentials: true,
       },
+      // Limit the maximum size of incoming socket messages (prevent DoS)
+      maxHttpBufferSize: 1e6, // 1 MB
     });
 
     try {
       const pubClient = redis;
       this.subClient = redis.duplicate();
+      this.subClient.on('error', (err: any) => {
+        if (!err?.message?.includes('Connection is closed')) {
+          logger.warn(`[Socket.IO Redis subClient] ${err.message}`);
+        }
+      });
       this.io.adapter(createAdapter(pubClient, this.subClient));
       logger.info('Socket.IO Redis Pub/Sub adapter registered.');
     } catch (err) {
       logger.error('Failed to configure Socket.IO Redis adapter:', err);
     }
 
-    // JWT authentication middleware on handshake
+    // JWT authentication middleware on WebSocket handshake
     this.io.use((socket: Socket, next) => {
       const token =
         (socket.handshake.auth?.token as string | undefined) ||
         (socket.handshake.headers?.authorization?.replace('Bearer ', '') ?? '');
 
       if (!token) {
-        // Allow unauthenticated connections for public broadcasts, but no room join
+        // Allow unauthenticated connections (e.g. public dashboards) but no private room join
         return next();
       }
 
       try {
         const decoded = jwt.verify(token, config.jwtSecret) as JwtTokenPayload;
-        // Attach user info to socket data
         socket.data.userId = decoded.id;
         socket.data.roleName = decoded.roleName;
+        socket.data.tenantId = decoded.tenantId;
       } catch {
-        // Invalid token — proceed as unauthenticated (don't reject outright)
-        logger.warn(`[Socket] Invalid JWT on handshake from ${socket.id}`);
+        // Invalid token — log and proceed as unauthenticated rather than rejecting
+        // This allows graceful degradation for expired tokens on reconnect
+        logger.warn(`[Socket] Invalid JWT on handshake from socket ${socket.id}`);
       }
       next();
     });
@@ -92,18 +121,27 @@ export class SocketManager {
         `Client connected: ${socket.id} (user=${socket.data.userId ?? 'anon'}, role=${socket.data.roleName ?? 'none'})`
       );
 
-      // Join personal user room
+      // Join personal user room for targeted notifications
       if (socket.data.userId) {
         socket.join(`user:${socket.data.userId}`);
       }
 
-      // Join role-based room
+      // Join role-based broadcast room
       if (socket.data.roleName) {
         socket.join(`role:${socket.data.roleName}`);
       }
 
-      socket.on('disconnect', () => {
-        logger.info(`Client disconnected: ${socket.id}`);
+      // Join tenant-scoped room for multi-tenant isolation
+      if (socket.data.tenantId) {
+        socket.join(`tenant:${socket.data.tenantId}`);
+      }
+
+      socket.on('disconnect', (reason) => {
+        logger.info(`Client disconnected: ${socket.id} (reason: ${reason})`);
+      });
+
+      socket.on('error', (err) => {
+        logger.error(`[Socket] Error on socket ${socket.id}:`, err);
       });
     });
   }
@@ -111,19 +149,23 @@ export class SocketManager {
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   public emitGlobal(event: string, payload: any): void {
     if (!this.io) {
-      logger.warn('Cannot emit event; Socket.IO is not initialized.');
+      if (process.env.NODE_ENV !== 'test') {
+        logger.warn('Cannot emit event: Socket.IO is not initialized.');
+      }
       return;
     }
     this.io.emit(event, payload);
   }
 
   /**
-   * Emit to a named room (e.g. 'user:<id>' or 'role:<roleName>').
+   * Emit to a named room (e.g. 'user:<id>', 'role:<roleName>', 'tenant:<id>').
    */
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   public emitToRoom(room: string, event: string, payload: any): void {
     if (!this.io) {
-      logger.warn('Cannot emit to room; Socket.IO is not initialized.');
+      if (process.env.NODE_ENV !== 'test') {
+        logger.warn('Cannot emit to room: Socket.IO is not initialized.');
+      }
       return;
     }
     this.io.to(room).emit(event, payload);
@@ -132,10 +174,21 @@ export class SocketManager {
   public async shutdown(): Promise<void> {
     if (this.subClient) {
       try {
-        await this.subClient.quit();
+        if (this.subClient.status === 'ready' || this.subClient.status === 'connect') {
+          await this.subClient.quit();
+        } else {
+          this.subClient.disconnect();
+        }
         logger.info('Socket.IO subscriber Redis client closed.');
-      } catch (err) {
-        logger.error('Error closing Socket.IO subscriber Redis:', err);
+      } catch (err: any) {
+        try {
+          this.subClient.disconnect();
+        } catch {
+          // ignore
+        }
+        if (!err?.message?.includes('Connection is closed')) {
+          logger.error('Error closing Socket.IO subscriber Redis client:', err);
+        }
       }
     }
 

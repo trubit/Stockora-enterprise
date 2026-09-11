@@ -17,267 +17,307 @@ import {
   DialogActions,
   TextField,
   Grid,
-  MenuItem,
-  TablePagination,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import SendIcon from '@mui/icons-material/Send';
-import client from '../../api/client';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { api } from '../../api/client.ts';
+import { toast } from 'react-hot-toast';
+import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 
 export default function PurchaseOrderConsole() {
-  const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
+  const { formatAmount, currencySymbol } = useRegionalSettings();
+  const [orders, setOrders] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [openModal, setOpenModal] = useState(false);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [totalCount, setTotalCount] = useState(0);
   const [formData, setFormData] = useState({
     supplierId: '',
-    productId: 'Industrial Bolt Pack',
-    quantity: 100,
-    costPrice: 50,
-    shippingCost: 50,
+    productId: '',
+    quantity: 50,
+    costPrice: 20,
+    shippingCost: 15,
+    paymentTerms: 'NET 30',
   });
 
-  const fetchOrders = async () => {
+  const fetchData = async () => {
     try {
-      const res = await client.get(
-        `/procurement/purchase-orders?page=${page + 1}&limit=${rowsPerPage}`
-      );
-      const responseData = res.data?.data ? res.data.data : Array.isArray(res.data) ? res.data : [];
-      setPurchaseOrders(responseData);
-      setTotalCount(res.data?.total || responseData.length);
+      const [poRes, supRes, prodRes] = await Promise.all([
+        api.get('/procurement-advanced/purchase-orders'),
+        api.get('/procurement-advanced/suppliers'),
+        api.get('/products'),
+      ]);
+      setOrders(poRes.data || []);
+      setSuppliers(supRes.data || []);
+      setProducts(prodRes.data?.data || prodRes.data || []);
     } catch {
-      // Fallback
-    }
-  };
-
-  const fetchSuppliers = async () => {
-    try {
-      const res = await client.get('/procurement/suppliers');
-      const responseData = res.data?.data ? res.data.data : Array.isArray(res.data) ? res.data : [];
-      setSuppliers(responseData);
-    } catch {
-      // Fallback
+      toast.error('Failed to load purchase orders.');
     }
   };
 
   useEffect(() => {
-    fetchOrders();
-    fetchSuppliers();
-  }, [page, rowsPerPage]);
+    fetchData();
+  }, []);
 
-  const handleChangePage = (_: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const handleCreateOrder = async () => {
+  const handleCreatePO = async () => {
     try {
-      await client.post('/procurement/purchase-orders', {
-        supplierId: formData.supplierId || 'default-supplier',
+      if (!formData.supplierId || !formData.productId) {
+        toast.error('Please select both supplier and product.');
+        return;
+      }
+      await api.post('/procurement-advanced/purchase-orders', {
+        supplierId: formData.supplierId,
         items: [
           {
             productId: formData.productId,
-            quantity: formData.quantity,
-            costPrice: formData.costPrice,
+            quantity: Number(formData.quantity),
+            costPrice: Number(formData.costPrice),
           },
         ],
-        shippingCost: formData.shippingCost,
+        shippingCost: Number(formData.shippingCost),
+        paymentTerms: formData.paymentTerms,
       });
+      toast.success('Purchase Order issued successfully!');
       setOpenModal(false);
-      fetchOrders();
-    } catch {
-      // Fallback
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to create Purchase Order.');
     }
   };
 
-  const handleApprove = async (id: string) => {
+  const handleConfirmPO = async (id: string) => {
     try {
-      await client.post(`/procurement/purchase-orders/${id}/approve`);
-      fetchOrders();
-    } catch {
-      // Fallback
-    }
-  };
-
-  const handleSend = async (id: string) => {
-    try {
-      await client.post(`/procurement/purchase-orders/${id}/send`);
-      fetchOrders();
-    } catch {
-      // Fallback
-    }
-  };
-
-  const getStatusChip = (status: string) => {
-    switch (status) {
-      case 'APPROVED':
-        return <Chip label="APPROVED" color="success" size="small" />;
-      case 'PENDING_APPROVAL':
-        return <Chip label="PENDING APPROVAL" color="warning" size="small" />;
-      case 'SENT':
-        return <Chip label="SENT TO SUPPLIER" color="info" size="small" />;
-      case 'RECEIVED':
-        return <Chip label="RECEIVED" color="success" size="small" />;
-      default:
-        return <Chip label={status || 'DRAFT'} color="default" size="small" />;
+      await api.post(`/procurement-advanced/purchase-orders/${id}/confirm`, {
+        status: 'CONFIRMED',
+        notes: 'Supplier acknowledged order',
+      });
+      toast.success('Supplier confirmation recorded!');
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to record supplier confirmation.');
     }
   };
 
   return (
-    <Box p={3}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+    <Box sx={{ p: 3, background: '#0b0f19', minHeight: '100vh', color: '#f8fafc' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
-          <Typography variant="h4" fontWeight="bold" color="primary">
-            Purchase Orders & Versioning Console
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 800,
+              color: '#8b5cf6',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+            }}
+          >
+            <ShoppingCartIcon fontSize="large" /> Purchase Order Workspace
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Generate, approve, send, and audit version history for enterprise Purchase Orders
+          <Typography variant="body2" sx={{ color: '#9ca3af', mt: 0.5 }}>
+            Issue purchase orders, track supplier acknowledgments, and maintain version revision
+            histories
           </Typography>
         </Box>
         <Button
           variant="contained"
-          color="primary"
           startIcon={<AddIcon />}
           onClick={() => setOpenModal(true)}
+          sx={{
+            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+            color: '#ffffff',
+            fontWeight: 600,
+            borderRadius: '9999px',
+            px: 3,
+            '&:hover': {
+              background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+            },
+          }}
         >
           Create Purchase Order
         </Button>
       </Box>
 
-      <Paper elevation={2}>
+      <Paper
+        sx={{
+          p: 3,
+          background: '#111827',
+          border: '1px solid #1f2937',
+          borderRadius: 3,
+          color: '#f8fafc',
+        }}
+      >
         <TableContainer>
           <Table>
-            <TableHead>
-              <TableRow sx={{ bgcolor: 'action.hover' }}>
-                <TableCell>PO Number</TableCell>
-                <TableCell>Supplier</TableCell>
-                <TableCell>Total Amount</TableCell>
-                <TableCell>Version</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="right">Actions</TableCell>
+            <TableHead sx={{ background: '#1f2937' }}>
+              <TableRow>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>PO #</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Supplier</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Revision</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Delivery Date</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Total Amount</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Status</TableCell>
+                <TableCell align="right" sx={{ color: '#9ca3af', fontWeight: 600 }}>
+                  Actions
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {purchaseOrders.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    <Typography color="text.secondary" py={2}>
-                      No Purchase Orders created.
-                    </Typography>
+              {orders.map((po) => (
+                <TableRow key={po._id} sx={{ '&:hover': { background: '#1e293b' } }}>
+                  <TableCell sx={{ color: '#818cf8', fontWeight: 700 }}>{po.poNumber}</TableCell>
+                  <TableCell sx={{ color: '#f8fafc' }}>{po.supplierName || 'Supplier'}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={`v${po.version || 1}`}
+                      size="small"
+                      sx={{ background: '#374151', color: '#cbd5e1', fontWeight: 600 }}
+                    />
+                  </TableCell>
+                  <TableCell sx={{ color: '#9ca3af' }}>
+                    {po.expectedDeliveryDate
+                      ? new Date(po.expectedDeliveryDate).toLocaleDateString()
+                      : 'N/A'}
+                  </TableCell>
+                  <TableCell sx={{ color: '#34d399', fontWeight: 700 }}>
+                    {formatAmount(po.totalAmount || 0)}
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={po.status}
+                      size="small"
+                      sx={{
+                        fontWeight: 600,
+                        background:
+                          po.status === 'RECEIVED'
+                            ? 'rgba(16, 185, 129, 0.2)'
+                            : 'rgba(56, 189, 248, 0.2)',
+                        color: po.status === 'RECEIVED' ? '#34d399' : '#38bdf8',
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    {po.status === 'APPROVED' && (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<CheckCircleIcon />}
+                        onClick={() => handleConfirmPO(po._id)}
+                        sx={{ color: '#38bdf8', borderColor: '#38bdf8' }}
+                      >
+                        Confirm Receipt
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
-              ) : (
-                purchaseOrders.map((po) => (
-                  <TableRow key={po._id} hover>
-                    <TableCell sx={{ fontWeight: 'bold' }}>{po.poNumber}</TableCell>
-                    <TableCell>{po.supplierId?.name || 'Supplier'}</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>
-                      ${(po.totalAmount || 0).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <Chip label={`v${po.version || 1}`} size="small" variant="outlined" />
-                    </TableCell>
-                    <TableCell>{getStatusChip(po.status)}</TableCell>
-                    <TableCell align="right">
-                      {po.status === 'PENDING_APPROVAL' && (
-                        <Button size="small" color="success" onClick={() => handleApprove(po._id)}>
-                          Approve
-                        </Button>
-                      )}
-                      {po.status === 'APPROVED' && (
-                        <Button
-                          size="small"
-                          color="info"
-                          startIcon={<SendIcon />}
-                          onClick={() => handleSend(po._id)}
-                        >
-                          Send Vendor
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+              ))}
             </TableBody>
           </Table>
         </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={totalCount}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
       </Paper>
 
-      <Dialog open={openModal} onClose={() => setOpenModal(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Create Enterprise Purchase Order</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid item xs={12}>
+      {/* Create PO Dialog */}
+      <Dialog
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { background: '#111827', color: '#f8fafc', border: '1px solid #1f2937' },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, borderBottom: '1px solid #1f2937' }}>
+          Issue New Purchase Order
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 select
                 fullWidth
-                label="Select Supplier"
+                label="Target Supplier"
                 value={formData.supplierId}
                 onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
+                SelectProps={{ native: true }}
+                InputLabelProps={{ shrink: true, style: { color: '#9ca3af' } }}
+                InputProps={{ style: { color: '#fff' } }}
               >
-                {suppliers.map((sup) => (
-                  <MenuItem key={sup._id} value={sup._id}>
-                    {sup.name} ({sup.code})
-                  </MenuItem>
+                <option value="" style={{ background: '#111827' }}>
+                  -- Select Supplier --
+                </option>
+                {suppliers.map((s) => (
+                  <option key={s._id} value={s._id} style={{ background: '#111827' }}>
+                    {s.name} ({s.code})
+                  </option>
                 ))}
               </TextField>
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} sm={6}>
               <TextField
+                select
                 fullWidth
-                label="Product ID / SKU / Name"
+                label="Target Product"
                 value={formData.productId}
                 onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
-              />
+                SelectProps={{ native: true }}
+                InputLabelProps={{ shrink: true, style: { color: '#9ca3af' } }}
+                InputProps={{ style: { color: '#fff' } }}
+              >
+                <option value="" style={{ background: '#111827' }}>
+                  -- Select Product --
+                </option>
+                {products.map((p) => (
+                  <option key={p._id} value={p._id} style={{ background: '#111827' }}>
+                    {p.name} ({p.sku})
+                  </option>
+                ))}
+              </TextField>
             </Grid>
-            <Grid item xs={4}>
+            <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
                 type="number"
                 label="Quantity"
                 value={formData.quantity}
                 onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
+                InputLabelProps={{ shrink: true, style: { color: '#9ca3af' } }}
+                InputProps={{ style: { color: '#fff' } }}
               />
             </Grid>
-            <Grid item xs={4}>
+            <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
                 type="number"
-                label="Cost Price ($)"
+                label={`Unit Cost (${currencySymbol})`}
                 value={formData.costPrice}
                 onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) })}
+                InputLabelProps={{ shrink: true, style: { color: '#9ca3af' } }}
+                InputProps={{ style: { color: '#fff' } }}
               />
             </Grid>
-            <Grid item xs={4}>
+            <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
                 type="number"
-                label="Shipping ($)"
+                label={`Shipping Cost (${currencySymbol})`}
                 value={formData.shippingCost}
                 onChange={(e) => setFormData({ ...formData, shippingCost: Number(e.target.value) })}
+                InputLabelProps={{ shrink: true, style: { color: '#9ca3af' } }}
+                InputProps={{ style: { color: '#fff' } }}
               />
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenModal(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleCreateOrder}>
-            Generate PO
+        <DialogActions sx={{ p: 2.5, borderTop: '1px solid #1f2937' }}>
+          <Button onClick={() => setOpenModal(false)} sx={{ color: '#9ca3af' }}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleCreatePO}
+            sx={{ background: '#8b5cf6', color: '#fff' }}
+          >
+            Issue Purchase Order
           </Button>
         </DialogActions>
       </Dialog>

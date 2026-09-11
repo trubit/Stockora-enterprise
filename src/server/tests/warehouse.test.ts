@@ -66,7 +66,7 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
     expect(wh.code).toBe(code);
 
     const zone = await warehouseService.createZone({
-      companyId: wh.companyId.toString(),
+      companyId: wh.companyId!.toString(),
       warehouseId,
       name: 'High Capacity Storage Zone',
       code: 'ZONE-A',
@@ -78,7 +78,7 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
 
     // Receiving Dock Location
     const recLoc = await warehouseService.createLocation({
-      companyId: wh.companyId.toString(),
+      companyId: wh.companyId!.toString(),
       warehouseId,
       zoneId,
       locationCode: 'RECEIVING-DOCK-01',
@@ -90,7 +90,7 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
 
     // Storage Bin Location
     const storeLoc = await warehouseService.createLocation({
-      companyId: wh.companyId.toString(),
+      companyId: wh.companyId!.toString(),
       warehouseId,
       zoneId,
       locationCode: 'A-01-02-03',
@@ -196,7 +196,7 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
         quantityToPick: 10,
         pickerId: userId,
       })
-    ).rejects.toThrow(/WRONG PRODUCT SCANNED/);
+    ).rejects.toThrow(/WRONG PRODUCT SCANNED|SKU MISMATCH/);
 
     // Wrong Location Protection Check
     await expect(
@@ -208,7 +208,7 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
         quantityToPick: 10,
         pickerId: userId,
       })
-    ).rejects.toThrow(/WRONG LOCATION SCANNED/);
+    ).rejects.toThrow(/WRONG LOCATION SCANNED|LOCATION MISMATCH/);
 
     // Successful Pick Scan
     const result = await pickingService.scanAndPickItem({
@@ -247,7 +247,7 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
     expect(pkg.status).toBe('PACKED');
 
     const dispatch = await dispatchService.createDispatchManifest({
-      companyId: pkg.companyId.toString(),
+      companyId: pkg.companyId!.toString(),
       warehouseId,
       carrier: 'DHL Express',
       packageIds: [pkg._id.toString()],
@@ -271,7 +271,7 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
     });
 
     const destZone = await warehouseService.createZone({
-      companyId: destWh.companyId.toString(),
+      companyId: destWh.companyId!.toString(),
       warehouseId: destWh._id.toString(),
       name: 'Destination Zone',
       code: 'DEST-ZONE',
@@ -279,7 +279,7 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
     });
 
     await warehouseService.createLocation({
-      companyId: destWh.companyId.toString(),
+      companyId: destWh.companyId!.toString(),
       warehouseId: destWh._id.toString(),
       zoneId: destZone._id.toString(),
       locationCode: 'DEST-REC-01',
@@ -288,7 +288,7 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
     });
 
     const transfer = await warehouseTransferService.requestTransfer({
-      companyId: destWh.companyId.toString(),
+      companyId: destWh.companyId!.toString(),
       fromWarehouseId: warehouseId,
       toWarehouseId: destWh._id.toString(),
       items: [{ productId, quantity: 5, fromLocationId: storeLocId }],
@@ -325,7 +325,7 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
       const submitted = await cycleCountService.submitCountResults(count._id.toString(), userId, [
         {
           itemId: (firstItem as any)._id.toString(),
-          countedQuantity: firstItem.expectedQuantity + 2,
+          countedQuantity: (firstItem.expectedQuantity || 0) + 2,
         },
       ]);
 

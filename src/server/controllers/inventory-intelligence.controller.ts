@@ -4,6 +4,7 @@ import { ReplenishmentService } from '../services/replenishment.service.js';
 import { SupplierIntelligenceService } from '../services/supplier-intelligence.service.js';
 import { InventoryOptimizationService } from '../services/inventory-optimization.service.js';
 import { InventoryCopilotService } from '../services/inventory-copilot.service.js';
+import { InventoryAIService } from '../services/ai/inventoryAI.service.js';
 import { logger } from '../logger.js';
 
 export class InventoryIntelligenceController {
@@ -12,6 +13,8 @@ export class InventoryIntelligenceController {
    */
   public static async getDashboardData(req: Request, res: Response) {
     try {
+      const tenantId = (req as any).user?.tenantId || 'default';
+      const aiOverview = await InventoryAIService.getAIInventoryHealthOverview(tenantId);
       const stockoutRisks = await InventoryOptimizationService.scanStockoutRisks();
       const { overstock, deadStock } =
         await InventoryOptimizationService.getOverstockAndDeadStock();
@@ -19,23 +22,28 @@ export class InventoryIntelligenceController {
       const supplierScores = await SupplierIntelligenceService.getSupplierScores();
 
       const kpis = {
-        totalStockoutRisks: stockoutRisks.length,
-        criticalRisks: stockoutRisks.filter((r) => r.riskLevel === 'CRITICAL').length,
+        totalStockoutRisks:
+          stockoutRisks.length || aiOverview.criticalStockoutCount + aiOverview.lowStockCount,
+        criticalRisks:
+          stockoutRisks.filter((r) => r.riskLevel === 'CRITICAL').length ||
+          aiOverview.criticalStockoutCount,
         pendingReordersCount: recommendations.length,
-        overstockItemsCount: overstock.length,
+        overstockItemsCount: overstock.length || aiOverview.deadStockCount,
         deadStockItemsCount: deadStock.length,
+        totalInventoryValuation: aiOverview.totalInventoryValuation,
         avgSupplierScore:
           supplierScores.length > 0
             ? Math.round(
                 supplierScores.reduce((acc, s) => acc + s.overallScore, 0) / supplierScores.length
               )
-            : 85,
+            : 88,
       };
 
       res.status(200).json({
         success: true,
         data: {
           kpis,
+          aiStrategicDirectives: aiOverview.aiStrategicDirectives,
           stockoutRisks: stockoutRisks.slice(0, 10),
           recommendations,
           supplierScores: supplierScores.slice(0, 5),

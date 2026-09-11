@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography, Breadcrumbs, Link, Chip } from '@mui/material';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import { useTranslation } from '../hooks/useTranslation.js';
 
 interface PageHeaderProps {
   title: string;
@@ -19,18 +20,25 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   badgeColor = 'primary',
   action,
 }) => {
+  const { t } = useTranslation();
+
+  const displayTitle = t(title);
+  const displaySubtitle = subtitle ? t(subtitle) : undefined;
+  const displayCategory = t(category);
+  const displayBadge = badgeText ? t(badgeText) : undefined;
+
   return (
     <Box
       sx={{
-        mb: 4,
+        mb: { xs: 2.5, sm: 4 },
         display: 'flex',
         flexDirection: { xs: 'column', sm: 'row' },
         alignItems: { xs: 'flex-start', sm: 'center' },
         justifyContent: 'space-between',
-        gap: 2,
+        gap: { xs: 2, sm: 2.5 },
       }}
     >
-      <Box>
+      <Box sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: 0 }}>
         <Breadcrumbs
           separator={<NavigateNextIcon fontSize="small" sx={{ color: 'rgba(255,255,255,0.3)' }} />}
           aria-label="breadcrumb"
@@ -42,10 +50,10 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             href="/"
             sx={{ fontSize: '0.8rem', color: '#9ca3af' }}
           >
-            {category}
+            {displayCategory}
           </Link>
           <Typography sx={{ fontSize: '0.8rem', color: '#a78bfa', fontWeight: 600 }}>
-            {title}
+            {displayTitle}
           </Typography>
         </Breadcrumbs>
 
@@ -54,18 +62,20 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             variant="h4"
             sx={{
               fontWeight: 800,
+              fontSize: { xs: '1.35rem', sm: '1.65rem', md: '2.125rem' },
               background: 'linear-gradient(135deg, #ffffff 0%, #d1d5db 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               letterSpacing: '-0.02em',
+              wordBreak: 'break-word',
             }}
           >
-            {title}
+            {displayTitle}
           </Typography>
 
-          {badgeText && (
+          {displayBadge && (
             <Chip
-              label={badgeText}
+              label={displayBadge}
               color={badgeColor}
               size="small"
               sx={{
@@ -79,14 +89,38 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           )}
         </Box>
 
-        {subtitle && (
-          <Typography variant="body2" sx={{ color: '#9ca3af', mt: 0.5, maxWidth: '650px' }}>
-            {subtitle}
+        {displaySubtitle && (
+          <Typography
+            variant="body2"
+            sx={{
+              color: '#9ca3af',
+              mt: 0.5,
+              maxWidth: '650px',
+              fontSize: { xs: '0.78rem', sm: '0.85rem' },
+            }}
+          >
+            {displaySubtitle}
           </Typography>
         )}
       </Box>
 
-      {action && <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>{action}</Box>}
+      {action && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 1.5,
+            width: { xs: '100%', sm: 'auto' },
+            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+            '& > *': {
+              flexGrow: { xs: 1, sm: 0 },
+            },
+          }}
+        >
+          {action}
+        </Box>
+      )}
     </Box>
   );
 };

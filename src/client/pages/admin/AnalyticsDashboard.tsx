@@ -15,6 +15,7 @@ import {
   Tooltip,
 } from 'recharts';
 import { motion } from 'framer-motion';
+import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 
 interface SalesReport {
   revenue: number;
@@ -24,6 +25,7 @@ interface SalesReport {
 }
 
 export default function AnalyticsDashboard() {
+  const { formatAmount } = useRegionalSettings();
   const { data: sales, isLoading } = useQuery<SalesReport>({
     queryKey: ['sales-analytics'],
     queryFn: async () => {
@@ -49,7 +51,7 @@ export default function AnalyticsDashboard() {
           <Grid item xs={12} sm={4}>
             <StatCard
               title="AGGREGATED SALES VOLUME"
-              value={`$${sales.revenue.toFixed(2)}`}
+              value={formatAmount(sales.revenue)}
               subtitle="All shift tickets combined"
               icon={<RevenueIcon />}
               color="emerald"
@@ -58,7 +60,7 @@ export default function AnalyticsDashboard() {
           <Grid item xs={12} sm={4}>
             <StatCard
               title="AVERAGE BASKET SIZE"
-              value={`$${sales.averageSale.toFixed(2)}`}
+              value={formatAmount(sales.averageSale)}
               subtitle="Mean amount per checkout transaction"
               icon={<SalesIcon />}
               color="violet"
@@ -100,6 +102,7 @@ export default function AnalyticsDashboard() {
                       backgroundColor: '#111827',
                       border: '1px solid rgba(255,255,255,0.08)',
                     }}
+                    formatter={(val) => [formatAmount(Number(val)), 'Sales']}
                   />
                   <Area
                     type="monotone"

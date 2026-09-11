@@ -28,8 +28,12 @@ import PageHeader from '../../components/PageHeader.tsx';
 import StatCard from '../../components/StatCard.tsx';
 import { apiClient } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
+import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
+import { CurrencySelector } from '../../components/CurrencySelector.tsx';
 
 export default function RegisterSessionManager() {
+  const { formatAmount, currencySymbol, baseCurrency, activeCurrency, convertAmount } =
+    useRegionalSettings();
   const [activeSession, setActiveSession] = useState<any | null>(null);
   const [openingFloat, setOpeningFloat] = useState<number>(200);
   const [movementModalOpen, setMovementModalOpen] = useState(false);
@@ -56,13 +60,15 @@ export default function RegisterSessionManager() {
 
   const handleOpenRegister = async () => {
     try {
+      const openingFloatInBase = convertAmount(openingFloat, activeCurrency, baseCurrency);
       const { data } = await apiClient.post('/pos/register/open', {
         registerId: 'REG-01',
         registerName: 'Main Counter Register #1',
         branchId: '000000000000000000000001',
         cashierId: 'CASHIER-01',
         cashierName: 'Alice Operator',
-        openingFloat,
+        openingFloat: openingFloatInBase,
+        currency: baseCurrency,
       });
       setActiveSession(data.data);
       toast.success('Register opened successfully!');
@@ -77,10 +83,12 @@ export default function RegisterSessionManager() {
       return;
     }
     try {
+      const amountInBase = convertAmount(movementAmount, activeCurrency, baseCurrency);
       const { data } = await apiClient.post('/pos/register/cash-movement', {
         registerId: 'REG-01',
         type: movementType,
-        amount: movementAmount,
+        amount: amountInBase,
+        currency: baseCurrency,
         reason: movementReason,
         performedBy: 'Alice Operator',
       });
@@ -96,17 +104,29 @@ export default function RegisterSessionManager() {
 
   const handleCloseRegister = async () => {
     try {
+      const closingCashInBase = convertAmount(closingCash, activeCurrency, baseCurrency);
       const { data } = await apiClient.post('/pos/register/close', {
         registerId: 'REG-01',
-        closingCash,
+        closingCash: closingCashInBase,
+        currency: baseCurrency,
         managerNotes,
       });
       setActiveSession(null);
       setCloseModalOpen(false);
-      toast.success(`Register Closed! Shift Variance: $${data.data.variance.toFixed(2)}`);
+      toast.success(`Register Closed! Shift Variance: ${formatAmount(data.data.variance)}`);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Register close failed.');
     }
+  };
+
+  const handleOpenCloseModal = () => {
+    const displayExpected = convertAmount(
+      activeSession?.expectedCash || 0,
+      baseCurrency,
+      activeCurrency
+    );
+    setClosingCash(Number(displayExpected.toFixed(2)));
+    setCloseModalOpen(true);
   };
 
   return (
@@ -115,42 +135,44 @@ export default function RegisterSessionManager() {
         title="Cash Register & Shift Manager"
         subtitle="Opening float management, cash movement tracking, and end-of-shift reconciliation"
         action={
-          activeSession ? (
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="outlined"
-                startIcon={<AddCircleIcon />}
-                onClick={() => {
-                  setMovementType('CASH_IN');
-                  setMovementModalOpen(true);
-                }}
-              >
-                Cash In
-              </Button>
-              <Button
-                variant="outlined"
-                color="warning"
-                startIcon={<RemoveCircleIcon />}
-                onClick={() => {
-                  setMovementType('CASH_OUT');
-                  setMovementModalOpen(true);
-                }}
-              >
-                Cash Out
-              </Button>
-              <Button
-                variant="contained"
-                color="error"
-                startIcon={<LockIcon />}
-                onClick={() => {
-                  setClosingCash(activeSession.expectedCash || 0);
-                  setCloseModalOpen(true);
-                }}
-              >
-                Close Register Shift
-              </Button>
-            </Box>
-          ) : null
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+            <CurrencySelector size="small" />
+            {activeSession ? (
+              <>
+                <Button
+                  variant="outlined"
+                  startIcon={<AddCircleIcon />}
+                  onClick={() => {
+                    setMovementType('CASH_IN');
+                    setMovementAmount(0);
+                    setMovementModalOpen(true);
+                  }}
+                >
+                  Cash In
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="warning"
+                  startIcon={<RemoveCircleIcon />}
+                  onClick={() => {
+                    setMovementType('CASH_OUT');
+                    setMovementAmount(0);
+                    setMovementModalOpen(true);
+                  }}
+                >
+                  Cash Out
+                </Button>
+                <Button
+                  variant="contained"
+                  color="error"
+                  startIcon={<LockIcon />}
+                  onClick={handleOpenCloseModal}
+                >
+                  Close Register Shift
+                </Button>
+              </>
+            ) : null}
+          </Box>
         }
       />
 
@@ -165,7 +187,7 @@ export default function RegisterSessionManager() {
           </Typography>
 
           <TextField
-            label="Opening Cash Float ($)"
+            label={`Opening Cash Float (${currencySymbol})`}
             type="number"
             fullWidth
             value={openingFloat}
@@ -189,7 +211,7 @@ export default function RegisterSessionManager() {
             <Grid item xs={12} sm={6} md={3}>
               <StatCard
                 title="Opening Float"
-                value={`$${activeSession.openingFloat.toFixed(2)}`}
+                value={formatAmount(activeSession.openingFloat)}
                 subtitle={`Opened by ${activeSession.cashierName}`}
                 icon={<LockOpenIcon color="primary" />}
               />
@@ -197,7 +219,7 @@ export default function RegisterSessionManager() {
             <Grid item xs={12} sm={6} md={3}>
               <StatCard
                 title="Expected Cash"
-                value={`$${(activeSession.expectedCash || 0).toFixed(2)}`}
+                value={formatAmount(activeSession.expectedCash || 0)}
                 subtitle="Calculated shift total"
                 icon={<LockIcon color="success" />}
               />
@@ -205,7 +227,7 @@ export default function RegisterSessionManager() {
             <Grid item xs={12} sm={6} md={3}>
               <StatCard
                 title="Cash Sales"
-                value={`$${(activeSession.totalCashSales || 0).toFixed(2)}`}
+                value={formatAmount(activeSession.totalCashSales || 0)}
                 subtitle="Tendered in cash"
                 icon={<PaymentsIcon color="primary" />}
               />
@@ -252,7 +274,7 @@ export default function RegisterSessionManager() {
                           size="small"
                         />
                       </TableCell>
-                      <TableCell>${m.amount.toFixed(2)}</TableCell>
+                      <TableCell>{formatAmount(m.amount)}</TableCell>
                       <TableCell>{m.reason}</TableCell>
                       <TableCell>{m.performedBy}</TableCell>
                     </TableRow>
@@ -274,7 +296,7 @@ export default function RegisterSessionManager() {
         <DialogTitle sx={{ fontWeight: 'bold' }}>Record {movementType}</DialogTitle>
         <DialogContent dividers>
           <TextField
-            label="Amount ($)"
+            label={`Amount (${currencySymbol})`}
             type="number"
             fullWidth
             value={movementAmount}
@@ -310,11 +332,11 @@ export default function RegisterSessionManager() {
         <DialogContent dividers>
           <Alert severity="info" sx={{ mb: 2 }}>
             Expected Cash in Register Drawer:{' '}
-            <strong>${(activeSession?.expectedCash || 0).toFixed(2)}</strong>
+            <strong>{formatAmount(activeSession?.expectedCash || 0)}</strong>
           </Alert>
 
           <TextField
-            label="Actual Cash Counted in Drawer ($)"
+            label={`Actual Cash Counted in Drawer (${currencySymbol})`}
             type="number"
             fullWidth
             value={closingCash}
@@ -322,25 +344,35 @@ export default function RegisterSessionManager() {
             sx={{ mb: 2 }}
           />
 
-          <Box sx={{ p: 2, bgcolor: '#f8f9fa', borderRadius: 1, mb: 2 }}>
-            <Typography variant="subtitle2" color="text.secondary">
-              Calculated Shift Variance:
-            </Typography>
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 'bold',
-                color:
-                  closingCash - (activeSession?.expectedCash || 0) === 0
-                    ? 'success.main'
-                    : closingCash - (activeSession?.expectedCash || 0) > 0
-                      ? 'info.main'
-                      : 'error.main',
-              }}
-            >
-              ${(closingCash - (activeSession?.expectedCash || 0)).toFixed(2)}
-            </Typography>
-          </Box>
+          {(() => {
+            const displayExpected = convertAmount(
+              activeSession?.expectedCash || 0,
+              baseCurrency,
+              activeCurrency
+            );
+            const displayVariance = closingCash - displayExpected;
+            return (
+              <Box sx={{ p: 2, bgcolor: '#f8f9fa', borderRadius: 1, mb: 2 }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Calculated Shift Variance:
+                </Typography>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 'bold',
+                    color:
+                      displayVariance === 0
+                        ? 'success.main'
+                        : displayVariance > 0
+                          ? 'info.main'
+                          : 'error.main',
+                  }}
+                >
+                  {formatAmount(displayVariance, { currency: activeCurrency, convert: false })}
+                </Typography>
+              </Box>
+            );
+          })()}
 
           <TextField
             label="Manager Notes / Variance Explanation"

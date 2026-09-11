@@ -11,34 +11,78 @@ import { Receipt } from '../models/Receipt.js';
 import { CRMService } from './crm.service.js';
 import { LoyaltyService } from './loyalty.service.js';
 import { ReservationService } from './reservation.service.js';
+import { Tenant } from '../models/Tenant.js';
+import { Company } from '../models/Company.js';
 import { ResilientExecutor } from '../utils/resiliency/index.js';
+import { redis } from '../database/redis.js';
 import { logger } from '../logger.js';
 import { eventBus } from '../events/eventBus.js';
+
+export type PosManualPaymentMethod = 'CASH' | 'BANK_TRANSFER' | 'CARD';
+
+function formatCleanAddress(contact?: any, fallback?: string): string {
+  const raw = contact
+    ? [
+        contact.addressLine1,
+        contact.addressLine2,
+        contact.city,
+        contact.state,
+        contact.country &&
+        contact.country.trim().toUpperCase() !== 'US' &&
+        contact.country.trim().toUpperCase() !== 'USA'
+          ? contact.country.trim()
+          : undefined,
+      ]
+        .filter(Boolean)
+        .join(', ')
+    : fallback || '';
+  if (!raw) return '';
+  const upper = raw.trim().toUpperCase().replace(/[\.,]/g, '');
+  if (upper === 'US' || upper === 'USA' || upper === 'UNITED STATES') return '';
+  const cleaned = raw
+    .trim()
+    .replace(/,\s*(US|USA|United States)$/i, '')
+    .trim();
+  return cleaned.toUpperCase() === 'US' || cleaned.toUpperCase() === 'USA' ? '' : cleaned;
+}
 
 export interface POSCartItemInput {
   productId: string;
   quantity: number;
+  priceTier?: 'RETAIL' | 'WHOLESALE';
   unitPrice?: number;
   discount?: number;
 }
 
 export interface POSCheckoutInput {
   idempotencyKey?: string;
-  branchId: string;
-  warehouseId: string;
+  tenantId?: string;
+  branchId?: string;
+  warehouseId?: string;
   cashierId: string;
   cashierName: string;
   customerId?: string;
   customerName?: string;
   customerEmail?: string;
   items: POSCartItemInput[];
-  payments: {
-    paymentMethod: IPaymentAllocation['paymentMethod'];
+  pricingMode?: 'RETAIL' | 'WHOLESALE' | 'MIXED';
+  paymentMethod?: PosManualPaymentMethod | string;
+  amountTendered?: number;
+  referenceNumber?: string;
+  payments?: {
+    paymentMethod: string;
     amount: number;
     referenceNumber?: string;
   }[];
   cartDiscount?: number;
   taxRate?: number; // e.g. 0.07 for 7%
+  subtotal?: number;
+  taxTotal?: number;
+  discountTotal?: number;
+  grandTotal?: number;
+  total?: number;
+  currency?: string;
+  channel?: string;
   notes?: string;
 }
 
@@ -75,7 +119,7 @@ export class POSService {
   }
 
   /**
-   * Process POS Checkout with split payment support, idempotency, and CRM update
+   * Process POS Checkout with single manual tender, cashier confirmation, and inventory consistency
    */
   public static async checkout(input: POSCheckoutInput): Promise<IOmnichannelOrder> {
     // 1. Idempotency Check
@@ -87,7 +131,54 @@ export class POSService {
       }
     }
 
-    // 2. Validate Cart Items & Build Details
+    // 2. Enforce Strict Manual POS Payment Boundary
+    // Reject split payment attempts
+    if (input.payments && input.payments.length > 1) {
+      throw new Error(
+        'Split payment is forbidden in POS. Each POS transaction must use a single payment method.'
+      );
+    }
+
+    let resolvedMethod = (input.paymentMethod || input.payments?.[0]?.paymentMethod || 'CASH')
+      .toString()
+      .toUpperCase()
+      .trim();
+
+    // Map common aliases
+    if (
+      resolvedMethod === 'TRANSFER' ||
+      resolvedMethod === 'BANK' ||
+      resolvedMethod === 'MOBILE_TRANSFER'
+    ) {
+      resolvedMethod = 'BANK_TRANSFER';
+    } else if (
+      resolvedMethod === 'DEBIT' ||
+      resolvedMethod === 'CREDIT' ||
+      resolvedMethod === 'POS_CARD'
+    ) {
+      resolvedMethod = 'CARD';
+    }
+
+    // Strict rejection of forbidden online gateways and split keywords
+    if (
+      resolvedMethod === 'PAYSTACK' ||
+      resolvedMethod === 'STRIPE' ||
+      resolvedMethod === 'ONLINE' ||
+      resolvedMethod === 'GATEWAY' ||
+      resolvedMethod.includes('SPLIT')
+    ) {
+      throw new Error(
+        `Payment method [${resolvedMethod}] is not permitted for in-person POS sales. POS only accepts CASH, BANK_TRANSFER, and CARD.`
+      );
+    }
+
+    if (!['CASH', 'BANK_TRANSFER', 'CARD'].includes(resolvedMethod)) {
+      throw new Error(
+        `Invalid POS payment method: [${resolvedMethod}]. Allowed methods are CASH, BANK_TRANSFER, and CARD.`
+      );
+    }
+
+    // 3. Validate Cart Items & Build Details
     if (!input.items || input.items.length === 0) {
       throw new Error('POS Cart cannot be empty.');
     }
@@ -104,7 +195,19 @@ export class POSService {
         );
       }
 
-      const unitPrice = itemInput.unitPrice ?? product.sellingPrice;
+      const priceTier: 'RETAIL' | 'WHOLESALE' =
+        itemInput.priceTier === 'WHOLESALE' ? 'WHOLESALE' : 'RETAIL';
+      const expectedPrice =
+        priceTier === 'WHOLESALE'
+          ? product.wholesalePrice && product.wholesalePrice > 0
+            ? product.wholesalePrice
+            : product.sellingPrice
+          : product.retailPrice && product.retailPrice > 0
+            ? product.retailPrice
+            : product.sellingPrice;
+
+      const unitPrice =
+        itemInput.unitPrice !== undefined ? Number(itemInput.unitPrice) : expectedPrice;
       const discount = itemInput.discount ?? 0;
       const lineTotal = Math.max(0, (unitPrice - discount) * itemInput.quantity);
 
@@ -113,6 +216,7 @@ export class POSService {
         sku: product.sku,
         name: product.name,
         quantity: itemInput.quantity,
+        priceTier,
         unitPrice,
         discount,
         tax: 0,
@@ -120,39 +224,71 @@ export class POSService {
       });
     }
 
-    // 3. Totals calculation
+    // 4. Server-Side Totals Calculation
     const calc = this.calculateCart(itemDetails, input.taxRate || 0.07, input.cartDiscount || 0);
 
-    // 4. Validate Payments Sum
-    const totalPayments = input.payments.reduce((acc, p) => acc + p.amount, 0);
-    if (Number(totalPayments.toFixed(2)) < calc.grandTotal) {
-      throw new Error(
-        `Insufficient payment amount. Total due: $${calc.grandTotal}, provided: $${totalPayments.toFixed(2)}`
-      );
+    // 5. Payment Tender & Change Validation
+    const amountTendered =
+      input.amountTendered !== undefined
+        ? Number(input.amountTendered)
+        : input.payments?.[0]?.amount || calc.grandTotal;
+
+    if (resolvedMethod === 'CASH') {
+      if (amountTendered < calc.grandTotal) {
+        throw new Error(
+          `Insufficient cash received: Insufficient payment amount. Total due: $${calc.grandTotal}, received: $${amountTendered.toFixed(2)}`
+        );
+      }
+    } else {
+      // For Bank Transfer and Physical Card, cashier confirms full amount received
+      if (amountTendered < calc.grandTotal) {
+        throw new Error(
+          `Insufficient payment amount: confirmed amount is less than total. Total due: $${calc.grandTotal}, confirmed: $${amountTendered.toFixed(2)}`
+        );
+      }
     }
 
-    // 5. Generate Order Number
+    const changeAmount =
+      resolvedMethod === 'CASH' ? Number((amountTendered - calc.grandTotal).toFixed(2)) : 0;
+
+    // 6. Generate Order Number
     const orderCount = await OmnichannelOrder.countDocuments();
     const orderNumber = `POS-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}${String(orderCount + 1).padStart(4, '0')}`;
 
-    // 6. Formulate Payments Array
-    const paymentAllocations: IPaymentAllocation[] = input.payments.map((p) => ({
-      paymentMethod: p.paymentMethod,
-      amount: p.amount,
-      referenceNumber: p.referenceNumber || `REF-${Date.now()}`,
-      status: 'PAID',
-      paidAt: new Date(),
-    }));
+    // 7. Formulate Single Payment Allocation Record
+    const refNo =
+      input.referenceNumber || input.payments?.[0]?.referenceNumber || `POS-REF-${Date.now()}`;
+    const paymentAllocations: IPaymentAllocation[] = [
+      {
+        paymentMethod: resolvedMethod as any,
+        amount: calc.grandTotal,
+        referenceNumber: refNo,
+        status: 'PAID',
+        paidAt: new Date(),
+      },
+    ];
 
-    // 7. Create Omnichannel Order Record
+    // 8. Create Omnichannel Order Record
+    const resolvedPricingMode: 'RETAIL' | 'WHOLESALE' | 'MIXED' =
+      input.pricingMode ||
+      (itemDetails.every((i) => i.priceTier === 'WHOLESALE')
+        ? 'WHOLESALE'
+        : itemDetails.some((i) => i.priceTier === 'WHOLESALE')
+          ? 'MIXED'
+          : 'RETAIL');
+
     const order = await OmnichannelOrder.create({
+      tenantId: input.tenantId,
       orderNumber,
       channel: 'POS',
+      pricingMode: resolvedPricingMode,
       customerId: input.customerId ? new mongoose.Types.ObjectId(input.customerId) : undefined,
       customerName: input.customerName || 'Walk-in Customer',
       customerEmail: input.customerEmail,
       branchId: new mongoose.Types.ObjectId(input.branchId),
-      warehouseId: new mongoose.Types.ObjectId(input.warehouseId),
+      warehouseId: input.warehouseId
+        ? new mongoose.Types.ObjectId(input.warehouseId)
+        : new mongoose.Types.ObjectId(input.branchId),
       cashierId: input.cashierId,
       cashierName: input.cashierName,
       items: itemDetails,
@@ -166,7 +302,7 @@ export class POSService {
       fulfillmentMethod: 'PICKUP',
       status: 'COMPLETED',
       idempotencyKey: input.idempotencyKey,
-      notes: input.notes,
+      notes: input.notes ? `${input.notes} | Change: $${changeAmount}` : `Change: $${changeAmount}`,
     });
 
     // 8. Deduct stock & create inventory movements
@@ -176,16 +312,46 @@ export class POSService {
       });
     }
 
+    if (input.tenantId) {
+      try {
+        await redis.del(`tenant:${input.tenantId}:products:all`);
+        await redis.del(`tenant:${input.tenantId}:products:low_stock`);
+      } catch (cacheErr) {
+        logger.warn(`Failed to clear product redis cache during POS checkout: ${cacheErr}`);
+      }
+    }
+
+    // Resolve tenant / company info for legacy transaction
+    const tenantInfo: any = input.tenantId
+      ? (await Tenant.findById(input.tenantId).lean()) ||
+        (await Tenant.findOne({ slug: input.tenantId }).lean())
+      : null;
+    const companyInfo: any = input.tenantId
+      ? await Company.findOne({ tenantId: input.tenantId }).lean()
+      : null;
+    const resolvedBizName = tenantInfo?.name || companyInfo?.name || 'Retail Store';
+
     // 9. Record POS Transaction for legacy compatibility
     await Transaction.create({
+      tenantId: input.tenantId,
+      companyName: resolvedBizName,
+      companyLogoUrl: tenantInfo?.branding?.logoUrl || companyInfo?.logoUrl,
+      companyAddress: formatCleanAddress(tenantInfo?.contact, companyInfo?.address),
+      companyPhone: tenantInfo?.contact?.phone || companyInfo?.phone,
+      companyEmail: tenantInfo?.contact?.email || companyInfo?.email,
+      companyTaxId: tenantInfo?.taxConfig?.taxId || companyInfo?.taxId,
+      receiptHeader: tenantInfo?.branding?.receiptHeader,
+      receiptFooter: tenantInfo?.branding?.receiptFooter,
       transactionNumber: orderNumber,
       type: 'SALE',
       status: 'COMPLETED',
+      pricingMode: resolvedPricingMode,
       items: itemDetails.map((i) => ({
         productId: i.productId.toString(),
         productName: i.name,
         sku: i.sku,
         quantity: i.quantity,
+        priceTier: i.priceTier,
         price: i.unitPrice,
         discount: i.discount,
         total: i.total,
@@ -194,12 +360,12 @@ export class POSService {
       tax: calc.taxTotal,
       discount: calc.discountTotal,
       total: calc.grandTotal,
-      paymentMethod: input.payments.length > 1 ? 'SPLIT' : input.payments[0].paymentMethod,
+      paymentMethod: resolvedMethod as 'CASH' | 'CARD' | 'BANK_TRANSFER',
       customerEmail: input.customerEmail,
-      cashierId: input.cashierId,
-      cashierName: input.cashierName,
-      branchId: input.branchId,
-      branchName: 'Main Store',
+      cashierId: input.cashierId || new mongoose.Types.ObjectId().toString(),
+      cashierName: input.cashierName || 'Cashier',
+      branchId: input.branchId || input.warehouseId || new mongoose.Types.ObjectId().toString(),
+      branchName: (input as any).branchName || 'Main Store',
     });
 
     // 10. Update Customer 360 & Loyalty
@@ -277,24 +443,82 @@ export class POSService {
   /**
    * Generate Receipt Metadata (58mm / 80mm printable layout)
    */
-  public static async generateReceipt(orderNumber: string, paperWidth: '58mm' | '80mm' = '80mm') {
-    const order = await OmnichannelOrder.findOne({ orderNumber });
+  public static async generateReceipt(
+    orderNumberOrId: string,
+    paperWidth: '58mm' | '80mm' = '80mm'
+  ) {
+    const order = await OmnichannelOrder.findOne(
+      mongoose.isValidObjectId(orderNumberOrId)
+        ? { $or: [{ orderNumber: orderNumberOrId }, { _id: orderNumberOrId }] }
+        : { orderNumber: orderNumberOrId }
+    );
     if (!order) {
-      throw new Error(`Order #${orderNumber} not found.`);
+      throw new Error(`Order #${orderNumberOrId} not found.`);
     }
+
+    const tenant: any = order.tenantId
+      ? (await Tenant.findById(order.tenantId).lean()) ||
+        (await Tenant.findOne({ slug: order.tenantId }).lean())
+      : null;
+    const company: any = order.tenantId
+      ? await Company.findOne({ tenantId: order.tenantId }).lean()
+      : null;
+
+    const businessName = tenant?.name || company?.name || 'Retail Store';
+    const legalName = tenant?.legalName || company?.legalName;
+    const logoUrl = tenant?.branding?.logoUrl || company?.logoUrl;
+    const address = formatCleanAddress(tenant?.contact, company?.address);
+    const phone = tenant?.contact?.phone || company?.phone || '';
+    const email = tenant?.contact?.email || company?.email || '';
+    const taxId = tenant?.taxConfig?.taxId || company?.taxId || '';
+    const headerNotice = tenant?.branding?.receiptHeader || '';
+    const footerNotice =
+      tenant?.branding?.receiptFooter ||
+      'Thank you for your patronage! Retain receipt for returns.';
 
     const receipt = {
       receiptNumber: `REC-${order.orderNumber}`,
       paperWidth,
-      businessName: 'Stockora Enterprise Superstore',
+      companyName: businessName,
+      companyLegalName: legalName,
+      companyLogoUrl: logoUrl,
+      companyAddress: address,
+      companyPhone: phone,
+      companyEmail: email,
+      companyTaxId: taxId,
+      receiptHeader: headerNotice,
+      receiptFooter: footerNotice,
+      businessName,
+      legalName,
+      logoUrl,
+      address,
+      phone,
+      email,
+      taxId,
+      headerNotice,
+      header: {
+        storeName: businessName,
+        legalName,
+        logoUrl,
+        address,
+        phone,
+        email,
+        taxId,
+        headerNotice,
+      },
       branchName: 'Central POS Branch',
       cashierName: order.cashierName || 'Cashier',
       date: order.createdAt,
       customerName: order.customerName || 'Walk-in Customer',
+      customerEmail: order.customerEmail,
+      pricingMode: (order as any).pricingMode || 'RETAIL',
       items: order.items.map((i) => ({
         name: i.name,
+        productName: i.name,
         sku: i.sku,
         qty: i.quantity,
+        quantity: i.quantity,
+        priceTier: (i as any).priceTier || 'RETAIL',
         price: i.unitPrice,
         total: i.total,
       })),
@@ -306,15 +530,17 @@ export class POSService {
         method: p.paymentMethod,
         amount: p.amount,
       })),
-      footer:
-        'Thank you for shopping at Stockora Enterprise! Retain receipt for returns within 14 days.',
+      footer: footerNotice,
+      platformAttribution: 'Powered by Stockora Enterprise',
     };
 
     await Receipt.create({
+      tenantId: order.tenantId,
       receiptNumber: receipt.receiptNumber,
       orderId: order.orderNumber,
       totalAmount: order.grandTotal,
       printedAt: new Date(),
+      data: receipt,
     }).catch(() => {});
 
     return receipt;

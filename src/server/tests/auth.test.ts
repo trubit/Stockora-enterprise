@@ -8,7 +8,7 @@ import { PasswordService } from '../services/password.service.js';
 describe('Authentication & Session Services', () => {
   beforeAll(async () => {
     if (mongoose.connection.readyState === 0) {
-      await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_auth');
+      await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_auth_service');
     }
     await Role.deleteMany({});
     await User.deleteMany({});

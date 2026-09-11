@@ -17,8 +17,10 @@ import {
   CircularProgress,
 } from '@mui/material';
 import PageHeader from '../../components/PageHeader.tsx';
+import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 
 export default function StockOptimization() {
+  const { formatAmount } = useRegionalSettings();
   const { data: optimizationData, isLoading } = useQuery({
     queryKey: ['stock-optimization'],
     queryFn: async () => {
@@ -122,7 +124,7 @@ export default function StockOptimization() {
                           </Typography>
                         </TableCell>
                         <TableCell align="right">{item.currentStock}</TableCell>
-                        <TableCell align="right">${item.holdingValue}</TableCell>
+                        <TableCell align="right">{formatAmount(item.holdingValue)}</TableCell>
                         <TableCell>
                           <Typography variant="caption" color="textSecondary">
                             {item.recommendedAction}
@@ -164,7 +166,7 @@ export default function StockOptimization() {
                           </Typography>
                         </TableCell>
                         <TableCell align="right">{item.quantity}</TableCell>
-                        <TableCell align="right">${item.capitalTiedUp}</TableCell>
+                        <TableCell align="right">{formatAmount(item.capitalTiedUp)}</TableCell>
                         <TableCell>
                           <Typography variant="caption" color="textSecondary">
                             {item.recommendedAction}

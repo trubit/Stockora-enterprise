@@ -57,6 +57,14 @@ export class ReportingService {
     return freshData;
   }
 
+  private static getTenantOrCompanyQuery(companyId: string): Record<string, any> {
+    const isOid = mongoose.Types.ObjectId.isValid(companyId);
+    const companyOid = isOid ? new mongoose.Types.ObjectId(companyId) : null;
+    return companyOid
+      ? { $or: [{ tenantId: companyId }, { companyId: companyOid }, { companyId: companyId }] }
+      : { $or: [{ tenantId: companyId }, { companyId: companyId }] };
+  }
+
   /**
    * Generates dynamic aggregations for executive dashboards by role
    */
@@ -65,15 +73,21 @@ export class ReportingService {
     const ttl = 300; // 5 minutes cache
 
     return this.getOrSetCache(cacheKey, ttl, async () => {
+      const tenantMatch = this.getTenantOrCompanyQuery(companyId);
+      const poMatch: Record<string, any> = {
+        status: { $in: ['APPROVED', 'COMPLETED', 'RECEIVED', 'BILLED'] },
+        ...tenantMatch,
+      };
+
       // 1. Basic counts
       const [totalProducts, salesStats, purchaseStats] = await Promise.all([
-        Product.countDocuments({}),
+        Product.countDocuments(tenantMatch),
         Transaction.aggregate([
-          { $match: { status: 'COMPLETED' } },
+          { $match: { ...tenantMatch, status: 'COMPLETED' } },
           { $group: { _id: null, totalSales: { $sum: '$total' }, count: { $sum: 1 } } },
         ]),
         PurchaseOrder.aggregate([
-          { $match: { status: { $in: ['APPROVED', 'COMPLETED', 'RECEIVED', 'BILLED'] } } },
+          { $match: poMatch },
           { $group: { _id: null, totalPurchases: { $sum: '$totalAmount' } } },
         ]),
       ]);
@@ -84,7 +98,7 @@ export class ReportingService {
 
       // 2. Inventory Valuation (selling price * quantity)
       const inventoryValData = await Product.aggregate([
-        { $match: { isActive: true } },
+        { $match: { ...tenantMatch, isActive: true } },
         {
           $group: {
             _id: null,
@@ -99,8 +113,9 @@ export class ReportingService {
       // 3. Simple Net profit
       const profit = salesVolume - purchasesVolume;
 
-      // System Health metrics (mocked for security limits, using active MongoDB connection)
+      // Live System Health metrics
       const dbStatus = mongoose.connection.readyState === 1 ? 'HEALTHY' : 'DEGRADED';
+      const redisStatus = redis.status === 'ready' ? 'HEALTHY' : 'DEGRADED';
 
       return {
         revenue: salesVolume,
@@ -112,7 +127,7 @@ export class ReportingService {
         totalProducts,
         systemHealth: {
           database: dbStatus,
-          redis: 'HEALTHY',
+          redis: redisStatus,
           apiGateway: 'HEALTHY',
         },
       };
@@ -125,7 +140,7 @@ export class ReportingService {
   public static async getInventoryReport(companyId: string): Promise<unknown> {
     const cacheKey = `reporting:inventory:${companyId}`;
     return this.getOrSetCache(cacheKey, 600, async () => {
-      const items = await Product.find({}).lean();
+      const items = await Product.find(this.getTenantOrCompanyQuery(companyId)).lean();
       const deadStock = items.filter((p) => p.quantity === 0 || !p.isActive);
       const lowStock = items.filter((p) => p.quantity <= p.lowStockAlert);
       const fastMoving = items.filter((p) => p.quantity > p.lowStockAlert * 3);
@@ -153,13 +168,8 @@ export class ReportingService {
   ): Promise<unknown> {
     const cacheKey = `reporting:sales:${companyId}:${startDate || 'all'}:${endDate || 'all'}`;
     return this.getOrSetCache(cacheKey, 60, async () => {
-      const matchQuery: {
-        status: string;
-        createdAt?: {
-          $gte?: Date;
-          $lte?: Date;
-        };
-      } = { status: 'COMPLETED' };
+      const baseMatch = this.getTenantOrCompanyQuery(companyId);
+      const matchQuery: Record<string, any> = { ...baseMatch, status: 'COMPLETED' };
 
       if (startDate || endDate) {
         matchQuery.createdAt = {};
@@ -188,32 +198,35 @@ export class ReportingService {
           },
         },
         { $sort: { _id: 1 } },
-        { $project: { date: '$_id', sales: 1, _id: 0 } },
       ]);
 
       return {
-        revenue: summary[0]?.totalRevenue || 0,
-        averageSale: summary[0]?.averageSale || 0,
-        count: summary[0]?.transactionCount || 0,
-        chartData,
+        summary: summary[0] || { totalRevenue: 0, averageSale: 0, transactionCount: 0 },
+        trend: chartData.map((d) => ({ date: d._id, sales: d.sales })),
       };
     });
   }
 
   /**
-   * Retrieve KPI Engine Performance list
+   * Evaluates system and customizable Business Key Performance Indicators
    */
-  public static async getKPIs(companyId: string): Promise<unknown[]> {
+  public static async getKPIs(companyId: string): Promise<unknown> {
     const cacheKey = `reporting:kpis:${companyId}`;
     return this.getOrSetCache(cacheKey, 300, async () => {
+      const tenantMatch = this.getTenantOrCompanyQuery(companyId);
+      const poMatch: Record<string, any> = {
+        status: 'COMPLETED',
+        ...tenantMatch,
+      };
+
       // Perform aggregation to calculate real-time values for KPI definitions
       const [salesSum, poSum] = await Promise.all([
         Transaction.aggregate([
-          { $match: { status: 'COMPLETED' } },
+          { $match: { ...tenantMatch, status: 'COMPLETED' } },
           { $group: { _id: null, total: { $sum: '$total' } } },
         ]),
         PurchaseOrder.aggregate([
-          { $match: { status: 'COMPLETED' } },
+          { $match: poMatch },
           { $group: { _id: null, total: { $sum: '$totalAmount' } } },
         ]),
       ]);

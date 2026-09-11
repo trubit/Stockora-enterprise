@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Box, Typography, Button, Container } from '@mui/material';
+import { appNavigate } from '../utils/navigation.ts';
 
 interface Props {
   children?: ReactNode;
@@ -26,11 +27,16 @@ export class ErrorBoundary extends Component<Props, State> {
 
   private handleReset = () => {
     this.setState({ hasError: false, error: null });
-    window.location.href = '/';
+    appNavigate('/', { replace: true });
   };
 
   public override render() {
     if (this.state.hasError) {
+      const errorMsg =
+        typeof this.state.error?.message === 'string'
+          ? this.state.error.message
+          : 'An unexpected layout error occurred.';
+
       return (
         <Container maxWidth="sm">
           <Box
@@ -51,7 +57,7 @@ export class ErrorBoundary extends Component<Props, State> {
               Something went wrong in the application shell.
             </Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
-              {this.state.error?.message || 'An unexpected layout error occurred.'}
+              {errorMsg}
             </Typography>
             <Button
               variant="contained"

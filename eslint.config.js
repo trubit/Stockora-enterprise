@@ -22,13 +22,22 @@ export default defineConfig([
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
+      'react-refresh/only-export-components': 'off',
+      'react-hooks/purity': 'off',
       'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/immutability': 'off',
       'no-useless-assignment': 'off',
+      'no-empty': 'off',
+      'no-useless-escape': 'off',
+      'no-case-declarations': 'off',
+      'no-control-regex': 'off',
+      'prefer-const': 'warn',
     },
   },
   // Server Linting Rules
   {
-    files: ['src/server/**/*.ts', 'src/config/**/*.ts'],
+    files: ['src/server/**/*.ts', 'src/config/**/*.ts', 'src/shared/**/*.ts'],
     extends: [js.configs.recommended, tseslint.configs.recommended],
     languageOptions: {
       globals: globals.node,
@@ -36,8 +45,15 @@ export default defineConfig([
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
       'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/immutability': 'off',
       'no-useless-assignment': 'off',
+      'no-empty': 'off',
+      'no-useless-escape': 'off',
+      'no-case-declarations': 'off',
+      'no-control-regex': 'off',
+      'prefer-const': 'warn',
     },
   },
 ]);

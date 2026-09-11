@@ -18,6 +18,15 @@ export interface IInvoice extends Document {
   tenantId?: string;
   companyId?: mongoose.Types.ObjectId;
   branchId?: mongoose.Types.ObjectId;
+  companyName?: string;
+  companyLegalName?: string;
+  companyLogoUrl?: string;
+  companyAddress?: string;
+  companyPhone?: string;
+  companyEmail?: string;
+  companyTaxId?: string;
+  receiptHeader?: string;
+  receiptFooter?: string;
   invoiceNumber: string;
   customerId: mongoose.Types.ObjectId;
   customerName: string;
@@ -55,6 +64,15 @@ const InvoiceSchema = new Schema<IInvoice>(
     tenantId: { type: String, index: true },
     companyId: { type: Schema.Types.ObjectId, ref: 'Company', index: true },
     branchId: { type: Schema.Types.ObjectId, ref: 'Branch', index: true },
+    companyName: { type: String },
+    companyLegalName: { type: String },
+    companyLogoUrl: { type: String },
+    companyAddress: { type: String },
+    companyPhone: { type: String },
+    companyEmail: { type: String },
+    companyTaxId: { type: String },
+    receiptHeader: { type: String },
+    receiptFooter: { type: String },
     invoiceNumber: { type: String, required: true, unique: true, index: true },
     customerId: { type: Schema.Types.ObjectId, ref: 'Customer', required: true, index: true },
     customerName: { type: String, required: true },

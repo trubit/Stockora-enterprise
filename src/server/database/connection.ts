@@ -48,9 +48,20 @@ export class DBConnectionManager {
         }
       );
 
+      if ((config.isTest || process.env.VITEST) && mongoose.connection.name === 'stockora') {
+        logger.error(
+          'CRITICAL: Test runner connected to development database "stockora". Aborting.'
+        );
+        await mongoose.connection.close();
+        throw new Error(
+          'FATAL: Attempted to run test suite against development database "stockora". Tests must connect to stockora_test.'
+        );
+      }
+
       logger.info(`MongoDB Connected successfully: ${mongoose.connection.host}`);
     } catch (err) {
       logger.error('Failed to establish MongoDB database pool:', err);
+      throw err;
     }
   }
 

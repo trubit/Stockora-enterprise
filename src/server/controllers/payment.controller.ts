@@ -4,7 +4,7 @@ import { Transaction, type ITransaction } from '../models/Transaction.js';
 import { Product } from '../models/Product.js';
 import { Receipt } from '../models/Receipt.js';
 import { PaymentService, type PaymentProvider } from '../services/payment.service.js';
-import { ValidationError, NotFoundError } from '../errors/AppError.js';
+import { ValidationError, NotFoundError, AuthorizationError } from '../errors/AppError.js';
 import { logger } from '../logger.js';
 import { Branch } from '../models/Branch.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
@@ -17,7 +17,7 @@ const io = SocketManager.getInstance();
 const initializeCheckoutSchema = z.object({
   email: z.string().email('Invalid customer email address'),
   provider: z.enum(['PAYSTACK', 'STRIPE']),
-  paymentMethod: z.enum(['CARD', 'MOBILE']),
+  paymentMethod: z.enum(['CARD', 'MOBILE', 'CASH', 'SPLIT']),
   items: z
     .array(
       z.object({
@@ -25,16 +25,14 @@ const initializeCheckoutSchema = z.object({
         productName: z.string(),
         sku: z.string(),
         quantity: z.number().int().positive(),
-        price: z.number().nonnegative(),
+        price: z.number().nonnegative().optional(),
         discount: z.number().nonnegative().default(0),
-        total: z.number().nonnegative(),
+        total: z.number().nonnegative().optional(),
       })
     )
     .min(1, 'At least one item is required in the cart'),
   discount: z.number().nonnegative().default(0),
   tax: z.number().nonnegative().default(0),
-  subtotal: z.number().nonnegative(),
-  total: z.number().nonnegative(),
   currency: z.string().default('USD'),
 });
 
@@ -46,12 +44,13 @@ const verifyCheckoutSchema = z.object({
 const refundCheckoutSchema = z.object({
   reference: z.string().min(3, 'Reference is required'),
   amount: z.number().positive('Refund amount must be positive'),
+  reason: z.string().optional(),
 });
 
 export class PaymentController {
   /**
-   * Safe transaction checkout initialization. Creates a pending transaction record
-   * and initializes gateway session.
+   * Safe transaction checkout initialization.
+   * Calculates prices strictly from database records to prevent client-side price tampering.
    */
   public static async initializeCheckout(
     req: Request,
@@ -61,12 +60,15 @@ export class PaymentController {
     try {
       const payload = initializeCheckoutSchema.parse(req.body);
 
-      // Verify stock levels before initiating payment session
+      // Server-side authoritative price & inventory calculation
+      let calculatedSubtotal = 0;
+      const verifiedItems = [];
+
       for (const item of payload.items) {
         const product = await Product.findById(item.productId);
         if (!product) {
           throw new ValidationError(
-            `Product ${item.productName} (ID: ${item.productId}) not found.`
+            `Product ${item.productName} (ID: ${item.productId}) not found in catalog.`
           );
         }
         if (product.quantity < item.quantity) {
@@ -74,7 +76,24 @@ export class PaymentController {
             `Insufficient inventory for ${item.productName}. Available: ${product.quantity}, Requested: ${item.quantity}`
           );
         }
+
+        const authoritativePrice = product.price || product.sellingPrice || 0;
+        const itemDiscount = item.discount || 0;
+        const itemTotal = Math.max(0, authoritativePrice * item.quantity - itemDiscount);
+
+        calculatedSubtotal += itemTotal;
+        verifiedItems.push({
+          productId: product._id.toString(),
+          productName: product.name,
+          sku: product.sku,
+          quantity: item.quantity,
+          price: authoritativePrice,
+          discount: itemDiscount,
+          total: itemTotal,
+        });
       }
+
+      const calculatedTotal = Math.max(0, calculatedSubtotal - payload.discount + payload.tax);
 
       // Generate a unique reference number
       const reference = `TX-PAY-${Date.now().toString().slice(-6)}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
@@ -82,23 +101,23 @@ export class PaymentController {
       // Dynamically resolve cashier and branch information
       const authReq = req as AuthenticatedRequest;
       const user = authReq.user;
-      const cashierId = user?.id || 'cashier-1';
+      const cashierId = user?.id || 'cashier-pos';
       const cashierName = user?.username || 'POS Cashier';
 
       const activeBranch = await Branch.findOne({ isActive: true });
-      const branchId = activeBranch?._id?.toString() || 'branch-1';
+      const branchId = activeBranch?._id?.toString() || 'branch-default';
       const branchName = activeBranch?.name || 'Primary Branch';
 
-      // Create standard transaction but mark it as PENDING
+      // Create standard transaction marked as PENDING
       const transaction = await Transaction.create({
         transactionNumber: reference,
         type: 'SALE',
         status: 'PENDING',
-        items: payload.items,
-        subtotal: payload.subtotal,
+        items: verifiedItems,
+        subtotal: calculatedSubtotal,
         tax: payload.tax,
         discount: payload.discount,
-        total: payload.total,
+        total: calculatedTotal,
         paymentMethod: payload.paymentMethod,
         currencyCode: payload.currency.toUpperCase(),
         exchangeRate: 1.0,
@@ -117,17 +136,22 @@ export class PaymentController {
           const urlObj = new URL(referer);
           frontendOrigin = urlObj.origin;
         } catch {
-          // ignore
+          // ignore invalid referer URL
         }
       }
 
       // Call payment service with resiliency protection
       const paymentResult = await PaymentService.initialize(payload.provider, {
         email: payload.email,
-        amount: payload.total,
+        amount: calculatedTotal,
         currency: payload.currency,
         reference,
         callbackUrl: `${frontendOrigin}/pos?provider=${payload.provider}&reference=${reference}`,
+        metadata: {
+          transactionId: transaction._id.toString(),
+          cashierId,
+          branchId,
+        },
       });
 
       res.status(200).json({
@@ -135,6 +159,7 @@ export class PaymentController {
         transactionId: transaction._id,
         reference: paymentResult.reference,
         amount: paymentResult.amount,
+        currency: paymentResult.currency,
         authorizationUrl: paymentResult.authorizationUrl, // For Paystack redirection
         clientSecret: paymentResult.clientSecret, // For Stripe card elements mounting
         gatewayTransactionId: paymentResult.gatewayTransactionId,
@@ -279,8 +304,6 @@ export class PaymentController {
       if (result.success) {
         res.json(result);
       } else {
-        // Return 200 so the client can inspect result.success cleanly without Axios throwing.
-        // A 400 here fires the global error interceptor and swallows the useful gatewayResponse.
         res.status(200).json({
           ...result,
           message: result.gatewayResponse || 'Payment not yet confirmed by gateway.',
@@ -300,7 +323,7 @@ export class PaymentController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { reference, amount } = refundCheckoutSchema.parse(req.body);
+      const { reference, amount, reason } = refundCheckoutSchema.parse(req.body);
 
       const transaction = await Transaction.findOne({ transactionNumber: reference });
       if (!transaction) {
@@ -315,7 +338,7 @@ export class PaymentController {
         transaction.paymentMethod === 'MOBILE' ? 'PAYSTACK' : 'STRIPE';
 
       // Perform gateway refund
-      const refundResult = await PaymentService.refund(provider, reference, amount);
+      const refundResult = await PaymentService.refund(provider, reference, amount, reason);
 
       if (refundResult.success) {
         // Return products to inventory stock ledger
@@ -344,6 +367,74 @@ export class PaymentController {
       } else {
         throw new Error('Gateway rejected refund request');
       }
+    } catch (err: unknown) {
+      next(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/checkout/history
+   * Returns transaction history with pagination.
+   */
+  public static async getTransactionHistory(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+      const skip = (page - 1) * limit;
+
+      const filter: Record<string, unknown> = {};
+      if (req.query.status) {
+        filter.status = req.query.status;
+      }
+      if (req.query.paymentMethod) {
+        filter.paymentMethod = req.query.paymentMethod;
+      }
+      if (req.query.branchId) {
+        filter.branchId = req.query.branchId;
+      }
+
+      const [transactions, total] = await Promise.all([
+        Transaction.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+        Transaction.countDocuments(filter),
+      ]);
+
+      res.json({
+        success: true,
+        data: transactions,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      });
+    } catch (err: unknown) {
+      next(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/checkout/receipts/:transactionNumber
+   * Returns receipt details for a transaction.
+   */
+  public static async getPaymentReceipt(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { transactionNumber } = req.params;
+      const receipt = await Receipt.findOne({ transactionNumber }).lean();
+
+      if (!receipt) {
+        throw new NotFoundError(`Receipt for transaction ${transactionNumber} not found.`);
+      }
+
+      res.json({ success: true, data: receipt });
     } catch (err: unknown) {
       next(err);
     }

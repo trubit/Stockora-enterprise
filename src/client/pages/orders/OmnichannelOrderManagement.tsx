@@ -26,8 +26,10 @@ import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { apiClient } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
+import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 
 export default function OmnichannelOrderManagement() {
+  const { formatAmount } = useRegionalSettings();
   const [isPending, startTransition] = useTransition();
   const [orders, setOrders] = useState<any[]>([]);
   const [channelFilter, setChannelFilter] = useState<string>('');
@@ -163,7 +165,7 @@ export default function OmnichannelOrderManagement() {
                     </TableCell>
                     <TableCell>{o.customerName || 'Walk-in'}</TableCell>
                     <TableCell>{o.items.length} item(s)</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>${o.grandTotal.toFixed(2)}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>{formatAmount(o.grandTotal)}</TableCell>
                     <TableCell>
                       <StatusChip status={o.paymentStatus} />
                     </TableCell>
@@ -240,9 +242,9 @@ export default function OmnichannelOrderManagement() {
                   <TableRow key={idx}>
                     <TableCell>{i.sku}</TableCell>
                     <TableCell>{i.name}</TableCell>
-                    <TableCell>${i.unitPrice.toFixed(2)}</TableCell>
+                    <TableCell>{formatAmount(i.unitPrice)}</TableCell>
                     <TableCell>{i.quantity}</TableCell>
-                    <TableCell align="right">${i.total.toFixed(2)}</TableCell>
+                    <TableCell align="right">{formatAmount(i.total)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

@@ -29,6 +29,7 @@ import AnalyticsIcon from '@mui/icons-material/Analytics';
 import CostIcon from '@mui/icons-material/MonetizationOn';
 import SpeedIcon from '@mui/icons-material/Speed';
 import { toast } from 'react-hot-toast';
+import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 
 interface Message {
   sender: 'USER' | 'ASSISTANT';
@@ -77,6 +78,7 @@ interface ForecastingReport {
 const textFieldStyle = { mt: 1 };
 
 export default function AIAssistant() {
+  const { formatAmount } = useRegionalSettings();
   const [activeTab, setActiveTab] = useState(0);
   const [prompt, setPrompt] = useState('');
   const [chatHistory, setChatHistory] = useState<Message[]>([
@@ -92,7 +94,7 @@ export default function AIAssistant() {
   // Fetch telemetry usage
   const {
     data: usage = {
-      providerName: 'MOCK',
+      providerName: 'Enterprise AI',
       totalRequests: 0,
       totalPromptTokens: 0,
       totalCompletionTokens: 0,
@@ -264,7 +266,7 @@ export default function AIAssistant() {
                 Accumulated API Cost
               </Typography>
               <Typography variant="h5" sx={{ fontWeight: 800, color: 'secondary.light' }}>
-                ${usage.totalEstimatedCost.toFixed(5)}
+                {formatAmount(usage.totalEstimatedCost)}
               </Typography>
             </Box>
           </Paper>
@@ -431,7 +433,7 @@ export default function AIAssistant() {
                       <ListItem key={idx} sx={{ p: 0.5 }}>
                         <ListItemText
                           primary={f.name}
-                          secondary={`Sold: ${f.quantitySold} units • Total Revenue: $${f.revenue.toFixed(2)}`}
+                          secondary={`Sold: ${f.quantitySold} units • Total Revenue: ${formatAmount(f.revenue)}`}
                         />
                       </ListItem>
                     ))}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../api/client.ts';
+import { toast } from 'react-hot-toast';
 import {
   Box,
   Typography,
@@ -40,7 +41,8 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import CodeIcon from '@mui/icons-material/Code';
 import ScheduleSendIcon from '@mui/icons-material/ScheduleSend';
-import { toast } from 'react-hot-toast';
+import { notify } from '../../utils/notify.ts';
+import { useConfirm } from '../../context/ConfirmDialogContext.tsx';
 import { socket } from '../../socket.ts';
 
 // ---- Types ------------------------------------------------------------------
@@ -88,6 +90,7 @@ const textFieldStyle = { mt: 1 };
 // ---- Component --------------------------------------------------------------
 
 export default function CommunicationCenter() {
+  const confirm = useConfirm();
   const [activeTab, setActiveTab] = useState(0);
   const [unreadOnly, setUnreadOnly] = useState(false);
 
@@ -166,29 +169,33 @@ export default function CommunicationCenter() {
   const markAllReadMutation = useMutation({
     mutationFn: async () => (await apiClient.patch('/notifications/mark-all-read')).data,
     onSuccess: (data: { markedRead: number }) => {
-      toast.success(`Marked ${data.markedRead} notifications as read.`);
+      notify.success(`Marked ${data.markedRead} notifications as read.`);
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => (await apiClient.delete(`/notifications/${id}`)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+    onSuccess: () => {
+      notify.success('Notification removed.');
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
   });
 
   const broadcastMutation = useMutation({
     mutationFn: async (payload: Record<string, unknown>) =>
       (await apiClient.post('/notifications/broadcast', payload)).data,
     onSuccess: () => {
-      toast.success(
+      notify.success(
         bUseSchedule ? 'Notification scheduled.' : 'Broadcast dispatched to all targets.'
       );
       setOpenBroadcastDialog(false);
       resetBroadcastForm();
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
-    onError: (err: { response?: { data?: { error?: { message?: string } } } }) =>
-      toast.error(err.response?.data?.error?.message || 'Broadcast failed.'),
+    onError: (err: any) => {
+      notify.error(err, { fallback: 'Broadcast failed.' });
+    },
   });
 
   const templateMutation = useMutation({
@@ -388,7 +395,17 @@ export default function CommunicationCenter() {
                           <IconButton
                             size="small"
                             color="error"
-                            onClick={() => deleteMutation.mutate(n._id)}
+                            onClick={async () => {
+                              const confirmed = await confirm({
+                                title: 'Delete Notification',
+                                message: `Are you sure you want to remove notification "${n.title}"?`,
+                                confirmText: 'Delete',
+                                severity: 'error',
+                              });
+                              if (confirmed) {
+                                deleteMutation.mutate(n._id);
+                              }
+                            }}
                           >
                             <DeleteOutlineIcon fontSize="small" />
                           </IconButton>

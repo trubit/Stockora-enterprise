@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { Response, NextFunction } from 'express';
 import { Company } from '../models/Company.js';
 import { Branch } from '../models/Branch.js';
 import { Warehouse } from '../models/Warehouse.js';
@@ -9,9 +9,18 @@ import type { AuthenticatedRequest } from '../middleware/auth.js';
 
 export class OrgController {
   // --- Company ---
-  public static async getCompany(_req: Request, res: Response, next: NextFunction): Promise<void> {
+  public static async getCompany(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
-      const company = await Company.findOne();
+      const tenantId = req.tenantId;
+      const filter = tenantId ? { tenantId } : {};
+      let company = await Company.findOne(filter);
+      if (!company && !tenantId) {
+        company = await Company.findOne();
+      }
       res.json(company || null);
     } catch (err: unknown) {
       next(err);
@@ -23,21 +32,35 @@ export class OrgController {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    const { name, currency, timeZone } = req.body;
+    const { name, currency, timeZone, address, phone, legalName, email, website } = req.body;
     if (!name) {
       return next(new ValidationError('Company name is required.'));
     }
 
     try {
-      const existing = await Company.findOne();
-      if (existing) {
-        return next(new ValidationError('Company profile already exists.'));
+      const tenantId = req.tenantId;
+      if (tenantId) {
+        const existing = await Company.findOne({ tenantId });
+        if (existing) {
+          return next(new ValidationError('Company profile already exists for this tenant.'));
+        }
       }
 
-      const company = await Company.create({ name, currency, timeZone });
+      const company = await Company.create({
+        tenantId: tenantId || undefined,
+        name,
+        legalName: legalName || name,
+        currency: currency || 'USD',
+        timeZone: timeZone || 'UTC',
+        address,
+        phone,
+        email,
+        website,
+      });
 
       await AuditLog.create({
         userId: req.user?.id,
+        tenantId: req.tenantId,
         action: 'CREATE',
         targetModel: 'Company',
         targetId: company._id.toString(),
@@ -56,7 +79,12 @@ export class OrgController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const company = await Company.findOne();
+      const tenantId = req.tenantId;
+      const filter = tenantId ? { tenantId } : {};
+      let company = await Company.findOne(filter);
+      if (!company) {
+        company = await Company.findOne();
+      }
       if (!company) {
         return next(new NotFoundError('Company not found.'));
       }
@@ -73,6 +101,7 @@ export class OrgController {
 
       await AuditLog.create({
         userId: req.user?.id,
+        tenantId: req.tenantId,
         action: 'UPDATE',
         targetModel: 'Company',
         targetId: company._id.toString(),
@@ -88,12 +117,14 @@ export class OrgController {
 
   // --- Branch ---
   public static async listBranches(
-    _req: Request,
+    req: AuthenticatedRequest,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
-      const branches = await Branch.find();
+      const tenantId = req.tenantId;
+      const filter = tenantId ? { tenantId } : {};
+      const branches = await Branch.find(filter).sort({ name: 1 });
       res.json(branches);
     } catch (err: unknown) {
       next(err);
@@ -105,27 +136,41 @@ export class OrgController {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    const { companyId, name, code, address, phone } = req.body;
-    if (!companyId || !name || !code) {
-      return next(new ValidationError('Company ID, name, and code are required.'));
+    const { companyId, name, code, address, phone, email, timezone } = req.body;
+    if (!name || !code) {
+      return next(new ValidationError('Name and branch code are required.'));
     }
 
     try {
-      const existingBranch = await Branch.findOne({ code: code.toUpperCase() });
+      const tenantId = req.tenantId;
+      let resolvedCompanyId = companyId;
+      if (!resolvedCompanyId && tenantId) {
+        const company = await Company.findOne({ tenantId });
+        resolvedCompanyId = company?._id;
+      }
+
+      const existingBranch = await Branch.findOne({
+        ...(tenantId ? { tenantId } : {}),
+        code: code.toUpperCase(),
+      });
       if (existingBranch) {
         return next(new ValidationError(`Branch code [${code.toUpperCase()}] already exists.`));
       }
 
       const branch = await Branch.create({
-        companyId,
+        tenantId: tenantId || undefined,
+        companyId: resolvedCompanyId,
         name,
         code: code.toUpperCase(),
         address,
         phone,
+        email,
+        timezone: timezone || 'UTC',
       });
 
       await AuditLog.create({
         userId: req.user?.id,
+        tenantId: req.tenantId,
         action: 'CREATE',
         targetModel: 'Branch',
         targetId: branch._id.toString(),
@@ -140,12 +185,14 @@ export class OrgController {
 
   // --- Warehouse ---
   public static async listWarehouses(
-    _req: Request,
+    req: AuthenticatedRequest,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
-      const warehouses = await Warehouse.find();
+      const tenantId = req.tenantId;
+      const filter = tenantId ? { tenantId } : {};
+      const warehouses = await Warehouse.find(filter).sort({ name: 1 });
       res.json(warehouses);
     } catch (err: unknown) {
       next(err);
@@ -157,27 +204,34 @@ export class OrgController {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    const { branchId, name, code, zones, capacity } = req.body;
+    const { branchId, name, code, zones, capacity, warehouseType } = req.body;
     if (!branchId || !name || !code) {
       return next(new ValidationError('Branch ID, name, and code are required.'));
     }
 
     try {
-      const existingWarehouse = await Warehouse.findOne({ code: code.toUpperCase() });
+      const tenantId = req.tenantId;
+      const existingWarehouse = await Warehouse.findOne({
+        ...(tenantId ? { tenantId } : {}),
+        code: code.toUpperCase(),
+      });
       if (existingWarehouse) {
         return next(new ValidationError(`Warehouse code [${code.toUpperCase()}] already exists.`));
       }
 
       const warehouse = await Warehouse.create({
+        tenantId: tenantId || undefined,
         branchId,
         name,
         code: code.toUpperCase(),
+        warehouseType: warehouseType || 'MAIN',
         zones,
         capacity,
       });
 
       await AuditLog.create({
         userId: req.user?.id,
+        tenantId: req.tenantId,
         action: 'CREATE',
         targetModel: 'Warehouse',
         targetId: warehouse._id.toString(),
@@ -192,12 +246,12 @@ export class OrgController {
 
   // --- Master Data ---
   public static async listMasterData(
-    req: Request,
+    req: AuthenticatedRequest,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     const { type } = req.query;
-    const filter = type ? { type: String(type).toUpperCase() } : {};
+    const filter: Record<string, unknown> = type ? { type: String(type).toUpperCase() } : {};
     try {
       const masterList = await MasterData.find(filter);
       res.json(masterList);
@@ -221,6 +275,7 @@ export class OrgController {
 
       await AuditLog.create({
         userId: req.user?.id,
+        tenantId: req.tenantId,
         action: 'CREATE',
         targetModel: 'MasterData',
         targetId: data._id.toString(),

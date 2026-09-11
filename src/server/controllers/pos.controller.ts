@@ -8,7 +8,11 @@ export class POSController {
    */
   public static async checkout(req: Request, res: Response) {
     try {
-      const order = await POSService.checkout(req.body);
+      const tenantId = (req as any).tenantId || (req as any).user?.tenantId || req.body.tenantId;
+      const order = await POSService.checkout({
+        ...req.body,
+        tenantId,
+      });
       res.status(201).json({ success: true, data: order });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -100,13 +104,15 @@ export class POSController {
   public static async openRegister(req: Request, res: Response) {
     try {
       const { registerId, registerName, branchId, cashierId, cashierName, openingFloat } = req.body;
+      const tenantId = (req as any).tenantId || (req as any).user?.tenantId;
       const session = await RegisterSessionService.openRegister(
         registerId,
         registerName,
         branchId,
         cashierId,
         cashierName,
-        Number(openingFloat)
+        Number(openingFloat),
+        tenantId
       );
       res.status(201).json({ success: true, data: session });
     } catch (err: unknown) {
@@ -164,6 +170,70 @@ export class POSController {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       res.status(500).json({ success: false, message: msg });
+    }
+  }
+
+  /**
+   * GET /api/v1/pos/register/shift-summary
+   * Calculates live shift revenue strictly from active register sessions and transactions
+   * belonging to the active company. Returns 0 if no active shift or no transactions exist.
+   */
+  public static async getShiftSummary(req: Request, res: Response) {
+    try {
+      const tenantId = (req as any).tenantId || (req as any).user?.tenantId;
+      if (!tenantId) {
+        res.status(200).json({
+          success: true,
+          shiftRevenue: 0,
+          shiftSalesCount: 0,
+          hasActiveShift: false,
+        });
+        return;
+      }
+
+      const { RegisterSession } = await import('../models/RegisterSession.js');
+      const { Transaction } = await import('../models/Transaction.js');
+
+      // Find active register session for this tenant
+      const activeSession = await RegisterSession.findOne({
+        tenantId,
+        status: 'OPEN',
+      }).sort({ openedAt: -1 });
+
+      if (!activeSession) {
+        res.status(200).json({
+          success: true,
+          shiftRevenue: 0,
+          shiftSalesCount: 0,
+          hasActiveShift: false,
+        });
+        return;
+      }
+
+      const transactions = await Transaction.find({
+        tenantId,
+        status: 'COMPLETED',
+        type: 'SALE',
+        createdAt: { $gte: activeSession.openedAt },
+      }).lean();
+
+      const shiftRevenue = transactions.reduce((sum, tx) => sum + (tx.total || 0), 0);
+
+      res.status(200).json({
+        success: true,
+        shiftRevenue,
+        shiftSalesCount: transactions.length,
+        hasActiveShift: true,
+        registerName: activeSession.registerName,
+        openedAt: activeSession.openedAt,
+      });
+    } catch (err: unknown) {
+      res.status(200).json({
+        success: true,
+        shiftRevenue: 0,
+        shiftSalesCount: 0,
+        hasActiveShift: false,
+      });
     }
   }
 }

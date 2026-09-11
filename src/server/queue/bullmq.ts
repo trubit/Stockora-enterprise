@@ -62,7 +62,19 @@ export class QueueManager {
     try {
       // Dynamic import to avoid circular deps — redis.ts is already initialised by now
       const { redis } = await import('../database/redis.js');
-      const info: string = await redis.info('server');
+      if (redis.status !== 'ready') {
+        logger.info(
+          '[BullMQ] Redis not ready at startup — BullMQ disabled; falling back to Node.js setInterval scheduler.'
+        );
+        QueueManager.isRedisCompatible = false;
+        return false;
+      }
+
+      const infoPromise = redis.info('server');
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Redis info probe timeout')), 2000)
+      );
+      const info: string = await Promise.race([infoPromise, timeoutPromise]);
       const match = info.match(/redis_version:(\d+)\.\d+\.\d+/);
       if (match) {
         const major = parseInt(match[1], 10);
@@ -78,8 +90,10 @@ export class QueueManager {
         QueueManager.isRedisCompatible = true;
         return true;
       }
-    } catch (err) {
-      logger.warn('[BullMQ] Could not determine Redis version — assuming incompatible.', err);
+    } catch (err: any) {
+      logger.warn(
+        `[BullMQ] Could not determine Redis version (${err?.message || err}) — assuming incompatible.`
+      );
       QueueManager.isRedisCompatible = false;
     }
     return QueueManager.isRedisCompatible;
@@ -175,7 +189,7 @@ export class QueueManager {
   // ---- Metrics --------------------------------------------------------------
 
   public async getQueueMetrics(): Promise<QueueMetric[]> {
-    if (!QueueManager.isRedisCompatible) {
+    if (!QueueManager.isRedisCompatible || this.queues.size === 0) {
       return [
         {
           name: 'system-automation',
@@ -238,12 +252,20 @@ export class QueueManager {
   public async shutdown(): Promise<void> {
     logger.info('Closing all BullMQ queues and workers...');
     for (const [name, queue] of this.queues.entries()) {
-      await queue.close();
-      logger.info(`Queue [${name}] closed.`);
+      try {
+        await queue.close();
+        logger.info(`Queue [${name}] closed.`);
+      } catch {
+        // ignore
+      }
     }
     for (const [name, worker] of this.workers.entries()) {
-      await worker.close();
-      logger.info(`Worker [${name}] closed.`);
+      try {
+        await worker.close();
+        logger.info(`Worker [${name}] closed.`);
+      } catch {
+        // ignore
+      }
     }
   }
 }

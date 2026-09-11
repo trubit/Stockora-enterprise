@@ -97,6 +97,5 @@ const PutAwayTaskSchema = new Schema<IPutAwayTask>(
 );
 
 PutAwayTaskSchema.index({ warehouseId: 1, status: 1 });
-PutAwayTaskSchema.index({ goodsReceiptId: 1 });
 
 export const PutAwayTask = mongoose.model<IPutAwayTask>('PutAwayTask', PutAwayTaskSchema);

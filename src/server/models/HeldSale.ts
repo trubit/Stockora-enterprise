@@ -5,6 +5,7 @@ export interface IHeldSaleItem {
   sku: string;
   name: string;
   quantity: number;
+  priceTier?: 'RETAIL' | 'WHOLESALE';
   unitPrice: number;
   discount: number;
   total: number;
@@ -29,6 +30,7 @@ const HeldSaleItemSchema = new Schema<IHeldSaleItem>({
   sku: { type: String, required: true },
   name: { type: String, required: true },
   quantity: { type: Number, required: true, min: 1 },
+  priceTier: { type: String, enum: ['RETAIL', 'WHOLESALE'], default: 'RETAIL' },
   unitPrice: { type: Number, required: true, min: 0 },
   discount: { type: Number, default: 0 },
   total: { type: Number, required: true, min: 0 },

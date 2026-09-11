@@ -15,243 +15,216 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TablePagination,
 } from '@mui/material';
 import AIIcon from '@mui/icons-material/AutoAwesome';
-import CompareIcon from '@mui/icons-material/CompareArrows';
 import TrendingIcon from '@mui/icons-material/TrendingUp';
-import client from '../../api/client';
+import CompareIcon from '@mui/icons-material/CompareArrows';
+import { api } from '../../api/client.ts';
+import { toast } from 'react-hot-toast';
+import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 
 export default function ProcurementAnalyticsDashboard() {
-  const [recommendations, setRecommendations] = useState<any[]>([]);
-  const [compareProductId, setCompareProductId] = useState('bread');
-  const [comparisonResult, setComparisonResult] = useState<any>(null);
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [aiResponse, setAiResponse] = useState<any>(null);
+  const { formatAmount } = useRegionalSettings();
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [prompt, setPrompt] = useState('');
+  const [copilotReply, setCopilotReply] = useState('');
 
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-
-  const fetchReorderRecommendations = async () => {
+  const fetchAnalytics = async () => {
     try {
-      const res = await client.get('/procurement/ai/reorder-recommendations');
-      const data = res.data?.data ? res.data.data : Array.isArray(res.data) ? res.data : [];
-      setRecommendations(data);
+      const res = await api.get('/procurement-advanced/analytics');
+      setAnalytics(res.data);
     } catch {
-      // Fallback
+      toast.error('Failed to load procurement analytics.');
     }
   };
 
   useEffect(() => {
-    fetchReorderRecommendations();
+    fetchAnalytics();
   }, []);
 
-  const handleChangePage = (_: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const handleCompareSuppliers = async () => {
-    if (!compareProductId) return;
-    try {
-      const res = await client.get(
-        `/procurement/ai/compare-suppliers/${encodeURIComponent(compareProductId)}`
-      );
-      setComparisonResult(res.data);
-    } catch {
-      // Fallback
-    }
-  };
-
   const handleAskCopilot = async () => {
-    if (!aiPrompt) return;
+    if (!prompt.trim()) return;
     try {
-      const res = await client.post('/procurement/ai/copilot', { prompt: aiPrompt });
-      setAiResponse(res.data);
-    } catch {
-      // Fallback
+      const res = await api.post('/copilot/chat', { message: prompt });
+      setCopilotReply(
+        res.data?.reply || res.data?.answer || res.data?.message || 'Advisory analysis complete.'
+      );
+    } catch (err: any) {
+      setCopilotReply(
+        'AI Procurement Intelligence is currently unavailable or unconfigured. Please ensure GEMINI_API_KEY is configured.'
+      );
+      toast.error('AI Advisory request failed.');
     }
   };
-
-  const cleanText = (str: string) => {
-    if (!str) return '';
-    return str
-      .replace(/#{1,6}\s*/g, '')
-      .replace(/\*\*\*(.*?)\*\*\*/g, '$1')
-      .replace(/\*\*(.*?)\*\*/g, '$1')
-      .replace(/\*(.*?)\*/g, '$1')
-      .replace(/`([^`]+)`/g, '$1')
-      .trim();
-  };
-
-  const displayedRecs = recommendations.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
-    <Box p={3}>
-      <Typography variant="h4" fontWeight="bold" color="primary" mb={1}>
-        Procurement Analytics & Supply-Chain Intelligence
+    <Box sx={{ p: 3, background: '#0b0f19', minHeight: '100vh', color: '#f8fafc' }}>
+      <Typography
+        variant="h4"
+        sx={{
+          fontWeight: 800,
+          color: '#8b5cf6',
+          mb: 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+        }}
+      >
+        <TrendingIcon fontSize="large" /> Procurement Analytics & Spend Intelligence
       </Typography>
-      <Typography variant="body2" color="text.secondary" mb={3}>
-        Demand-aware reorder recommendations, supplier price comparison matrix, and executive AI
-        copilot
+      <Typography variant="body2" sx={{ color: '#9ca3af', mb: 3 }}>
+        Supplier spend breakdown, PO cycle times, quality rejection rates, and AI reorder
+        recommendations
       </Typography>
 
-      <Grid container spacing={3} mb={4}>
-        {/* Demand-Aware Reorder Intelligence */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        {/* Spend by Supplier Table */}
         <Grid item xs={12} md={7}>
-          <Paper elevation={2} sx={{ p: 3 }}>
-            <Box display="flex" alignItems="center" gap={1} mb={2}>
-              <TrendingIcon color="primary" />
-              <Typography variant="h6" fontWeight="bold">
-                AI Demand-Aware Reorder Recommendations
-              </Typography>
-            </Box>
+          <Paper
+            sx={{
+              p: 3,
+              background: '#111827',
+              border: '1px solid #1f2937',
+              borderRadius: 3,
+              color: '#f8fafc',
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: '#f8fafc' }}>
+              Supplier Spend & Performance Metrics
+            </Typography>
             <TableContainer>
               <Table size="small">
-                <TableHead>
-                  <TableRow sx={{ bgcolor: 'action.hover' }}>
-                    <TableCell>Product</TableCell>
-                    <TableCell>Stock / Alert</TableCell>
-                    <TableCell>Recommended Qty</TableCell>
-                    <TableCell>Lead Time</TableCell>
-                    <TableCell>Est. Cost</TableCell>
+                <TableHead sx={{ background: '#1f2937' }}>
+                  <TableRow>
+                    <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Supplier</TableCell>
+                    <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Category</TableCell>
+                    <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>POs</TableCell>
+                    <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Total Spend</TableCell>
+                    <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Score</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {displayedRecs.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} align="center">
-                        <Typography color="text.secondary" py={2}>
-                          All inventory stock levels are healthy.
-                        </Typography>
+                  {analytics?.spendBySupplier?.map((s: any) => (
+                    <TableRow key={s.supplierId} sx={{ '&:hover': { background: '#1e293b' } }}>
+                      <TableCell sx={{ color: '#f8fafc', fontWeight: 600 }}>
+                        {s.supplierName}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={s.category}
+                          size="small"
+                          sx={{ background: '#374151', color: '#cbd5e1' }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ color: '#9ca3af' }}>{s.poCount}</TableCell>
+                      <TableCell sx={{ color: '#34d399', fontWeight: 700 }}>
+                        {formatAmount(s.totalSpend || 0)}
+                      </TableCell>
+                      <TableCell sx={{ color: '#fbbf24', fontWeight: 700 }}>
+                        {s.overallScore}%
                       </TableCell>
                     </TableRow>
-                  ) : (
-                    displayedRecs.map((rec) => (
-                      <TableRow key={rec.productId || rec.sku}>
-                        <TableCell sx={{ fontWeight: 'bold' }}>{rec.productName}</TableCell>
-                        <TableCell>
-                          {rec.currentStock} / {rec.lowStockAlert}
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={`${rec.recommendedOrderQuantity} units`}
-                            color="primary"
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>{rec.leadTimeDays} days</TableCell>
-                        <TableCell>${(rec.estimatedCost || 0).toLocaleString()}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
+                  ))}
                 </TableBody>
               </Table>
             </TableContainer>
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25]}
-              component="div"
-              count={recommendations.length}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-            />
           </Paper>
         </Grid>
 
-        {/* Supplier Comparison Matrix */}
+        {/* AI Reorder Intelligence */}
         <Grid item xs={12} md={5}>
-          <Paper elevation={2} sx={{ p: 3 }}>
-            <Box display="flex" alignItems="center" gap={1} mb={2}>
-              <CompareIcon color="secondary" />
-              <Typography variant="h6" fontWeight="bold">
-                Supplier Price & Quality Comparison
+          <Paper
+            sx={{
+              p: 3,
+              background: '#111827',
+              border: '1px solid #1f2937',
+              borderRadius: 3,
+              color: '#f8fafc',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <CompareIcon sx={{ color: '#fbbf24' }} />
+              <Typography variant="h6" sx={{ fontWeight: 700, color: '#f8fafc' }}>
+                AI Stockout Risk & Reorder Advisory
               </Typography>
             </Box>
-            <Box display="flex" gap={1} mb={2}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Product ID / SKU / Name"
-                value={compareProductId}
-                onChange={(e) => setCompareProductId(e.target.value)}
-                placeholder="e.g. bread, SKU-101"
-              />
-              <Button variant="contained" color="secondary" onClick={handleCompareSuppliers}>
-                Compare
-              </Button>
-            </Box>
-
-            {comparisonResult && (
-              <Box bgcolor="action.hover" p={2} borderRadius={1}>
-                <Typography variant="subtitle2" fontWeight="bold" color="secondary.main">
-                  Top Recommended Supplier: {comparisonResult.recommendedSupplier}
+            {analytics?.aiProcurementAdvisory?.reorderRecommendations?.map((r: any) => (
+              <Box
+                key={r.productId}
+                sx={{
+                  p: 2,
+                  mb: 1.5,
+                  borderRadius: 2,
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 700, color: '#38bdf8' }}>
+                  {r.name} ({r.sku})
                 </Typography>
-                <Typography variant="body2" mt={0.5} color="text.primary">
-                  {cleanText(comparisonResult.reason)}
+                <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block', mt: 0.5 }}>
+                  Current Stock: {r.currentStock} units
                 </Typography>
-
-                {comparisonResult.suppliers && comparisonResult.suppliers.length > 0 && (
-                  <Box mt={2}>
-                    <Typography variant="caption" fontWeight="bold" color="text.secondary">
-                      Vendor Options:
-                    </Typography>
-                    {comparisonResult.suppliers.map((s: any, idx: number) => (
-                      <Box key={idx} display="flex" justifyContent="space-between" mt={0.5}>
-                        <Typography variant="body2">{s.supplierName}</Typography>
-                        <Typography variant="body2" fontWeight="bold">
-                          ${s.purchaseCost} ({s.leadTimeDays}d lead time)
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Box>
-                )}
+                <Chip
+                  label={`Reorder: ${r.recommendedQty} units`}
+                  size="small"
+                  sx={{
+                    mt: 1,
+                    background: 'rgba(16, 185, 129, 0.2)',
+                    color: '#34d399',
+                    fontWeight: 700,
+                  }}
+                />
               </Box>
-            )}
+            ))}
           </Paper>
         </Grid>
       </Grid>
 
-      {/* Conversational AI Procurement Copilot */}
-      <Paper elevation={2} sx={{ p: 3 }}>
-        <Box display="flex" alignItems="center" gap={1} mb={2}>
-          <AIIcon color="primary" />
-          <Typography variant="h6" fontWeight="bold">
+      {/* AI Procurement Copilot */}
+      <Paper
+        sx={{
+          p: 3,
+          background: '#111827',
+          border: '1px solid #1f2937',
+          borderRadius: 3,
+          color: '#f8fafc',
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <AIIcon sx={{ color: '#fbbf24' }} />
+          <Typography variant="h6" sx={{ fontWeight: 700, color: '#fbbf24' }}>
             Executive AI Procurement Copilot
           </Typography>
         </Box>
-
-        <Box display="flex" gap={2} mb={2}>
+        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
           <TextField
             fullWidth
-            placeholder="Ask Copilot: 'Which supplier', 'Which suppliers have high lead times?' or 'Why did purchase costs increase?'..."
-            value={aiPrompt}
-            onChange={(e) => setAiPrompt(e.target.value)}
+            placeholder="Ask Copilot: 'Which suppliers are performing poorly?' or 'What products need urgent reorder?'..."
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            InputLabelProps={{ style: { color: '#9ca3af' } }}
+            InputProps={{ style: { color: '#fff' } }}
           />
-          <Button variant="contained" color="primary" onClick={handleAskCopilot}>
+          <Button
+            variant="contained"
+            onClick={handleAskCopilot}
+            sx={{ background: '#8b5cf6', color: '#fff', px: 3 }}
+          >
             Ask Copilot
           </Button>
         </Box>
-
-        {aiResponse && (
-          <Card variant="outlined" sx={{ bgcolor: 'action.hover' }}>
+        {copilotReply && (
+          <Card
+            sx={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: 2,
+            }}
+          >
             <CardContent>
-              <Typography variant="caption" color="text.secondary">
-                Query: {aiResponse.query}
-              </Typography>
-              <Typography
-                variant="body1"
-                mt={1.5}
-                lineHeight={1.6}
-                fontWeight="medium"
-                color="text.primary"
-              >
-                {cleanText(aiResponse.reply)}
+              <Typography variant="body2" sx={{ color: '#f8fafc', lineHeight: 1.6 }}>
+                {copilotReply}
               </Typography>
             </CardContent>
           </Card>

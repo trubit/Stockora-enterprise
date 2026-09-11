@@ -31,8 +31,8 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { apiClient } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 import type { Product, Supplier } from '../../../shared/types.js';
-import { useAuthStore } from '../../store/auth.ts';
 import { motion } from 'framer-motion';
+import { usePermission } from '../../hooks/usePermission.js';
 
 const textFieldStyle = {};
 
@@ -79,9 +79,8 @@ export default function PurchaseOrders() {
   const [activeTab, setActiveTab] = useState(0);
   const [prOpen, setPrOpen] = useState(false);
   const [poOpen, setPoOpen] = useState(false);
-  const { user } = useAuthStore();
 
-  const isAdmin = user?.roleName === 'Company Owner' || user?.roleName === 'Super Administrator';
+  const canWriteSuppliers = usePermission('suppliers:write');
 
   // Fetch requisitions
   const { data: requisitions = [], refetch: refetchPRs } = useQuery<Requisition[]>({
@@ -275,36 +274,38 @@ export default function PurchaseOrders() {
           >
             Purchasing & Procurement
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
-              variant="outlined"
-              startIcon={<AddIcon />}
-              onClick={() => setPrOpen(true)}
-              sx={{ textTransform: 'none', px: 2, borderColor: 'rgba(255,255,255,0.08)' }}
-            >
-              New Requisition
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setPoOpen(true)}
-              sx={{
-                fontWeight: 700,
-                px: 3,
-                py: 1.2,
-                borderRadius: 2.5,
-                textTransform: 'none',
-                background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
-                boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
-                '&:hover': {
-                  background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
-                  boxShadow: '0 6px 20px rgba(139, 92, 246, 0.45)',
-                },
-              }}
-            >
-              Create PO
-            </Button>
-          </Box>
+          {canWriteSuppliers && (
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="outlined"
+                startIcon={<AddIcon />}
+                onClick={() => setPrOpen(true)}
+                sx={{ textTransform: 'none', px: 2, borderColor: 'rgba(255,255,255,0.08)' }}
+              >
+                New Requisition
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setPoOpen(true)}
+                sx={{
+                  fontWeight: 700,
+                  px: 3,
+                  py: 1.2,
+                  borderRadius: 2.5,
+                  textTransform: 'none',
+                  background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                  boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
+                  '&:hover': {
+                    background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
+                    boxShadow: '0 6px 20px rgba(139, 92, 246, 0.45)',
+                  },
+                }}
+              >
+                Create PO
+              </Button>
+            </Box>
+          )}
         </Box>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
           Control procurement replenishments, request approvals, and record purchase orders.
@@ -383,7 +384,7 @@ export default function PurchaseOrders() {
                       </TableCell>
                       <TableCell>{new Date(pr.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell sx={{ textAlign: 'right' }}>
-                        {pr.status === 'PENDING_APPROVAL' && isAdmin && (
+                        {pr.status === 'PENDING_APPROVAL' && canWriteSuppliers && (
                           <>
                             <Tooltip title="Approve">
                               <IconButton
@@ -478,7 +479,7 @@ export default function PurchaseOrders() {
                       </TableCell>
                       <TableCell>{new Date(po.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell sx={{ textAlign: 'right' }}>
-                        {po.status === 'PENDING_APPROVAL' && isAdmin && (
+                        {po.status === 'PENDING_APPROVAL' && canWriteSuppliers && (
                           <Button
                             variant="contained"
                             size="small"

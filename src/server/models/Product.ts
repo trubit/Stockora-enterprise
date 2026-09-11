@@ -9,6 +9,7 @@ export interface IProductVariant {
 }
 
 export interface IProduct extends Document {
+  tenantId?: string;
   sku: string;
   name: string;
   description?: string;
@@ -66,7 +67,8 @@ const ProductVariantSchema = new Schema<IProductVariant>({
 
 const ProductSchema = new Schema<IProduct>(
   {
-    sku: { type: String, required: true, unique: true, index: true, trim: true },
+    tenantId: { type: String, index: true, default: 'default' },
+    sku: { type: String, required: true, index: true, trim: true },
     name: { type: String, required: true, trim: true },
     description: { type: String },
     category: { type: String, required: true, index: true, default: 'General' },
@@ -118,6 +120,11 @@ const ProductSchema = new Schema<IProduct>(
   { timestamps: true }
 );
 
+ProductSchema.index({ tenantId: 1, sku: 1 });
+ProductSchema.index({ tenantId: 1, category: 1 });
+ProductSchema.index({ tenantId: 1, status: 1 });
+ProductSchema.index({ tenantId: 1, createdAt: -1 });
+
 ProductSchema.pre('validate', function (next) {
   if (this.costPrice === undefined && this.cost !== undefined) {
     this.costPrice = this.cost;
@@ -128,4 +135,5 @@ ProductSchema.pre('validate', function (next) {
   next();
 });
 
-export const Product = mongoose.model<IProduct>('Product', ProductSchema);
+export const Product =
+  mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema);

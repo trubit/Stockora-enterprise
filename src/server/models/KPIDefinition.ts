@@ -1,7 +1,8 @@
 import mongoose, { Schema, type Document } from 'mongoose';
 
 export interface IKPIDefinition extends Document {
-  companyId: mongoose.Types.ObjectId;
+  tenantId?: string;
+  companyId?: mongoose.Types.ObjectId;
   code: string; // e.g. "REV_GROWTH", "NET_PROFIT_MARGIN"
   name: string;
   category: 'FINANCE' | 'SALES' | 'INVENTORY' | 'SUPPLIER' | 'EMPLOYEE';
@@ -16,7 +17,8 @@ export interface IKPIDefinition extends Document {
 
 const KPIDefinitionSchema = new Schema<IKPIDefinition>(
   {
-    companyId: { type: Schema.Types.ObjectId, ref: 'Company', required: true, index: true },
+    tenantId: { type: String, default: 'default', index: true },
+    companyId: { type: Schema.Types.ObjectId, ref: 'Company', index: true },
     code: { type: String, required: true, index: true },
     name: { type: String, required: true },
     category: {
@@ -33,6 +35,7 @@ const KPIDefinitionSchema = new Schema<IKPIDefinition>(
   { timestamps: true }
 );
 
-KPIDefinitionSchema.index({ companyId: 1, code: 1 }, { unique: true });
+KPIDefinitionSchema.index({ tenantId: 1, code: 1 }, { unique: true, sparse: true });
+KPIDefinitionSchema.index({ companyId: 1, code: 1 }, { unique: false, sparse: true });
 
 export const KPIDefinition = mongoose.model<IKPIDefinition>('KPIDefinition', KPIDefinitionSchema);

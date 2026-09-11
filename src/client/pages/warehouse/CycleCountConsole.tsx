@@ -1,251 +1,138 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Grid,
-  Button,
-  TextField,
-  MenuItem,
   Paper,
-  Chip,
+  Button,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  Chip,
 } from '@mui/material';
-import CountIcon from '@mui/icons-material/QrCodeScanner';
-import ApproveIcon from '@mui/icons-material/CheckCircle';
+import CalculateIcon from '@mui/icons-material/Calculate';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { api } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 
 export default function CycleCountConsole() {
-  const [warehouses, setWarehouses] = useState<any[]>([]);
-  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
-  const [countType, setCountType] = useState('SCHEDULED');
-  const [isBlindCount, setIsBlindCount] = useState(true);
-  const [activeCount, setActiveCount] = useState<any>(null);
-  const [countInputs, setCountInputs] = useState<Record<string, number>>({});
+  const [counts, setCounts] = useState<any[]>([]);
+
+  const fetchCounts = async () => {
+    try {
+      const res = await api.get('/warehouse-advanced/counts');
+      setCounts(res.data || []);
+    } catch {
+      toast.error('Failed to load cycle counts.');
+    }
+  };
 
   useEffect(() => {
-    api
-      .get('/warehouses')
-      .then((res: any) => {
-        const whList = res.data || [];
-        setWarehouses(whList);
-        if (whList.length > 0) setSelectedWarehouseId(whList[0]._id);
-      })
-      .catch((err) => console.error(err));
+    fetchCounts();
   }, []);
 
-  const handleCreateCount = async () => {
+  const handleReconcile = async (id: string) => {
     try {
-      const res = await api.post('/warehouses/cycle-count', {
-        warehouseId: selectedWarehouseId || 'wh-main',
-        countType,
-        isBlindCount,
-      });
-
-      setActiveCount(res.data);
-      toast.success(`Cycle count [${res.data.countNumber}] created!`);
+      await api.post(`/warehouse-advanced/counts/${id}/reconcile`);
+      toast.success('Stock count reconciled successfully!');
+      fetchCounts();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to create cycle count');
-    }
-  };
-
-  const handleSubmitCounts = async () => {
-    if (!activeCount) return;
-    const items = Object.entries(countInputs).map(([itemId, countedQuantity]) => ({
-      itemId,
-      countedQuantity,
-    }));
-
-    try {
-      const res = await api.post(`/warehouses/cycle-count/${activeCount._id}/submit`, { items });
-      setActiveCount(res.data);
-      toast.success(
-        res.data.status === 'REVIEW_REQUIRED'
-          ? 'Count submitted! Variance requires supervisor approval.'
-          : 'Count submitted & adjustments automatically applied!'
-      );
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to submit count');
-    }
-  };
-
-  const handleApproveCount = async () => {
-    if (!activeCount) return;
-    try {
-      const res = await api.post(`/warehouses/cycle-count/${activeCount._id}/approve`);
-      setActiveCount(res.data);
-      toast.success('Cycle count adjustments approved and posted to inventory!');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to approve cycle count');
+      toast.error(err.response?.data?.message || 'Failed to reconcile count.');
     }
   };
 
   return (
-    <Box sx={{ p: 3, background: '#0b0f19', minHeight: '100vh', color: '#f3f4f6' }}>
+    <Box sx={{ p: 3, background: '#0b0f19', minHeight: '100vh', color: '#f8fafc' }}>
       <Box sx={{ mb: 3 }}>
         <Typography
           variant="h4"
           sx={{
-            fontWeight: 700,
-            color: '#6366f1',
+            fontWeight: 800,
+            color: '#8b5cf6',
             display: 'flex',
             alignItems: 'center',
             gap: 1.5,
           }}
         >
-          <CountIcon fontSize="large" /> Cycle Counting & Stock Audits
+          <CalculateIcon fontSize="large" /> Scheduled Cycle Counting Console
         </Typography>
-        <Typography variant="body2" sx={{ color: '#9ca3af' }}>
-          Execute blind cycle counts, audit stock variances, and trigger approval-driven
-          adjustments.
+        <Typography variant="body2" sx={{ color: '#9ca3af', mt: 0.5 }}>
+          Manage recurring cycle count rotations, review physical counts & reconcile inventory
+          variances
         </Typography>
       </Box>
 
-      {/* Warehouse Selector */}
-      {warehouses.length > 0 && (
-        <Box sx={{ mb: 3, display: 'flex', gap: 1 }}>
-          {warehouses.map((wh) => (
-            <Button
-              key={wh._id}
-              variant={selectedWarehouseId === wh._id ? 'contained' : 'outlined'}
-              onClick={() => setSelectedWarehouseId(wh._id)}
-            >
-              {wh.name} ({wh.code})
-            </Button>
-          ))}
-        </Box>
-      )}
-
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, background: '#1e293b', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <Typography variant="h6" sx={{ color: '#fff', mb: 2, fontWeight: 600 }}>
-              Create New Count Task
-            </Typography>
-
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <TextField
-                select
-                label="Count Type"
-                value={countType}
-                onChange={(e) => setCountType(e.target.value)}
-                fullWidth
-              >
-                {['SCHEDULED', 'RANDOM', 'ABC', 'LOCATION', 'PRODUCT'].map((t) => (
-                  <MenuItem key={t} value={t}>
-                    {t}
-                  </MenuItem>
-                ))}
-              </TextField>
-
-              <Button
-                variant={isBlindCount ? 'contained' : 'outlined'}
-                onClick={() => setIsBlindCount(!isBlindCount)}
-                color="secondary"
-              >
-                Blind Count Mode: {isBlindCount ? 'ON (Expected Hidden)' : 'OFF'}
-              </Button>
-
-              <Button
-                variant="contained"
-                onClick={handleCreateCount}
-                sx={{ background: '#6366f1' }}
-              >
-                Generate Cycle Count Task
-              </Button>
-            </Box>
-          </Paper>
-        </Grid>
-
-        {activeCount && (
-          <Grid item xs={12} md={8}>
-            <Paper sx={{ p: 3, background: '#1e293b', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                <Typography variant="h6" sx={{ color: '#818cf8', fontWeight: 700 }}>
-                  Count Task: {activeCount.countNumber}
-                </Typography>
-                <Chip
-                  label={activeCount.status}
-                  color={activeCount.status === 'COMPLETED' ? 'success' : 'warning'}
-                />
-              </Box>
-
-              <TableContainer sx={{ mb: 2 }}>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow sx={{ '& th': { color: '#9ca3af' } }}>
-                      <TableCell>Location</TableCell>
-                      <TableCell>Product</TableCell>
-                      {!activeCount.isBlindCount && <TableCell>Expected</TableCell>}
-                      <TableCell>Physical Count</TableCell>
-                      {activeCount.status !== 'ASSIGNED' && <TableCell>Variance</TableCell>}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {activeCount.items?.map((item: any) => (
-                      <TableRow key={item._id} sx={{ '& td': { color: '#fff' } }}>
-                        <TableCell sx={{ fontWeight: 600, color: '#818cf8' }}>
-                          {item.locationCode}
-                        </TableCell>
-                        <TableCell>
-                          {item.name} ({item.sku})
-                        </TableCell>
-                        {!activeCount.isBlindCount && (
-                          <TableCell>{item.expectedQuantity}</TableCell>
-                        )}
-                        <TableCell>
-                          <TextField
-                            size="small"
-                            type="number"
-                            value={countInputs[item._id] ?? (item.countedQuantity || 0)}
-                            onChange={(e) =>
-                              setCountInputs({ ...countInputs, [item._id]: Number(e.target.value) })
-                            }
-                            sx={{ width: 90 }}
-                          />
-                        </TableCell>
-                        {activeCount.status !== 'ASSIGNED' && (
-                          <TableCell
-                            sx={{
-                              color: item.variance === 0 ? '#10b981' : '#ef4444',
-                              fontWeight: 700,
-                            }}
-                          >
-                            {item.variance > 0 ? `+${item.variance}` : item.variance}
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                {activeCount.status === 'ASSIGNED' && (
-                  <Button variant="contained" color="primary" onClick={handleSubmitCounts}>
-                    Submit Count Results
-                  </Button>
-                )}
-                {activeCount.status === 'REVIEW_REQUIRED' && (
-                  <Button
-                    variant="contained"
-                    color="warning"
-                    startIcon={<ApproveIcon />}
-                    onClick={handleApproveCount}
-                  >
-                    Approve Variance & Post Adjustments
-                  </Button>
-                )}
-              </Box>
-            </Paper>
-          </Grid>
-        )}
-      </Grid>
+      <Paper
+        sx={{
+          p: 3,
+          background: '#111827',
+          border: '1px solid #1f2937',
+          borderRadius: 3,
+          color: '#f8fafc',
+        }}
+      >
+        <TableContainer>
+          <Table>
+            <TableHead sx={{ background: '#1f2937' }}>
+              <TableRow>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Count #</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Count Type</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Total Items</TableCell>
+                <TableCell sx={{ color: '#9ca3af', fontWeight: 600 }}>Status</TableCell>
+                <TableCell align="right" sx={{ color: '#9ca3af', fontWeight: 600 }}>
+                  Actions
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {counts.map((cnt) => (
+                <TableRow key={cnt._id} sx={{ '&:hover': { background: '#1e293b' } }}>
+                  <TableCell sx={{ color: '#818cf8', fontWeight: 700 }}>
+                    {cnt.countNumber}
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={cnt.countType || 'CYCLE'}
+                      size="small"
+                      sx={{ background: '#374151', color: '#cbd5e1', fontWeight: 600 }}
+                    />
+                  </TableCell>
+                  <TableCell sx={{ color: '#cbd5e1' }}>{cnt.items?.length || 0} Products</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={cnt.status}
+                      size="small"
+                      sx={{
+                        fontWeight: 600,
+                        background:
+                          cnt.status === 'COMPLETED'
+                            ? 'rgba(16, 185, 129, 0.2)'
+                            : 'rgba(245, 158, 11, 0.2)',
+                        color: cnt.status === 'COMPLETED' ? '#34d399' : '#fbbf24',
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    {cnt.status !== 'COMPLETED' && (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        startIcon={<CheckCircleIcon />}
+                        onClick={() => handleReconcile(cnt._id)}
+                        sx={{ background: '#10b981', color: '#fff' }}
+                      >
+                        Reconcile Variance
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
     </Box>
   );
 }

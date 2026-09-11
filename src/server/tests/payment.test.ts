@@ -9,7 +9,7 @@ import { PaymentController } from '../controllers/payment.controller.js';
 // Mock axios globally for tests
 vi.mock('axios');
 
-describe('Secure Payment Gateway & Resiliency tests', () => {
+describe('Secure Multi-Provider Payment Gateway & Zero-Trust Verification Tests', () => {
   let productId: string;
 
   beforeAll(async () => {
@@ -68,7 +68,31 @@ describe('Secure Payment Gateway & Resiliency tests', () => {
     expect(result.reference).toBe('TX-PAY-123456');
   });
 
-  it('should verify payment successfully directly with the provider', async () => {
+  it('should resiliently initialize a Stripe PaymentIntent session', async () => {
+    const mockStripeResponse = {
+      data: {
+        id: 'pi_test_stripe_123',
+        client_secret: 'pi_test_stripe_123_secret_xyz',
+        amount: 30000,
+        currency: 'usd',
+      },
+    };
+    vi.mocked(axios.post).mockResolvedValueOnce(mockStripeResponse);
+
+    const result = await PaymentService.initialize('STRIPE', {
+      email: 'stripe-buyer@test.com',
+      amount: 300.0,
+      currency: 'USD',
+      reference: 'TX-STRIPE-123',
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.clientSecret).toBe('pi_test_stripe_123_secret_xyz');
+    expect(result.gatewayTransactionId).toBe('pi_test_stripe_123');
+    expect(result.reference).toBe('TX-STRIPE-123');
+  });
+
+  it('should verify payment successfully directly with Paystack', async () => {
     const mockAxiosResponse = {
       data: {
         status: true,
@@ -91,8 +115,27 @@ describe('Secure Payment Gateway & Resiliency tests', () => {
     expect(verification.currency).toBe('NGN');
   });
 
+  it('should verify payment successfully directly with Stripe', async () => {
+    const mockStripeVerifyResponse = {
+      data: {
+        id: 'pi_test_stripe_456',
+        status: 'succeeded',
+        amount: 30000, // $300.00 USD in cents
+        currency: 'usd',
+        metadata: { reference: 'TX-STRIPE-VERIFY-1' },
+      },
+    };
+    vi.mocked(axios.get).mockResolvedValueOnce(mockStripeVerifyResponse);
+
+    const verification = await PaymentService.verify('STRIPE', 'pi_test_stripe_456', 300.0, 'USD');
+
+    expect(verification.success).toBe(true);
+    expect(verification.status).toBe('COMPLETED');
+    expect(verification.amount).toBe(300.0);
+    expect(verification.currency).toBe('USD');
+  });
+
   it('should block double-spend and verify details mismatch strictly', async () => {
-    // Create a mock transaction record
     const reference = 'TX-SEC-FRAUD-1';
     await Transaction.create({
       transactionNumber: reference,
@@ -144,6 +187,48 @@ describe('Secure Payment Gateway & Resiliency tests', () => {
     // Check database state updated to CANCELLED
     const updatedTx = await Transaction.findOne({ transactionNumber: reference });
     expect(updatedTx?.status).toBe('CANCELLED');
+  });
+
+  it('should guarantee idempotency on multiple verify calls for already COMPLETED transaction', async () => {
+    const reference = 'TX-IDEMPOTENT-1';
+    const tx = await Transaction.create({
+      transactionNumber: reference,
+      type: 'SALE',
+      status: 'COMPLETED',
+      items: [
+        {
+          productId,
+          productName: 'Resilient Payment Terminal',
+          sku: 'SKU-CARD-PAY-1',
+          quantity: 1,
+          price: 300.0,
+          discount: 0,
+          total: 300.0,
+        },
+      ],
+      subtotal: 300.0,
+      tax: 0,
+      total: 300.0,
+      paymentMethod: 'CARD',
+      currencyCode: 'USD',
+      cashierId: 'cashier-1',
+      cashierName: 'POS Operator',
+      branchId: 'branch-1',
+      branchName: 'Main HQ',
+    });
+
+    const productBefore = await Product.findById(productId);
+    const quantityBefore = productBefore?.quantity || 0;
+
+    // Verify call on already completed transaction
+    const result = await PaymentController.verifyAndProcessPayment('PAYSTACK', reference);
+
+    expect(result.success).toBe(true);
+    expect(result.status).toBe('COMPLETED');
+
+    // Inventory must not be deducted again
+    const productAfter = await Product.findById(productId);
+    expect(productAfter?.quantity).toBe(quantityBefore);
   });
 
   it('should retry transient connection errors using ResilientExecutor exponential backoff', async () => {

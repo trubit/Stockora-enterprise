@@ -2,7 +2,7 @@ import { Supplier } from '../models/Supplier.js';
 import { SupplierProduct } from '../models/SupplierProduct.js';
 import { Product } from '../models/Product.js';
 import { PurchaseOrder } from '../models/PurchaseOrder.js';
-import { AIService } from './ai/ai.service.js';
+import { geminiService } from './ai/gemini/gemini.service.js';
 import { resolveProductEntity, resolveSupplierEntity } from './procurement.service.js';
 
 export function sanitizeTextForOutput(text: string): string {
@@ -163,13 +163,22 @@ export class ProcurementCopilotService {
         rawReply = `Apex Industrial Supplies is currently recommended as the primary enterprise vendor. They maintain a 98% quality rating, 5-day average lead time, and optimal price stability.`;
       }
     } else {
-      const aiService = AIService.getInstance();
       const context = `Active Suppliers: ${suppliers.length}. Open POs: ${openPOs.length}. Customer Prompt: ${userPrompt}`;
-      const responseText = await aiService.executePrompt(
-        context,
-        'You are an executive procurement and supply chain advisor. Answer concisely in clear, direct English without using markdown hash symbols, bold symbols, or raw context echoes.'
-      );
-      rawReply = responseText;
+      try {
+        const response = await geminiService.generateContent({
+          tenantId: 'global',
+          action: 'procurement_copilot',
+          systemInstruction:
+            'You are an executive procurement and supply chain advisor. Answer concisely in clear, direct English without using markdown hash symbols, bold symbols, or raw context echoes.',
+          prompt: context,
+          responseMimeType: 'text/plain',
+          temperature: 0.2,
+        });
+        rawReply = response.content;
+      } catch {
+        rawReply =
+          'AI procurement analysis is temporarily unavailable. Please review active suppliers and purchase orders in the procurement table.';
+      }
     }
 
     const cleanReply = sanitizeTextForOutput(rawReply);

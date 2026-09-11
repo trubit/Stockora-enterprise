@@ -28,13 +28,16 @@ import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { apiClient } from '../../api/client.ts';
-import { toast } from 'react-hot-toast';
+import { notify } from '../../utils/notify.ts';
+import { useConfirm } from '../../context/ConfirmDialogContext.tsx';
 import type { Customer } from '../../../shared/types.js';
 import { motion } from 'framer-motion';
+import { Can } from '../../components/auth/Can.tsx';
 
 const textFieldStyle = {};
 
 export default function Customers() {
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -68,7 +71,7 @@ export default function Customers() {
       return await apiClient.post('/customers', newCustomer);
     },
     onSuccess: () => {
-      toast.success('Customer registered successfully!');
+      notify.success('Customer created successfully!');
       setOpen(false);
       reset();
       refetch();
@@ -83,7 +86,7 @@ export default function Customers() {
       );
     },
     onSuccess: () => {
-      toast.success('Customer updated successfully!');
+      notify.success('Customer updated successfully!');
       setOpen(false);
       setEditingCustomer(null);
       reset();
@@ -96,7 +99,7 @@ export default function Customers() {
       return await apiClient.delete(`/customers/${id}`);
     },
     onSuccess: () => {
-      toast.success('Customer deactivated successfully.');
+      notify.success('Customer deactivated successfully.');
       refetch();
     },
   });
@@ -164,26 +167,28 @@ export default function Customers() {
           >
             Customer Directory
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleOpenCreate}
-            sx={{
-              fontWeight: 700,
-              px: 3,
-              py: 1.2,
-              borderRadius: 2.5,
-              textTransform: 'none',
-              background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
-              boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
-              '&:hover': {
-                background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
-                boxShadow: '0 6px 20px rgba(139, 92, 246, 0.45)',
-              },
-            }}
-          >
-            Add Customer
-          </Button>
+          <Can permission="customers:write">
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleOpenCreate}
+              sx={{
+                fontWeight: 700,
+                px: 3,
+                py: 1.2,
+                borderRadius: 2.5,
+                textTransform: 'none',
+                background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(90deg, #7c3aed 0%, #4f46e5 100%)',
+                  boxShadow: '0 6px 20px rgba(139, 92, 246, 0.45)',
+                },
+              }}
+            >
+              Add Customer
+            </Button>
+          </Can>
         </Box>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
           Manage wholesale and retail customers, loyalty point balances, and billing profiles.
@@ -320,24 +325,37 @@ export default function Customers() {
                     <TableCell
                       sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', textAlign: 'right' }}
                     >
-                      <Tooltip title="Edit Customer">
-                        <IconButton
-                          onClick={() => handleOpenEdit(c)}
-                          sx={{ color: 'primary.light' }}
-                          size="small"
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Deactivate">
-                        <IconButton
-                          onClick={() => c._id && deleteMutation.mutate(c._id)}
-                          sx={{ color: 'error.light', ml: 1 }}
-                          size="small"
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+                      <Can permission="customers:write">
+                        <Tooltip title="Edit Customer">
+                          <IconButton
+                            onClick={() => handleOpenEdit(c)}
+                            sx={{ color: 'primary.light' }}
+                            size="small"
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Deactivate">
+                          <IconButton
+                            onClick={async () => {
+                              if (!c._id) return;
+                              const confirmed = await confirm({
+                                title: 'Deactivate Customer',
+                                message: `Are you sure you want to deactivate customer "${c.name}" (${c.code})? They will no longer be eligible for new sales orders or credit terms.`,
+                                confirmText: 'Deactivate',
+                                severity: 'error',
+                              });
+                              if (confirmed) {
+                                deleteMutation.mutate(c._id);
+                              }
+                            }}
+                            sx={{ color: 'error.light', ml: 1 }}
+                            size="small"
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Can>
                     </TableCell>
                   </TableRow>
                 ))

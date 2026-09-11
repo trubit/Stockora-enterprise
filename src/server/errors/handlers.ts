@@ -57,7 +57,7 @@ export function errorHandler(err: any, req: Request, res: Response, _next: NextF
 
   if (status >= 500) {
     logger.error(`[500 Server Error] ${err.message || err} | Stack: ${err.stack}`);
-  } else {
+  } else if (process.env.NODE_ENV !== 'test') {
     logger.warn(
       `[Client Warning] ${status} ${code}: ${error.message} - Details: ${JSON.stringify(details || [])}`
     );

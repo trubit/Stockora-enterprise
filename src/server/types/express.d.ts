@@ -1,25 +1,28 @@
 /**
  * express.d.ts
- * Global Express namespace augmentation for Stockora.
- *
- * @types/passport declares `Express.User` as an empty interface and merges
- * `req.user: Express.User | undefined` into Request.  We extend that interface
- * here so every middleware and controller gets the correct authenticated user
- * shape — without needing a conflicting property override in AuthenticatedRequest.
- *
- * TypeScript merges this declaration with @types/passport's Express.User,
- * producing a single interface that satisfies both.
+ * Global Express namespace augmentation for Stockora Multi-Tenant SaaS.
  */
 
 declare namespace Express {
-  /**
-   * Stockora JWT payload — merged into req.user everywhere via @types/passport.
-   * Matches the payload signed in AuthService and decoded in authMiddleware.
-   */
   interface User {
     id: string;
     username: string;
+    email?: string;
     roleName: string;
+    tenantId?: string;
+    tenantSlug?: string;
+    isPlatformAdmin?: boolean;
+    branchId?: string;
+    allowedBranches?: string[];
+    tenants?: Array<{
+      tenantId: string;
+      tenantSlug?: string;
+      tenantName?: string;
+      roleName: string;
+      branchId?: string;
+      allowedBranches?: string[];
+      isDefault?: boolean;
+    }>;
     sessionToken?: string;
   }
 }

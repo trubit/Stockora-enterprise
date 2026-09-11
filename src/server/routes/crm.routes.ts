@@ -8,6 +8,7 @@ export const crmRouter = Router();
 
 crmRouter.use(authMiddleware);
 
+// 1. Dashboard & Customer 360
 crmRouter.get(
   '/dashboard',
   rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_READ]),
@@ -20,12 +21,37 @@ crmRouter.get(
   CRMController.getCustomer360
 );
 
+crmRouter.get(
+  '/customers/:id/overview',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_READ]),
+  CRMController.getCustomer360
+);
+
+crmRouter.get(
+  '/customers/:id/timeline',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_READ]),
+  CRMController.getCustomer360
+);
+
 crmRouter.post(
   '/customers/:id/recalculate',
   rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_WRITE]),
   CRMController.recalculateMetrics
 );
 
+crmRouter.get(
+  '/customers/:id/export',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_READ]),
+  CRMController.exportCustomerData
+);
+
+crmRouter.post(
+  '/customers/merge',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_WRITE]),
+  CRMController.mergeCustomers
+);
+
+// 2. Segments & Preview
 crmRouter.get(
   '/segments',
   rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_READ]),
@@ -38,6 +64,13 @@ crmRouter.post(
   CRMController.createSegment
 );
 
+crmRouter.post(
+  '/segments/preview',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_READ]),
+  CRMController.previewSegment
+);
+
+// 3. Campaigns & Lifecycle
 crmRouter.get(
   '/campaigns',
   rbacMiddleware([SYSTEM_PERMISSIONS.PROMOTIONS_READ]),
@@ -56,22 +89,23 @@ crmRouter.post(
   CRMController.dispatchCampaign
 );
 
-crmRouter.get(
-  '/coupons',
-  rbacMiddleware([SYSTEM_PERMISSIONS.PROMOTIONS_READ]),
-  CRMController.getCoupons
-);
-
 crmRouter.post(
-  '/coupons',
+  '/campaigns/:id/send',
   rbacMiddleware([SYSTEM_PERMISSIONS.PROMOTIONS_WRITE]),
-  CRMController.createCoupon
+  CRMController.dispatchCampaign
+);
+
+// 4. Loyalty Rewards & Redemptions
+crmRouter.get(
+  '/loyalty/rewards',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_READ]),
+  CRMController.getLoyaltyRewards
 );
 
 crmRouter.post(
-  '/coupons/validate',
-  rbacMiddleware([SYSTEM_PERMISSIONS.TRANSACTIONS_WRITE]),
-  CRMController.validateCoupon
+  '/loyalty/rewards',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_WRITE]),
+  CRMController.createLoyaltyReward
 );
 
 crmRouter.post(
@@ -87,7 +121,77 @@ crmRouter.post(
 );
 
 crmRouter.post(
+  '/referrals',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_WRITE]),
+  CRMController.processReferral
+);
+
+// 5. Retention Radar & Churn Intelligence
+crmRouter.get(
+  '/retention',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_READ]),
+  CRMController.getRetentionRadar
+);
+
+crmRouter.get(
+  '/churn',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_READ]),
+  CRMController.getRetentionRadar
+);
+
+// 6. AI Recommendations & Assistant
+crmRouter.get(
+  '/customers/:id/recommendations',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_READ]),
+  CRMController.getRecommendations
+);
+
+crmRouter.post(
+  '/ai/assistant',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_READ]),
+  CRMController.askCRMAssistant
+);
+
+crmRouter.post(
   '/copilot/query',
   rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_READ]),
-  CRMController.copilotQuery
+  CRMController.askCRMAssistant
+);
+
+// 7. Customer Journeys
+crmRouter.get(
+  '/journeys',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_READ]),
+  CRMController.getJourneys
+);
+
+crmRouter.post(
+  '/journeys',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_WRITE]),
+  CRMController.createJourney
+);
+
+// 8. Promotional Coupons & Discounts
+crmRouter.get(
+  '/coupons',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_READ, SYSTEM_PERMISSIONS.PROMOTIONS_READ]),
+  CRMController.getCoupons
+);
+
+crmRouter.post(
+  '/coupons',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_WRITE, SYSTEM_PERMISSIONS.PROMOTIONS_WRITE]),
+  CRMController.createCoupon
+);
+
+crmRouter.patch(
+  '/coupons/:id/toggle',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_WRITE, SYSTEM_PERMISSIONS.PROMOTIONS_WRITE]),
+  CRMController.toggleCoupon
+);
+
+crmRouter.delete(
+  '/coupons/:id',
+  rbacMiddleware([SYSTEM_PERMISSIONS.CUSTOMERS_WRITE, SYSTEM_PERMISSIONS.PROMOTIONS_WRITE]),
+  CRMController.deleteCoupon
 );

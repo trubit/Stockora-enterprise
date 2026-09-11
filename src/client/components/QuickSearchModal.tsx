@@ -25,12 +25,24 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 
+import { useAuthStore } from '../store/auth.ts';
+import { hasPermission } from '../../shared/permissions.js';
+
 interface QuickSearchModalProps {
   open: boolean;
   onClose: () => void;
 }
 
-const searchItems = [
+interface SearchItem {
+  title: string;
+  desc: string;
+  path: string;
+  icon: React.ReactNode;
+  category: string;
+  permission?: string;
+}
+
+const searchItems: SearchItem[] = [
   {
     title: 'Dashboard Overview',
     desc: 'Main sales & stock KPIs',
@@ -44,6 +56,7 @@ const searchItems = [
     path: '/pos',
     icon: <PosIcon />,
     category: 'Core',
+    permission: 'transactions:write',
   },
   {
     title: 'Product Catalog',
@@ -51,6 +64,7 @@ const searchItems = [
     path: '/products',
     icon: <CategoryIcon />,
     category: 'Catalog',
+    permission: 'products:read',
   },
   {
     title: 'Inventory Stock Catalog',
@@ -58,6 +72,7 @@ const searchItems = [
     path: '/inventory',
     icon: <InventoryIcon />,
     category: 'Inventory',
+    permission: 'products:read',
   },
   {
     title: 'Stock Adjustments',
@@ -65,6 +80,7 @@ const searchItems = [
     path: '/adjustments',
     icon: <SwapHorizIcon />,
     category: 'Logistics',
+    permission: 'products:write',
   },
   {
     title: 'Warehouse Transfers',
@@ -72,6 +88,7 @@ const searchItems = [
     path: '/transfers',
     icon: <StorefrontIcon />,
     category: 'Logistics',
+    permission: 'warehouses:read',
   },
   {
     title: 'Purchase Orders',
@@ -79,6 +96,7 @@ const searchItems = [
     path: '/purchase-orders',
     icon: <ShoppingCartIcon />,
     category: 'Procurement',
+    permission: 'suppliers:read',
   },
   {
     title: 'Financial Reports',
@@ -86,38 +104,43 @@ const searchItems = [
     path: '/finance',
     icon: <AnalyticsIcon />,
     category: 'Finance',
+    permission: 'transactions:read',
   },
   {
     title: 'AI Copilot Assistant',
     desc: 'Smart reorder suggestions & anomaly analysis',
-    path: '/ai-assistant',
+    path: '/copilot/chat',
     icon: <AutoAwesomeIcon />,
     category: 'AI Tools',
   },
   {
     title: 'Company Settings',
     desc: 'Manage workspace details and preferences',
-    path: '/company',
+    path: '/company/settings',
     icon: <SettingsIcon />,
     category: 'Settings',
+    permission: 'companies:read',
   },
 ];
 
 export const QuickSearchModal: React.FC<QuickSearchModalProps> = ({ open, onClose }) => {
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
+  const { user } = useAuthStore();
 
   const handleClose = () => {
     setQuery('');
     onClose();
   };
 
-  const filtered = searchItems.filter(
-    (item) =>
-      item.title.toLowerCase().includes(query.toLowerCase()) ||
-      item.desc.toLowerCase().includes(query.toLowerCase()) ||
-      item.category.toLowerCase().includes(query.toLowerCase())
-  );
+  const filtered = searchItems
+    .filter((item) => hasPermission(user, item.permission))
+    .filter(
+      (item) =>
+        item.title.toLowerCase().includes(query.toLowerCase()) ||
+        item.desc.toLowerCase().includes(query.toLowerCase()) ||
+        item.category.toLowerCase().includes(query.toLowerCase())
+    );
 
   const handleSelect = (path: string) => {
     navigate(path);

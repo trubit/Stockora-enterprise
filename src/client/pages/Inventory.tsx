@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../api/client.ts';
-import { useAuthStore } from '../store/auth.ts';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -28,6 +27,8 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import TuneIcon from '@mui/icons-material/Tune';
+import { useNavigate } from 'react-router-dom';
 import { AgGridReact } from 'ag-grid-react';
 import type { ColDef, ValueFormatterParams, ICellRendererParams } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
@@ -37,6 +38,10 @@ import { socket } from '../socket.ts';
 import type { Product } from '../../shared/types.js';
 import PageHeader from '../components/PageHeader.tsx';
 import StatCard from '../components/StatCard.tsx';
+import { useTranslation } from '../hooks/useTranslation.js';
+import { useRegionalSettings } from '../hooks/useRegionalSettings.js';
+import { usePermission } from '../hooks/usePermission.js';
+import { CurrencySelector } from '../components/CurrencySelector.tsx';
 
 // Zod Validation Schema for Product Creation
 const productSchema = z.object({
@@ -44,6 +49,11 @@ const productSchema = z.object({
   SKU: z.string().min(3, 'SKU must be at least 3 characters'),
   category: z.string().min(2, 'Category is required'),
   price: z.coerce.number().positive('Price must be positive'),
+  wholesalePrice: z.coerce
+    .number()
+    .positive('Wholesale price must be positive')
+    .optional()
+    .or(z.literal('')),
   cost: z.coerce.number().nonnegative('Cost cannot be negative'),
   quantity: z.coerce.number().int().nonnegative('Quantity cannot be negative'),
   lowStockAlert: z.coerce.number().int().nonnegative('Alert level cannot be negative'),
@@ -58,15 +68,15 @@ const fetchProducts = async (): Promise<Product[]> => {
 };
 
 export default function Inventory() {
+  const { t } = useTranslation();
+  const { formatAmount, currencySymbol, baseCurrency, activeCurrency, convertAmount } =
+    useRegionalSettings();
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
 
-  const canWriteProducts =
-    user?.roleName === 'Company Owner' ||
-    user?.roleName === 'Super Administrator' ||
-    user?.permissions?.includes('products:write');
+  const canWriteProducts = usePermission('products:write');
 
   const { data: products = [], refetch } = useQuery({
     queryKey: ['products'],
@@ -97,14 +107,8 @@ export default function Inventory() {
     socket.on('product:stock-updated', (data: { productId: string; quantity: number }) => {
       queryClient.setQueryData<Product[]>(['products'], (old) => {
         if (!old) return old;
-        return old.map((p) =>
-          p.id === data.productId || p._id === data.productId
-            ? { ...p, quantity: data.quantity }
-            : p
-        );
+        return old.map((p) => (p.id === data.productId ? { ...p, quantity: data.quantity } : p));
       });
-      refetchValuation();
-      refetchMovements();
     });
 
     socket.on('product:created', (newProduct: Product) => {
@@ -112,19 +116,30 @@ export default function Inventory() {
         if (!old) return [newProduct];
         return [...old, newProduct];
       });
-      refetchValuation();
-      refetchMovements();
     });
 
     return () => {
       socket.off('product:stock-updated');
       socket.off('product:created');
     };
-  }, [queryClient, refetchValuation, refetchMovements]);
+  }, [queryClient]);
 
+  // Mutation for creating product
   const createProductMutation = useMutation({
     mutationFn: async (newProduct: ProductFormInputs) => {
-      const { data } = await apiClient.post<Product>('/products', newProduct);
+      const payload = {
+        ...newProduct,
+        price: convertAmount(newProduct.price, activeCurrency, baseCurrency),
+        retailPrice: convertAmount(newProduct.price, activeCurrency, baseCurrency),
+        wholesalePrice:
+          newProduct.wholesalePrice && Number(newProduct.wholesalePrice) > 0
+            ? convertAmount(Number(newProduct.wholesalePrice), activeCurrency, baseCurrency)
+            : undefined,
+        cost: convertAmount(newProduct.cost, activeCurrency, baseCurrency),
+        costPrice: convertAmount(newProduct.cost, activeCurrency, baseCurrency),
+        currency: baseCurrency,
+      };
+      const { data } = await apiClient.post<Product>('/products', payload);
       return data;
     },
     onSuccess: () => {
@@ -153,6 +168,7 @@ export default function Inventory() {
       SKU: '',
       category: '',
       price: 0,
+      wholesalePrice: '',
       cost: 0,
       quantity: 0,
       lowStockAlert: 5,
@@ -173,35 +189,43 @@ export default function Inventory() {
 
   // AG Grid Column Definitions
   const columnDefs: ColDef<Product>[] = [
-    { field: 'sku', headerName: 'SKU', sortable: true, filter: true, width: 150 },
+    { field: 'sku', headerName: t('SKU'), sortable: true, filter: true, width: 150 },
     {
       field: 'name',
-      headerName: 'Product Name',
+      headerName: t('Product Name'),
       sortable: true,
       filter: true,
       flex: 1,
       minWidth: 200,
     },
-    { field: 'category', headerName: 'Category', sortable: true, filter: true, width: 140 },
+    { field: 'category', headerName: t('Category'), sortable: true, filter: true, width: 140 },
     {
       field: 'cost',
-      headerName: 'Cost Price',
+      headerName: t('Cost Price'),
       sortable: true,
       width: 120,
       valueFormatter: (params: ValueFormatterParams<Product>) =>
-        params.value != null ? `$${Number(params.value).toFixed(2)}` : '',
+        params.value != null ? formatAmount(Number(params.value)) : '',
     },
     {
       field: 'price',
-      headerName: 'Retail Price',
+      headerName: t('Retail Price'),
       sortable: true,
       width: 120,
       valueFormatter: (params: ValueFormatterParams<Product>) =>
-        params.value != null ? `$${Number(params.value).toFixed(2)}` : '',
+        params.value != null ? formatAmount(Number(params.value)) : '',
+    },
+    {
+      field: 'wholesalePrice',
+      headerName: t('Wholesale Price'),
+      sortable: true,
+      width: 130,
+      valueFormatter: (params: ValueFormatterParams<Product>) =>
+        params.value != null ? formatAmount(Number(params.value)) : '-',
     },
     {
       field: 'quantity',
-      headerName: 'Stock Qty',
+      headerName: t('Stock Qty'),
       sortable: true,
       width: 120,
       cellRenderer: (params: ICellRendererParams<Product>) => {
@@ -220,7 +244,7 @@ export default function Inventory() {
         );
       },
     },
-    { field: 'barcode', headerName: 'Barcode', sortable: true, filter: true, width: 140 },
+    { field: 'barcode', headerName: t('Barcode'), sortable: true, filter: true, width: 140 },
     {
       field: 'createdAt',
       headerName: 'Date Added',
@@ -241,7 +265,8 @@ export default function Inventory() {
         badgeText={`${products.length} PRODUCTS`}
         badgeColor="primary"
         action={
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+            <CurrencySelector size="small" />
             <Button
               variant="outlined"
               color="primary"
@@ -251,6 +276,26 @@ export default function Inventory() {
             >
               Sync
             </Button>
+            {canWriteProducts && (
+              <Button
+                variant="outlined"
+                color="secondary"
+                startIcon={<TuneIcon />}
+                onClick={() => navigate('/adjustments')}
+                sx={{
+                  fontWeight: 700,
+                  borderRadius: '8px',
+                  border: '1px solid rgba(167, 139, 250, 0.5)',
+                  color: '#a78bfa',
+                  '&:hover': {
+                    border: '1px solid #a78bfa',
+                    bgcolor: 'rgba(167, 139, 250, 0.08)',
+                  },
+                }}
+              >
+                Adjust Stock
+              </Button>
+            )}
             {canWriteProducts && (
               <Button
                 variant="contained"
@@ -264,7 +309,7 @@ export default function Inventory() {
                   boxShadow: '0 4px 14px rgba(139, 92, 246, 0.3)',
                 }}
               >
-                Add Product
+                {t('Add New Product')}
               </Button>
             )}
           </Box>
@@ -276,7 +321,7 @@ export default function Inventory() {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="WEIGHTED AVG ASSETS"
-            value={`$${Number(valuation.weightedAverage || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            value={formatAmount(Number(valuation.weightedAverage || 0))}
             subtitle="Real-time asset valuation"
             icon={<RefreshIcon sx={{ fontSize: 22 }} />}
             color="violet"
@@ -285,7 +330,7 @@ export default function Inventory() {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="FIFO ASSET VALUE"
-            value={`$${Number(valuation.fifo || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            value={formatAmount(Number(valuation.fifo || 0))}
             subtitle="First-In First-Out cost base"
             icon={<RefreshIcon sx={{ fontSize: 22 }} />}
             color="emerald"
@@ -294,7 +339,7 @@ export default function Inventory() {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="LIFO ASSET VALUE"
-            value={`$${Number(valuation.lifo || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            value={formatAmount(Number(valuation.lifo || 0))}
             subtitle="Last-In First-Out cost base"
             icon={<RefreshIcon sx={{ fontSize: 22 }} />}
             color="amber"
@@ -314,14 +359,23 @@ export default function Inventory() {
       <Tabs
         value={activeTab}
         onChange={(_e, v) => setActiveTab(v)}
+        variant="scrollable"
+        scrollButtons="auto"
+        allowScrollButtonsMobile
         sx={{ mb: 3, borderBottom: '1px solid rgba(255,255,255,0.08)' }}
       >
-        <Tab label="Stock Catalog Table" sx={{ textTransform: 'none', fontWeight: 700 }} />
-        <Tab label="Stock Movements Ledger" sx={{ textTransform: 'none', fontWeight: 700 }} />
+        <Tab label={t('Live Inventory Catalog')} sx={{ textTransform: 'none', fontWeight: 700 }} />
+        <Tab
+          label={t('Stock Movements Audit Log')}
+          sx={{ textTransform: 'none', fontWeight: 700 }}
+        />
       </Tabs>
 
       {activeTab === 0 && (
-        <Card className="glass-panel" sx={{ height: 'calc(100vh - 360px)', width: '100%' }}>
+        <Card
+          className="glass-panel"
+          sx={{ height: 'calc(100vh - 360px)', width: '100%', minHeight: 400 }}
+        >
           <Box
             className="ag-theme-alpine-dark"
             sx={{
@@ -356,9 +410,10 @@ export default function Inventory() {
             boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
             borderRadius: 3,
             maxHeight: 'calc(100vh - 360px)',
+            overflowX: 'auto',
           }}
         >
-          <Table stickyHeader>
+          <Table stickyHeader sx={{ minWidth: 700 }}>
             <TableHead>
               <TableRow>
                 <TableCell
@@ -513,7 +568,7 @@ export default function Inventory() {
                       <TableCell
                         sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontWeight: 600 }}
                       >
-                        ${Number(mov.costPrice || 0).toFixed(2)}
+                        {formatAmount(Number(mov.costPrice || 0))}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -540,44 +595,44 @@ export default function Inventory() {
 
       {/* Add Product Modal Form */}
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 800 }}>Add New Product</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 800 }}>{t('Add New Product')}</DialogTitle>
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogContent dividers>
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Product Name"
+                  label={t('Product Name')}
                   {...register('name')}
                   error={!!errors.name}
                   helperText={errors.name?.message}
                   size="small"
                 />
               </Grid>
-              <Grid item xs={6}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="SKU"
+                  label={t('SKU')}
                   {...register('SKU')}
                   error={!!errors.SKU}
                   helperText={errors.SKU?.message}
                   size="small"
                 />
               </Grid>
-              <Grid item xs={6}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Category"
+                  label={t('Category')}
                   {...register('category')}
                   error={!!errors.category}
                   helperText={errors.category?.message}
                   size="small"
                 />
               </Grid>
-              <Grid item xs={6}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Retail Price ($)"
+                  label={`${t('Retail Price')} (${currencySymbol})`}
                   type="number"
                   inputProps={{ step: '0.01' }}
                   {...register('price')}
@@ -586,10 +641,22 @@ export default function Inventory() {
                   size="small"
                 />
               </Grid>
-              <Grid item xs={6}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Cost Price ($)"
+                  label={`${t('Wholesale Price')} (${currencySymbol})`}
+                  type="number"
+                  inputProps={{ step: '0.01' }}
+                  {...register('wholesalePrice')}
+                  error={!!errors.wholesalePrice}
+                  helperText={errors.wholesalePrice?.message || 'Special bulk rate'}
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label={`${t('Cost Price')} (${currencySymbol})`}
                   type="number"
                   inputProps={{ step: '0.01' }}
                   {...register('cost')}
@@ -598,10 +665,10 @@ export default function Inventory() {
                   size="small"
                 />
               </Grid>
-              <Grid item xs={6}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Initial Stock Quantity"
+                  label={t('Stock Qty')}
                   type="number"
                   {...register('quantity')}
                   error={!!errors.quantity}
@@ -609,10 +676,10 @@ export default function Inventory() {
                   size="small"
                 />
               </Grid>
-              <Grid item xs={6}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Low Stock Warning Limit"
+                  label={t('Alert Threshold')}
                   type="number"
                   {...register('lowStockAlert')}
                   error={!!errors.lowStockAlert}
@@ -623,7 +690,7 @@ export default function Inventory() {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Barcode Number"
+                  label={t('Barcode')}
                   {...register('barcode')}
                   placeholder="e.g. 40012011"
                   size="small"
@@ -632,14 +699,14 @@ export default function Inventory() {
             </Grid>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setOpen(false)}>Cancel</Button>
+            <Button onClick={() => setOpen(false)}>{t('common.cancel')}</Button>
             <Button
               type="submit"
               variant="contained"
               color="primary"
               disabled={createProductMutation.isPending}
             >
-              {createProductMutation.isPending ? 'Saving...' : 'Add Product'}
+              {createProductMutation.isPending ? t('common.saving') : t('Save Product')}
             </Button>
           </DialogActions>
         </form>

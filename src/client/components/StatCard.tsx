@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, Box, Typography, Chip } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import { useTranslation } from '../hooks/useTranslation.js';
 
 interface StatCardProps {
   title: string;
@@ -50,7 +51,10 @@ export const StatCard: React.FC<StatCardProps> = ({
   trendUp = true,
   color = 'violet',
 }) => {
+  const { t } = useTranslation();
   const palette = colorMap[color];
+  const displayTitle = t(title);
+  const displaySubtitle = subtitle ? t(subtitle) : undefined;
 
   return (
     <Card
@@ -76,7 +80,7 @@ export const StatCard: React.FC<StatCardProps> = ({
             variant="body2"
             sx={{ color: '#9ca3af', fontWeight: 600, letterSpacing: '0.02em' }}
           >
-            {title}
+            {displayTitle}
           </Typography>
 
           <Box
@@ -110,9 +114,9 @@ export const StatCard: React.FC<StatCardProps> = ({
             gap: 1,
           }}
         >
-          {subtitle && (
+          {displaySubtitle && (
             <Typography variant="caption" sx={{ color: '#6b7280' }}>
-              {subtitle}
+              {displaySubtitle}
             </Typography>
           )}
 

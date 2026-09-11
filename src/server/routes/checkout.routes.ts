@@ -8,5 +8,7 @@ const router = Router();
 router.post('/initialize', authenticate, PaymentController.initializeCheckout);
 router.all('/verify', PaymentController.verifyCheckout); // supports GET/POST verify parameters
 router.post('/refund', authenticate, PaymentController.refundCheckout);
+router.get('/history', authenticate, PaymentController.getTransactionHistory);
+router.get('/receipts/:transactionNumber', PaymentController.getPaymentReceipt);
 
 export { router as checkoutRouter };

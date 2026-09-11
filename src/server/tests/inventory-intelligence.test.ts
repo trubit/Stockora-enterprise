@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
 import mongoose from 'mongoose';
 import { Product } from '../models/Product.js';
 import { InventoryForecast } from '../models/InventoryForecast.js';
@@ -16,7 +16,10 @@ describe('Phase 29 — Inventory Intelligence & Forecasting Tests', () => {
 
   beforeAll(async () => {
     if (mongoose.connection.readyState === 0) {
-      const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/stockora_test';
+      const mongoUri =
+        process.env.MONGODB_URI ||
+        process.env.MONGO_URI ||
+        'mongodb://127.0.0.1:27017/stockora_test';
       await mongoose.connect(mongoUri);
     }
 
@@ -34,15 +37,29 @@ describe('Phase 29 — Inventory Intelligence & Forecasting Tests', () => {
     });
   });
 
+  beforeEach(async () => {
+    const exists = sampleProduct?._id ? await Product.findById(sampleProduct._id) : null;
+    if (!exists) {
+      sampleProduct = await Product.create({
+        sku: `SKU-TEST-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        name: 'Test Wireless Keyboard',
+        category: 'Electronics',
+        costPrice: 45,
+        sellingPrice: 89,
+        price: 89,
+        cost: 45,
+        quantity: 15,
+        lowStockAlert: 10,
+      });
+    }
+  });
+
   afterAll(async () => {
     if (sampleProduct?._id) {
       await Product.deleteOne({ _id: sampleProduct._id });
       await InventoryForecast.deleteMany({ productId: sampleProduct._id });
       await ReorderRecommendation.deleteMany({ productId: sampleProduct._id });
       await StockoutRisk.deleteMany({ productId: sampleProduct._id });
-    }
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.disconnect();
     }
   });
 
