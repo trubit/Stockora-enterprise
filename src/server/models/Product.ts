@@ -126,11 +126,20 @@ ProductSchema.index({ tenantId: 1, status: 1 });
 ProductSchema.index({ tenantId: 1, createdAt: -1 });
 
 ProductSchema.pre('validate', function (next) {
-  if (this.costPrice === undefined && this.cost !== undefined) {
+  if (this.costPrice !== undefined && (this.cost === undefined || this.cost === 0)) {
+    this.cost = this.costPrice;
+  } else if (this.costPrice === undefined && this.cost !== undefined) {
     this.costPrice = this.cost;
   }
-  if (this.sellingPrice === undefined && this.price !== undefined) {
+
+  if (this.sellingPrice !== undefined && (this.price === undefined || this.price === 0)) {
+    this.price = this.sellingPrice;
+  } else if (this.sellingPrice === undefined && this.price !== undefined) {
     this.sellingPrice = this.price;
+  }
+
+  if (this.retailPrice === undefined && this.sellingPrice !== undefined) {
+    this.retailPrice = this.sellingPrice;
   }
   next();
 });

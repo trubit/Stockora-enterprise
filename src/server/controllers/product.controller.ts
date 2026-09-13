@@ -72,8 +72,19 @@ export class ProductController {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    const { name, category, costPrice, sellingPrice, price, cost, sku, barcode, ...rest } =
-      req.body;
+    const {
+      name,
+      category,
+      costPrice,
+      sellingPrice,
+      price,
+      cost,
+      wholesalePrice,
+      retailPrice,
+      sku,
+      barcode,
+      ...rest
+    } = req.body;
 
     const finalCostPrice = Number(
       costPrice !== undefined ? costPrice : cost !== undefined ? cost : 0
@@ -81,6 +92,14 @@ export class ProductController {
     const finalSellingPrice = Number(
       sellingPrice !== undefined ? sellingPrice : price !== undefined ? price : 0
     );
+    const finalWholesalePrice =
+      wholesalePrice !== undefined && wholesalePrice !== null && wholesalePrice !== ''
+        ? Number(wholesalePrice)
+        : undefined;
+    const finalRetailPrice =
+      retailPrice !== undefined && retailPrice !== null && retailPrice !== ''
+        ? Number(retailPrice)
+        : finalSellingPrice;
 
     if (!name || !category) {
       return next(new ValidationError('Name and category are required.'));
@@ -125,6 +144,8 @@ export class ProductController {
         sellingPrice: finalSellingPrice,
         price: finalSellingPrice,
         cost: finalCostPrice,
+        wholesalePrice: finalWholesalePrice,
+        retailPrice: finalRetailPrice,
         sku: finalSku,
         barcode: finalBarcode,
         quantity: initialQuantity,
@@ -172,14 +193,26 @@ export class ProductController {
 
       const oldValues = product.toObject();
 
-      const { sku, costPrice, sellingPrice, cost, price, addQuantity, quantity, lowStockAlert } =
-        req.body;
+      const {
+        sku,
+        costPrice,
+        sellingPrice,
+        cost,
+        price,
+        wholesalePrice,
+        retailPrice,
+        addQuantity,
+        quantity,
+        lowStockAlert,
+      } = req.body;
       const updatableData = { ...req.body };
       delete updatableData.sku;
       delete updatableData.costPrice;
       delete updatableData.sellingPrice;
       delete updatableData.cost;
       delete updatableData.price;
+      delete updatableData.wholesalePrice;
+      delete updatableData.retailPrice;
       delete updatableData.addQuantity;
       delete updatableData.quantity;
       delete updatableData.lowStockAlert;
@@ -215,6 +248,16 @@ export class ProductController {
       } else if (price !== undefined) {
         product.sellingPrice = Number(price);
         product.price = Number(price);
+      }
+
+      if (wholesalePrice !== undefined) {
+        product.wholesalePrice =
+          wholesalePrice !== null && wholesalePrice !== '' ? Number(wholesalePrice) : undefined;
+      }
+
+      if (retailPrice !== undefined) {
+        product.retailPrice =
+          retailPrice !== null && retailPrice !== '' ? Number(retailPrice) : undefined;
       }
 
       // Handle stock adjustments & restocking

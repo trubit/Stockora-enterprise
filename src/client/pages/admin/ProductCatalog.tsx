@@ -51,8 +51,7 @@ const textFieldStyle = {};
 
 export default function ProductCatalog() {
   const confirm = useConfirm();
-  const { formatAmount, convertAmount, activeCurrency, baseCurrency, currencySymbol } =
-    useRegionalSettings();
+  const { formatAmount, activeCurrency, baseCurrency, currencySymbol } = useRegionalSettings();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -227,24 +226,10 @@ export default function ProductCatalog() {
     setImageUrl(product.imageUrl || '');
     reset({
       ...product,
-      costPrice: Number(
-        convertAmount(product.costPrice ?? product.cost ?? 0, baseCurrency, activeCurrency).toFixed(
-          2
-        )
-      ),
-      sellingPrice: Number(
-        convertAmount(
-          product.sellingPrice ?? product.price ?? 0,
-          baseCurrency,
-          activeCurrency
-        ).toFixed(2)
-      ),
-      wholesalePrice: Number(
-        convertAmount(product.wholesalePrice ?? 0, baseCurrency, activeCurrency).toFixed(2)
-      ),
-      retailPrice: Number(
-        convertAmount(product.retailPrice ?? 0, baseCurrency, activeCurrency).toFixed(2)
-      ),
+      costPrice: Number(product.costPrice ?? product.cost ?? 0),
+      sellingPrice: Number(product.sellingPrice ?? product.price ?? 0),
+      wholesalePrice: Number(product.wholesalePrice ?? 0),
+      retailPrice: Number(product.retailPrice ?? product.sellingPrice ?? product.price ?? 0),
       quantity: product.quantity ?? (product as any).stock ?? 0,
       lowStockAlert: product.lowStockAlert ?? 10,
     });
@@ -255,7 +240,7 @@ export default function ProductCatalog() {
     setRestockProduct(product);
     setRestockQuantity(10);
     const rawCost = Number(product.costPrice || product.cost || 0);
-    setRestockCostPrice(Number(convertAmount(rawCost, baseCurrency, activeCurrency).toFixed(2)));
+    setRestockCostPrice(rawCost);
     setRestockReason('Supplier Delivery / Restock');
     setRestockDialogOpen(true);
   };
@@ -271,28 +256,28 @@ export default function ProductCatalog() {
       return;
     }
 
-    // Convert costPrice back to base currency
-    const baseCostPrice = convertAmount(
-      Number(restockCostPrice || 0),
-      activeCurrency,
-      baseCurrency
-    );
-
     restockMutation.mutate({
       productId: id,
       quantity: Number(restockQuantity),
-      costPrice: baseCostPrice,
+      costPrice: Number(restockCostPrice || 0),
       reason: restockReason || 'Supplier Delivery / Restock',
     });
   };
 
   const onSubmit = (data: Product) => {
+    const rawSellingPrice = Number(data.sellingPrice || 0);
+    const rawCostPrice = Number(data.costPrice || 0);
+    const rawWholesalePrice = data.wholesalePrice != null ? Number(data.wholesalePrice) : 0;
+    const rawRetailPrice = data.retailPrice != null ? Number(data.retailPrice) : rawSellingPrice;
+
     const payload = {
       ...data,
-      costPrice: convertAmount(Number(data.costPrice || 0), activeCurrency, baseCurrency),
-      sellingPrice: convertAmount(Number(data.sellingPrice || 0), activeCurrency, baseCurrency),
-      wholesalePrice: convertAmount(Number(data.wholesalePrice || 0), activeCurrency, baseCurrency),
-      retailPrice: convertAmount(Number(data.retailPrice || 0), activeCurrency, baseCurrency),
+      costPrice: rawCostPrice,
+      cost: rawCostPrice,
+      sellingPrice: rawSellingPrice,
+      price: rawSellingPrice,
+      wholesalePrice: rawWholesalePrice > 0 ? rawWholesalePrice : undefined,
+      retailPrice: rawRetailPrice > 0 ? rawRetailPrice : rawSellingPrice,
       quantity: Number(data.quantity || 0),
       lowStockAlert: Number(data.lowStockAlert || 10),
       width: Number(data.width || 0),

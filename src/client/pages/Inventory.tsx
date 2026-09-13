@@ -69,8 +69,7 @@ const fetchProducts = async (): Promise<Product[]> => {
 
 export default function Inventory() {
   const { t } = useTranslation();
-  const { formatAmount, currencySymbol, baseCurrency, activeCurrency, convertAmount } =
-    useRegionalSettings();
+  const { formatAmount, currencySymbol, baseCurrency } = useRegionalSettings();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -127,16 +126,20 @@ export default function Inventory() {
   // Mutation for creating product
   const createProductMutation = useMutation({
     mutationFn: async (newProduct: ProductFormInputs) => {
+      const priceNum = Number(newProduct.price || 0);
+      const costNum = Number(newProduct.cost || 0);
+      const wholesaleNum =
+        newProduct.wholesalePrice && Number(newProduct.wholesalePrice) > 0
+          ? Number(newProduct.wholesalePrice)
+          : undefined;
+
       const payload = {
         ...newProduct,
-        price: convertAmount(newProduct.price, activeCurrency, baseCurrency),
-        retailPrice: convertAmount(newProduct.price, activeCurrency, baseCurrency),
-        wholesalePrice:
-          newProduct.wholesalePrice && Number(newProduct.wholesalePrice) > 0
-            ? convertAmount(Number(newProduct.wholesalePrice), activeCurrency, baseCurrency)
-            : undefined,
-        cost: convertAmount(newProduct.cost, activeCurrency, baseCurrency),
-        costPrice: convertAmount(newProduct.cost, activeCurrency, baseCurrency),
+        price: priceNum,
+        retailPrice: priceNum,
+        wholesalePrice: wholesaleNum,
+        cost: costNum,
+        costPrice: costNum,
         currency: baseCurrency,
       };
       const { data } = await apiClient.post<Product>('/products', payload);
