@@ -975,11 +975,11 @@ export default function Layout() {
                           isActive ? 'premium-sidebar-item active' : 'premium-sidebar-item'
                         }
                         onClick={(e) => {
-                      (e.currentTarget as HTMLElement)?.blur();
-                      (document.activeElement as HTMLElement)?.blur();
-                      navigate(item.path);
-                      setMobileOpen(false);
-                    }}
+                          (e.currentTarget as HTMLElement)?.blur();
+                          (document.activeElement as HTMLElement)?.blur();
+                          navigate(item.path);
+                          setMobileOpen(false);
+                        }}
                         sx={{
                           borderRadius: '8px',
                           color: isActive ? '#ffffff' : 'text.secondary',
