@@ -100,32 +100,12 @@ const baseTheme = createTheme({
       defaultProps: {
         ModalProps: {
           keepMounted: false,
-          disableRestoreFocus: true,
-          disableAutoFocus: true,
-          disableEnforceFocus: true,
         },
       },
     },
     MuiModal: {
       defaultProps: {
         keepMounted: false,
-        disableRestoreFocus: true,
-        disableAutoFocus: true,
-        disableEnforceFocus: true,
-      },
-    },
-    MuiPopover: {
-      defaultProps: {
-        disableRestoreFocus: true,
-        disableAutoFocus: true,
-        disableEnforceFocus: true,
-      },
-    },
-    MuiMenu: {
-      defaultProps: {
-        disableRestoreFocus: true,
-        autoFocus: false,
-        disableAutoFocusItem: true,
       },
     },
     MuiButton: {
@@ -168,9 +148,6 @@ const baseTheme = createTheme({
       },
     },
     MuiDialog: {
-      defaultProps: {
-        disableRestoreFocus: true,
-      },
       styleOverrides: {
         paper: {
           background: 'linear-gradient(135deg, #0f1322 0%, #07090e 100%)',
@@ -215,9 +192,6 @@ const baseTheme = createTheme({
     MuiSelect: {
       defaultProps: {
         MenuProps: {
-          disableRestoreFocus: true,
-          disableAutoFocusItem: true,
-          autoFocus: false,
           disablePortal: false,
           sx: {
             zIndex: '2000 !important',

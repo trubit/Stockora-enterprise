@@ -1251,9 +1251,6 @@ export default function Layout() {
           }}
           ModalProps={{
             keepMounted: false,
-            disableRestoreFocus: true,
-            disableAutoFocus: true,
-            disableEnforceFocus: true,
           }}
           SlideProps={{
             onExit: () => {

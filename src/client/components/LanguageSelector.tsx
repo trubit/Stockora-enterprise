@@ -74,10 +74,8 @@ export const LanguageSelector: React.FC = () => {
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
-        disableRestoreFocus
         MenuListProps={{
           'aria-labelledby': 'language-selector-btn',
-          autoFocusItem: false,
         }}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
