@@ -97,7 +97,7 @@ const ProductSchema = new Schema<IProduct>(
     retailPrice: { type: Number, min: 0 },
     promotionalPrice: { type: Number, min: 0 },
     isTaxInclusive: { type: Boolean, default: false },
-    currency: { type: String, default: 'USD' },
+    currency: { type: String, default: 'USD', uppercase: true, trim: true },
     variants: [ProductVariantSchema],
     attributes: [
       {
@@ -126,6 +126,11 @@ ProductSchema.index({ tenantId: 1, status: 1 });
 ProductSchema.index({ tenantId: 1, createdAt: -1 });
 
 ProductSchema.pre('validate', function (next) {
+  if (this.currency) {
+    this.currency = this.currency.toUpperCase().trim();
+  } else {
+    this.currency = 'USD';
+  }
   if (this.costPrice !== undefined && (this.cost === undefined || this.cost === 0)) {
     this.cost = this.costPrice;
   } else if (this.costPrice === undefined && this.cost !== undefined) {

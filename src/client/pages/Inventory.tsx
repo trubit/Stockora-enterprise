@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  MenuItem,
   Grid,
   Chip,
   Card,
@@ -42,6 +43,7 @@ import { useTranslation } from '../hooks/useTranslation.js';
 import { useRegionalSettings } from '../hooks/useRegionalSettings.js';
 import { usePermission } from '../hooks/usePermission.js';
 import { CurrencySelector } from '../components/CurrencySelector.tsx';
+import { SUPPORTED_CURRENCIES } from '../../shared/currencies.js';
 
 // Zod Validation Schema for Product Creation
 const productSchema = z.object({
@@ -58,6 +60,7 @@ const productSchema = z.object({
   quantity: z.coerce.number().int().nonnegative('Quantity cannot be negative'),
   lowStockAlert: z.coerce.number().int().nonnegative('Alert level cannot be negative'),
   barcode: z.string().optional(),
+  currency: z.string().optional(),
 });
 
 type ProductFormInputs = z.infer<typeof productSchema>;
@@ -69,7 +72,7 @@ const fetchProducts = async (): Promise<Product[]> => {
 
 export default function Inventory() {
   const { t } = useTranslation();
-  const { formatAmount, currencySymbol, baseCurrency } = useRegionalSettings();
+  const { formatAmount, currencySymbol, baseCurrency, activeCurrency } = useRegionalSettings();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -140,7 +143,9 @@ export default function Inventory() {
         wholesalePrice: wholesaleNum,
         cost: costNum,
         costPrice: costNum,
-        currency: baseCurrency,
+        currency: (newProduct.currency || activeCurrency || baseCurrency || 'USD')
+          .toUpperCase()
+          .trim(),
       };
       const { data } = await apiClient.post<Product>('/products', payload);
       return data;
@@ -208,7 +213,12 @@ export default function Inventory() {
       sortable: true,
       width: 120,
       valueFormatter: (params: ValueFormatterParams<Product>) =>
-        params.value != null ? formatAmount(Number(params.value)) : '',
+        params.value != null
+          ? formatAmount(Number(params.value), {
+              fromCurrency: params.data?.currency || baseCurrency,
+              currency: activeCurrency,
+            })
+          : '',
     },
     {
       field: 'price',
@@ -216,7 +226,12 @@ export default function Inventory() {
       sortable: true,
       width: 120,
       valueFormatter: (params: ValueFormatterParams<Product>) =>
-        params.value != null ? formatAmount(Number(params.value)) : '',
+        params.value != null
+          ? formatAmount(Number(params.value), {
+              fromCurrency: params.data?.currency || baseCurrency,
+              currency: activeCurrency,
+            })
+          : '',
     },
     {
       field: 'wholesalePrice',
@@ -224,7 +239,12 @@ export default function Inventory() {
       sortable: true,
       width: 130,
       valueFormatter: (params: ValueFormatterParams<Product>) =>
-        params.value != null ? formatAmount(Number(params.value)) : '-',
+        params.value != null
+          ? formatAmount(Number(params.value), {
+              fromCurrency: params.data?.currency || baseCurrency,
+              currency: activeCurrency,
+            })
+          : '-',
     },
     {
       field: 'quantity',
@@ -324,7 +344,10 @@ export default function Inventory() {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="WEIGHTED AVG ASSETS"
-            value={formatAmount(Number(valuation.weightedAverage || 0))}
+            value={formatAmount(Number(valuation.weightedAverage || 0), {
+              fromCurrency: baseCurrency,
+              currency: activeCurrency,
+            })}
             subtitle="Real-time asset valuation"
             icon={<RefreshIcon sx={{ fontSize: 22 }} />}
             color="violet"
@@ -333,7 +356,10 @@ export default function Inventory() {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="FIFO ASSET VALUE"
-            value={formatAmount(Number(valuation.fifo || 0))}
+            value={formatAmount(Number(valuation.fifo || 0), {
+              fromCurrency: baseCurrency,
+              currency: activeCurrency,
+            })}
             subtitle="First-In First-Out cost base"
             icon={<RefreshIcon sx={{ fontSize: 22 }} />}
             color="emerald"
@@ -342,7 +368,10 @@ export default function Inventory() {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="LIFO ASSET VALUE"
-            value={formatAmount(Number(valuation.lifo || 0))}
+            value={formatAmount(Number(valuation.lifo || 0), {
+              fromCurrency: baseCurrency,
+              currency: activeCurrency,
+            })}
             subtitle="Last-In First-Out cost base"
             icon={<RefreshIcon sx={{ fontSize: 22 }} />}
             color="amber"
@@ -389,6 +418,7 @@ export default function Inventory() {
             }}
           >
             <AgGridReact
+              key={activeCurrency}
               theme="legacy"
               rowData={products}
               columnDefs={columnDefs}
@@ -571,7 +601,10 @@ export default function Inventory() {
                       <TableCell
                         sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontWeight: 600 }}
                       >
-                        {formatAmount(Number(mov.costPrice || 0))}
+                        {formatAmount(Number(mov.costPrice || 0), {
+                          fromCurrency: baseCurrency,
+                          currency: activeCurrency,
+                        })}
                       </TableCell>
                       <TableCell
                         sx={{
@@ -667,6 +700,22 @@ export default function Inventory() {
                   helperText={errors.cost?.message}
                   size="small"
                 />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  select
+                  fullWidth
+                  label={t('Source Currency') || 'Source Currency'}
+                  defaultValue={activeCurrency || baseCurrency || 'USD'}
+                  {...register('currency')}
+                  size="small"
+                >
+                  {Object.keys(SUPPORTED_CURRENCIES).map((curr) => (
+                    <MenuItem key={curr} value={curr}>
+                      {SUPPORTED_CURRENCIES[curr].flag} {curr} — {SUPPORTED_CURRENCIES[curr].name}
+                    </MenuItem>
+                  ))}
+                </TextField>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField

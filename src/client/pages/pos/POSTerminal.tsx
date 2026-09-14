@@ -52,6 +52,7 @@ interface ProductItem {
   wholesalePrice?: number;
   quantity: number;
   category?: string;
+  currency?: string;
 }
 
 interface CartItem {
@@ -731,7 +732,10 @@ export default function POSTerminal() {
                                     : 'text.secondary',
                               }}
                             >
-                              {formatAmount(retailAmt)}
+                              {formatAmount(retailAmt, {
+                                fromCurrency: p.currency || baseCurrency,
+                                currency: activeCurrency,
+                              })}
                             </Typography>
                           </Box>
                           <Box sx={{ textAlign: 'right' }}>
@@ -759,7 +763,10 @@ export default function POSTerminal() {
                                     : 'text.secondary',
                               }}
                             >
-                              {formatAmount(wholesaleAmt)}
+                              {formatAmount(wholesaleAmt, {
+                                fromCurrency: p.currency || baseCurrency,
+                                currency: activeCurrency,
+                              })}
                             </Typography>
                           </Box>
                         </Box>

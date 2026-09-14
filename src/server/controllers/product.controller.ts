@@ -1,3 +1,4 @@
+import { RegionalSettingsService } from '../services/regionalSettings.service.js';
 import type { Response, NextFunction } from 'express';
 import { Product } from '../models/Product.js';
 import { AuditLog } from '../models/AuditLog.js';
@@ -130,6 +131,17 @@ export class ProductController {
       }
 
       const initialQuantity = Number(rest.quantity || 0);
+      let productCurrency = rest.currency;
+      if (!productCurrency && tenantId) {
+        try {
+          const reg = await RegionalSettingsService.getSettings(tenantId);
+          if (reg && reg.currency) productCurrency = reg.currency;
+        } catch {
+          // fallback
+        }
+      }
+      productCurrency = (productCurrency || 'USD').toUpperCase().trim();
+
       const initialAlert = Number(rest.lowStockAlert !== undefined ? rest.lowStockAlert : 10);
       const initialStatus =
         initialQuantity > 0 ? rest.status || 'ACTIVE' : rest.status || 'OUT_OF_STOCK';
@@ -151,6 +163,7 @@ export class ProductController {
         quantity: initialQuantity,
         lowStockAlert: initialAlert,
         status: initialStatus,
+        currency: productCurrency,
         ...rest,
       });
 
@@ -253,6 +266,10 @@ export class ProductController {
       if (wholesalePrice !== undefined) {
         product.wholesalePrice =
           wholesalePrice !== null && wholesalePrice !== '' ? Number(wholesalePrice) : undefined;
+      }
+
+      if (req.body.currency) {
+        product.currency = String(req.body.currency).toUpperCase().trim();
       }
 
       if (retailPrice !== undefined) {

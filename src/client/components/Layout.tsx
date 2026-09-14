@@ -908,7 +908,9 @@ export default function Layout() {
                 <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
                   <ListItemButton
                     className={isActive ? 'premium-sidebar-item active' : 'premium-sidebar-item'}
-                    onClick={() => {
+                    onClick={(e) => {
+                      (e.currentTarget as HTMLElement)?.blur();
+                      (document.activeElement as HTMLElement)?.blur();
                       navigate(item.path);
                       setMobileOpen(false);
                     }}
@@ -972,10 +974,12 @@ export default function Layout() {
                         className={
                           isActive ? 'premium-sidebar-item active' : 'premium-sidebar-item'
                         }
-                        onClick={() => {
-                          navigate(item.path);
-                          setMobileOpen(false);
-                        }}
+                        onClick={(e) => {
+                      (e.currentTarget as HTMLElement)?.blur();
+                      (document.activeElement as HTMLElement)?.blur();
+                      navigate(item.path);
+                      setMobileOpen(false);
+                    }}
                         sx={{
                           borderRadius: '8px',
                           color: isActive ? '#ffffff' : 'text.secondary',
@@ -1124,7 +1128,10 @@ export default function Layout() {
               color="inherit"
               aria-label="open drawer"
               edge="start"
-              onClick={handleDrawerToggle}
+              onClick={(e) => {
+                (e.currentTarget as HTMLElement)?.blur();
+                handleDrawerToggle();
+              }}
               sx={{ mr: { xs: 0.5, sm: 1 }, display: { md: 'none' } }}
             >
               <MenuIcon />
@@ -1138,7 +1145,10 @@ export default function Layout() {
           <Chip
             icon={<SearchIcon style={{ color: '#8b5cf6', fontSize: 16 }} />}
             label="Search modules... (Ctrl+K)"
-            onClick={() => setSearchOpen(true)}
+            onClick={(e) => {
+              (e.currentTarget as HTMLElement)?.blur();
+              setSearchOpen(true);
+            }}
             sx={{
               display: { xs: 'none', md: 'flex' },
               backgroundColor: 'rgba(255, 255, 255, 0.04)',
@@ -1235,8 +1245,24 @@ export default function Layout() {
         <Drawer
           variant="temporary"
           open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{ keepMounted: true }}
+          onClose={() => {
+            (document.activeElement as HTMLElement)?.blur();
+            setMobileOpen(false);
+          }}
+          ModalProps={{
+            keepMounted: false,
+            disableRestoreFocus: true,
+            disableAutoFocus: true,
+            disableEnforceFocus: true,
+          }}
+          SlideProps={{
+            onExit: () => {
+              (document.activeElement as HTMLElement)?.blur();
+            },
+            onExited: () => {
+              (document.activeElement as HTMLElement)?.blur();
+            },
+          }}
           sx={{
             display: { xs: 'block', md: 'none' },
             '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },

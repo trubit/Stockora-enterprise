@@ -116,12 +116,15 @@ export const CurrencySelector: React.FC<CurrencySelectorProps> = ({ size = 'smal
 
       <Menu
         id="currency-selector-menu"
+        disableRestoreFocus
+        autoFocus={false}
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
         MenuListProps={{
           'aria-labelledby': 'currency-selector-btn',
           role: 'menu',
+          autoFocusItem: false,
         }}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}

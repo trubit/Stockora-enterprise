@@ -46,6 +46,7 @@ import { motion } from 'framer-motion';
 import { usePermission } from '../../hooks/usePermission.js';
 import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 import { CurrencySelector } from '../../components/CurrencySelector.tsx';
+import { SUPPORTED_CURRENCIES } from '../../../shared/currencies.js';
 
 const textFieldStyle = {};
 
@@ -97,6 +98,7 @@ export default function ProductCatalog() {
       height: 0,
       depth: 0,
       weight: 0,
+      currency: 'USD',
     },
   });
 
@@ -217,6 +219,7 @@ export default function ProductCatalog() {
       height: 0,
       depth: 0,
       weight: 0,
+      currency: activeCurrency || baseCurrency || 'USD',
     });
     setOpen(true);
   };
@@ -232,6 +235,7 @@ export default function ProductCatalog() {
       retailPrice: Number(product.retailPrice ?? product.sellingPrice ?? product.price ?? 0),
       quantity: product.quantity ?? (product as any).stock ?? 0,
       lowStockAlert: product.lowStockAlert ?? 10,
+      currency: product.currency || baseCurrency || 'USD',
     });
     setOpen(true);
   };
@@ -270,7 +274,11 @@ export default function ProductCatalog() {
     const rawWholesalePrice = data.wholesalePrice != null ? Number(data.wholesalePrice) : 0;
     const rawRetailPrice = data.retailPrice != null ? Number(data.retailPrice) : rawSellingPrice;
 
+    const rawCurrency = (data.currency || activeCurrency || baseCurrency || 'USD')
+      .toUpperCase()
+      .trim();
     const payload = {
+      currency: rawCurrency,
       ...data,
       costPrice: rawCostPrice,
       cost: rawCostPrice,
@@ -339,6 +347,7 @@ export default function ProductCatalog() {
             <CurrencySelector size="small" />
             {canWriteProducts && (
               <>
+                <CurrencySelector />
                 <Button
                   variant="outlined"
                   startIcon={<FlashOnIcon />}
@@ -545,11 +554,31 @@ export default function ProductCatalog() {
                       <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                         <Box>
                           <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                            {formatAmount(p.costPrice ?? p.cost ?? 0)} (Cost)
+                            {formatAmount(p.costPrice ?? p.cost ?? 0, {
+                              fromCurrency: p.currency || baseCurrency,
+                              currency: activeCurrency,
+                            })}{' '}
+                            (Cost)
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {formatAmount(p.sellingPrice ?? p.price ?? 0)} (Selling)
+                            {formatAmount(p.sellingPrice ?? p.price ?? 0, {
+                              fromCurrency: p.currency || baseCurrency,
+                              currency: activeCurrency,
+                            })}{' '}
+                            (Selling)
                           </Typography>
+                          {p.wholesalePrice != null && Number(p.wholesalePrice) > 0 && (
+                            <Typography
+                              variant="caption"
+                              sx={{ display: 'block', color: 'secondary.main', fontWeight: 600 }}
+                            >
+                              {formatAmount(Number(p.wholesalePrice), {
+                                fromCurrency: p.currency || baseCurrency,
+                                currency: activeCurrency,
+                              })}{' '}
+                              (Wholesale)
+                            </Typography>
+                          )}
                         </Box>
                       </TableCell>
 
@@ -905,6 +934,24 @@ export default function ProductCatalog() {
                       sx={textFieldStyle}
                       InputLabelProps={{ shrink: true }}
                     />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      select
+                      fullWidth
+                      label="Source Currency"
+                      {...register('currency')}
+                      defaultValue={activeCurrency || baseCurrency || 'USD'}
+                      size="small"
+                      sx={textFieldStyle}
+                    >
+                      {Object.keys(SUPPORTED_CURRENCIES).map((curr) => (
+                        <MenuItem key={curr} value={curr}>
+                          {SUPPORTED_CURRENCIES[curr].flag} {curr} —{' '}
+                          {SUPPORTED_CURRENCIES[curr].name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <TextField

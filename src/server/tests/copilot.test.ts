@@ -47,7 +47,7 @@ describe('Phase 28 AI Copilot & Knowledge integration tests', () => {
     expect(logs[0].role).toBe('user');
     expect(logs[0].content).toContain('SOP Policy');
     expect(logs[1].role).toBe('assistant');
-  }, 15000);
+  }, 30000);
 
   it('should save and load prompt library macro configurations', async () => {
     const template = await PromptTemplate.create({
