@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import mongoose from 'mongoose';
 import {
   OmnichannelOrder,
@@ -178,20 +179,24 @@ export class POSService {
       );
     }
 
-    // 3. Validate Cart Items & Build Details
+    // 3. Batch Fetch & Validate Cart Items Authoritatively
     if (!input.items || input.items.length === 0) {
       throw new Error('POS Cart cannot be empty.');
     }
 
+    const productIds = input.items.map((i) => i.productId);
+    const products = await Product.find({ _id: { $in: productIds } });
+    const productMap = new Map(products.map((p) => [p._id.toString(), p]));
+
     const itemDetails = [];
     for (const itemInput of input.items) {
-      const product = await Product.findById(itemInput.productId);
+      const product = productMap.get(itemInput.productId);
       if (!product) {
         throw new Error(`Product ID ${itemInput.productId} not found.`);
       }
       if (product.quantity < itemInput.quantity) {
         throw new Error(
-          `Insufficient stock for ${product.name} (SKU: ${product.sku}). On hand: ${product.quantity}`
+          `Insufficient stock for ${product.name} (SKU: ${product.sku}). On hand: ${product.quantity}, requested: ${itemInput.quantity}`
         );
       }
 
@@ -225,7 +230,11 @@ export class POSService {
     }
 
     // 4. Server-Side Totals Calculation
-    const calc = this.calculateCart(itemDetails, input.taxRate || 0.07, input.cartDiscount || 0);
+    const calc = this.calculateCart(
+      itemDetails,
+      input.taxRate !== undefined ? Number(input.taxRate) : 0.07,
+      input.cartDiscount || 0
+    );
 
     // 5. Payment Tender & Change Validation
     const amountTendered =
@@ -236,14 +245,13 @@ export class POSService {
     if (resolvedMethod === 'CASH') {
       if (amountTendered < calc.grandTotal) {
         throw new Error(
-          `Insufficient cash received: Insufficient payment amount. Total due: $${calc.grandTotal}, received: $${amountTendered.toFixed(2)}`
+          `Insufficient cash received: Insufficient payment amount. Total due: ${calc.grandTotal}, received: ${amountTendered.toFixed(2)}`
         );
       }
     } else {
-      // For Bank Transfer and Physical Card, cashier confirms full amount received
       if (amountTendered < calc.grandTotal) {
         throw new Error(
-          `Insufficient payment amount: confirmed amount is less than total. Total due: $${calc.grandTotal}, confirmed: $${amountTendered.toFixed(2)}`
+          `Insufficient payment amount: confirmed amount is less than total. Total due: ${calc.grandTotal}, confirmed: ${amountTendered.toFixed(2)}`
         );
       }
     }
@@ -251,13 +259,52 @@ export class POSService {
     const changeAmount =
       resolvedMethod === 'CASH' ? Number((amountTendered - calc.grandTotal).toFixed(2)) : 0;
 
-    // 6. Generate Order Number
-    const orderCount = await OmnichannelOrder.countDocuments();
-    const orderNumber = `POS-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}${String(orderCount + 1).padStart(4, '0')}`;
+    // 6. Cryptographically Collision-Free Order Number Generation under Millisecond Concurrency
+    const randomEntropy = crypto.randomBytes(3).toString('hex').toUpperCase();
+    const orderNumber = `POS-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}-${randomEntropy}`;
 
-    // 7. Formulate Single Payment Allocation Record
+    // 7. Atomic Conditional Stock Deduction with Auto-Rollback to Eliminate Overselling
+    const decrementedItems: { productId: mongoose.Types.ObjectId; quantity: number }[] = [];
+    try {
+      for (const item of itemDetails) {
+        const decrementFilter: Record<string, unknown> = {
+          _id: item.productId,
+          quantity: { $gte: item.quantity },
+        };
+        if (input.tenantId) {
+          decrementFilter.tenantId = input.tenantId;
+        }
+
+        const updated = await Product.findOneAndUpdate(
+          decrementFilter,
+          {
+            $inc: { quantity: -item.quantity },
+          },
+          { new: true }
+        );
+
+        if (!updated) {
+          throw new Error(
+            `Insufficient stock or concurrent inventory checkout conflict for ${item.name} (SKU: ${item.sku}).`
+          );
+        }
+        decrementedItems.push({ productId: item.productId, quantity: item.quantity });
+      }
+    } catch (concurrencyErr) {
+      // Rollback any items decremented before the conflict
+      for (const rollbackItem of decrementedItems) {
+        await Product.findByIdAndUpdate(rollbackItem.productId, {
+          $inc: { quantity: rollbackItem.quantity },
+        }).catch(() => {});
+      }
+      throw concurrencyErr;
+    }
+
+    // 8. Formulate Single Payment Allocation Record
     const refNo =
-      input.referenceNumber || input.payments?.[0]?.referenceNumber || `POS-REF-${Date.now()}`;
+      input.referenceNumber ||
+      input.payments?.[0]?.referenceNumber ||
+      `POS-REF-${Date.now()}-${randomEntropy}`;
     const paymentAllocations: IPaymentAllocation[] = [
       {
         paymentMethod: resolvedMethod as any,
@@ -268,7 +315,7 @@ export class POSService {
       },
     ];
 
-    // 8. Create Omnichannel Order Record
+    // 9. Create Omnichannel Order Record
     const resolvedPricingMode: 'RETAIL' | 'WHOLESALE' | 'MIXED' =
       input.pricingMode ||
       (itemDetails.every((i) => i.priceTier === 'WHOLESALE')
@@ -302,15 +349,8 @@ export class POSService {
       fulfillmentMethod: 'PICKUP',
       status: 'COMPLETED',
       idempotencyKey: input.idempotencyKey,
-      notes: input.notes ? `${input.notes} | Change: $${changeAmount}` : `Change: $${changeAmount}`,
+      notes: input.notes ? `${input.notes} | Change: ${changeAmount}` : `Change: ${changeAmount}`,
     });
-
-    // 8. Deduct stock & create inventory movements
-    for (const item of itemDetails) {
-      await Product.findByIdAndUpdate(item.productId, {
-        $inc: { quantity: -item.quantity },
-      });
-    }
 
     if (input.tenantId) {
       try {
@@ -323,15 +363,17 @@ export class POSService {
 
     // Resolve tenant / company info for legacy transaction
     const tenantInfo: any = input.tenantId
-      ? (await Tenant.findById(input.tenantId).lean()) ||
-        (await Tenant.findOne({ slug: input.tenantId }).lean())
+      ? (mongoose.isValidObjectId(input.tenantId)
+          ? await Tenant.findById(input.tenantId).lean()
+          : null) || (await Tenant.findOne({ slug: input.tenantId }).lean())
       : null;
-    const companyInfo: any = input.tenantId
-      ? await Company.findOne({ tenantId: input.tenantId }).lean()
-      : null;
+    const companyInfo: any =
+      input.tenantId && mongoose.isValidObjectId(input.tenantId)
+        ? await Company.findOne({ tenantId: input.tenantId }).lean()
+        : null;
     const resolvedBizName = tenantInfo?.name || companyInfo?.name || 'Retail Store';
 
-    // 9. Record POS Transaction for legacy compatibility
+    // 10. Record POS Transaction for legacy compatibility
     await Transaction.create({
       tenantId: input.tenantId,
       companyName: resolvedBizName,
@@ -368,7 +410,7 @@ export class POSService {
       branchName: (input as any).branchName || 'Main Store',
     });
 
-    // 10. Update Customer 360 & Loyalty
+    // 11. Update Customer 360 & Loyalty
     if (input.customerId) {
       await ResilientExecutor.execute({ name: `pos-crm-update:${orderNumber}` }, async () => {
         await CRMService.recalculateCustomerMetrics(input.customerId!);

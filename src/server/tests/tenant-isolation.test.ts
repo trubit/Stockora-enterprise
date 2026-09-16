@@ -38,13 +38,28 @@ describe('Phase 43: Multi-Tenant Architecture & Data Isolation Tests', () => {
     app.use(errorHandler);
 
     // Clean test collections
-    const testEmails = ['harn_owner@harn.com', 'hanson_owner@hanson.com', 'admin@stockora.com'];
-    const testTenants = await Tenant.find({ slug: { $in: ['harn-company', 'hanson-company'] } });
+    const testEmails = [
+      'harn_owner@harn.com',
+      'hanson_owner@hanson.com',
+      'admin@stockora.com',
+      'consultant@enterprise.com',
+      'admin@stockora.saas',
+      'owner@harncompany.com',
+      'owner@hansoncompany.com',
+      'stranger@example.com',
+    ];
+    const testTenants = await Tenant.find({
+      slug: { $in: ['harn-company', 'hanson-company', 'unauthorized-third-tenant'] },
+    });
     const tenantIds = testTenants.map((t) => t._id);
     await Promise.all([
       User.deleteMany({ email: { $in: testEmails } }),
-      Tenant.deleteMany({ slug: { $in: ['harn-company', 'hanson-company'] } }),
-      Product.deleteMany({ tenantId: { $in: tenantIds } }),
+      Tenant.deleteMany({
+        slug: { $in: ['harn-company', 'hanson-company', 'unauthorized-third-tenant'] },
+      }),
+      Product.deleteMany({
+        $or: [{ tenantId: { $in: tenantIds } }, { sku: { $in: ['HARN-SKU-001', 'HANS-SKU-001'] } }],
+      }),
       Branch.deleteMany({ tenantId: { $in: tenantIds } }),
       Warehouse.deleteMany({ tenantId: { $in: tenantIds } }),
     ]);

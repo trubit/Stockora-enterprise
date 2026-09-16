@@ -1,3 +1,4 @@
+import { redis } from '../database/redis.js';
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AuthenticationError, AuthorizationError } from '../errors/AppError.js';
@@ -121,23 +122,48 @@ export async function authMiddleware(
       req.tenantSlug = decoded.tenantSlug;
     }
 
-    // 2. Validate server-side session if a sessionToken was embedded in the JWT
+    // 2. Validate server-side session with Redis caching & throttled disk writes
     if (decoded.sessionToken) {
-      const session = await Session.findOneAndUpdate(
-        {
+      const sessionCacheKey = `session:${decoded.sessionToken}`;
+      let cachedSessionId: string | null = null;
+      try {
+        cachedSessionId = await redis.get(sessionCacheKey);
+      } catch {
+        // graceful Redis cache fallback
+      }
+
+      if (cachedSessionId) {
+        req.sessionId = cachedSessionId;
+      } else {
+        const session = await Session.findOne({
           sessionToken: decoded.sessionToken,
           isActive: true,
           expiresAt: { $gt: new Date() },
-        },
-        { $set: { lastSeenAt: new Date() } },
-        { new: true }
-      );
-      if (!session) {
-        return next(
-          new AuthenticationError('Session has been revoked or expired. Please log in again.')
-        );
+        });
+
+        if (!session) {
+          return next(
+            new AuthenticationError('Session has been revoked or expired. Please log in again.')
+          );
+        }
+
+        req.sessionId = session._id.toString();
+
+        // Cache session in Redis for 120 seconds to eliminate continuous DB write locks
+        try {
+          await redis.setex(sessionCacheKey, 120, req.sessionId);
+        } catch {
+          // ignore cache error
+        }
+
+        // Throttled lastSeenAt write: only update DB if lastSeenAt is older than 2 minutes
+        const lastSeen = session.lastSeenAt ? new Date(session.lastSeenAt).getTime() : 0;
+        if (Date.now() - lastSeen > 120_000) {
+          Session.updateOne({ _id: session._id }, { $set: { lastSeenAt: new Date() } }).catch(
+            () => {}
+          );
+        }
       }
-      req.sessionId = session._id.toString();
     }
 
     next();

@@ -1,3 +1,4 @@
+import { redis } from '../database/redis.js';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import { User, type IUser } from '../models/User.js';

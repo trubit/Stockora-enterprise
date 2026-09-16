@@ -124,6 +124,9 @@ ProductSchema.index({ tenantId: 1, sku: 1 });
 ProductSchema.index({ tenantId: 1, category: 1 });
 ProductSchema.index({ tenantId: 1, status: 1 });
 ProductSchema.index({ tenantId: 1, createdAt: -1 });
+ProductSchema.index({ tenantId: 1, name: 1 });
+ProductSchema.index({ tenantId: 1, barcode: 1 });
+ProductSchema.index({ tenantId: 1, lowStockAlert: 1, quantity: 1 });
 
 ProductSchema.pre('validate', function (next) {
   if (this.currency) {

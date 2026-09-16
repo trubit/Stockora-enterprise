@@ -22,9 +22,12 @@ const SessionSchema = new Schema<ISession>(
     deviceFingerprint: { type: String },
     isActive: { type: Boolean, default: true, index: true },
     lastSeenAt: { type: Date, default: Date.now },
-    expiresAt: { type: Date, required: true, index: true },
+    expiresAt: { type: Date, required: true },
   },
   { timestamps: true }
 );
+
+SessionSchema.index({ sessionToken: 1, isActive: 1, expiresAt: 1 });
+SessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 export const Session = mongoose.model<ISession>('Session', SessionSchema);

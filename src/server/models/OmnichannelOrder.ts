@@ -188,6 +188,11 @@ const OmnichannelOrderSchema = new Schema<IOmnichannelOrder>(
   { timestamps: true }
 );
 
+OmnichannelOrderSchema.index({ tenantId: 1, createdAt: -1 });
+OmnichannelOrderSchema.index({ tenantId: 1, status: 1 });
+OmnichannelOrderSchema.index({ tenantId: 1, customerId: 1 });
+OmnichannelOrderSchema.index({ tenantId: 1, channel: 1 });
+
 export const OmnichannelOrder = mongoose.model<IOmnichannelOrder>(
   'OmnichannelOrder',
   OmnichannelOrderSchema

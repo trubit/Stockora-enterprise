@@ -182,15 +182,22 @@ export class PaymentController {
     transaction: ITransaction;
     gatewayResponse?: string;
   }> {
-    const transaction = await Transaction.findOne({ transactionNumber: reference });
-    if (!transaction) {
-      throw new NotFoundError(`Transaction record not found for reference: ${reference}`);
-    }
+    // Atomic State Lock: acquire processing state to prevent race conditions between webhooks and client polling
+    const transaction = await Transaction.findOneAndUpdate(
+      { transactionNumber: reference, status: { $ne: 'COMPLETED' } },
+      { $set: { status: 'PROCESSING' } },
+      { new: true }
+    );
 
-    // Idempotency: Avoid double inventory deductions or re-processing completed payments
-    if (transaction.status === 'COMPLETED') {
-      logger.info(`[PaymentController] Reference ${reference} already marked as COMPLETED.`);
-      return { success: true, status: 'COMPLETED', transaction };
+    if (!transaction) {
+      const completedTx = await Transaction.findOne({ transactionNumber: reference });
+      if (completedTx && completedTx.status === 'COMPLETED') {
+        logger.info(
+          `[PaymentController] Reference ${reference} already marked as COMPLETED (idempotent replay).`
+        );
+        return { success: true, status: 'COMPLETED', transaction: completedTx };
+      }
+      throw new NotFoundError(`Transaction record not found for reference: ${reference}`);
     }
 
     const expectedAmount = transaction.total;

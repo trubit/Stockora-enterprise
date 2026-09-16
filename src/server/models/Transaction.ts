@@ -98,4 +98,8 @@ const TransactionSchema = new Schema<ITransaction>(
   { timestamps: true }
 );
 
+TransactionSchema.index({ tenantId: 1, createdAt: -1 });
+TransactionSchema.index({ tenantId: 1, status: 1 });
+TransactionSchema.index({ tenantId: 1, cashierId: 1 });
+
 export const Transaction = mongoose.model<ITransaction>('Transaction', TransactionSchema);
