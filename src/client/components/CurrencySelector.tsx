@@ -36,19 +36,31 @@ export const CurrencySelector: React.FC<CurrencySelectorProps> = ({ size = 'smal
   const open = Boolean(anchorEl);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     setAnchorEl(event.currentTarget);
   };
 
   const handleClose = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     setAnchorEl(null);
   };
 
   const handleSelect = (code: string) => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     handleClose();
     setDisplayCurrency(code);
   };
 
   const handleReset = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     handleClose();
     resetDisplayCurrency();
   };
@@ -66,6 +78,10 @@ export const CurrencySelector: React.FC<CurrencySelectorProps> = ({ size = 'smal
     <Box>
       <Button
         id="currency-selector-btn"
+        onMouseDown={(e) => {
+          // Prevent focus retention on trigger button before modal/portal attaches aria-hidden to #root
+          (e.currentTarget as HTMLElement)?.blur();
+        }}
         aria-controls={open ? 'currency-selector-menu' : undefined}
         aria-haspopup="true"
         aria-expanded={open ? 'true' : undefined}
@@ -119,12 +135,15 @@ export const CurrencySelector: React.FC<CurrencySelectorProps> = ({ size = 'smal
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
+        disableAutoFocusItem
+        autoFocus={false}
+        disableRestoreFocus
+        disableScrollLock
         MenuListProps={{
           'aria-labelledby': 'currency-selector-btn',
-          role: 'menu',
+          autoFocus: false,
+          autoFocusItem: false,
         }}
-        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         PaperProps={{
           sx: {
             mt: 1,

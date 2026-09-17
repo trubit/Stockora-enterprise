@@ -46,10 +46,17 @@ export const TenantSwitcher: React.FC = () => {
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     if (switching) return;
-    setAnchorEl(event.currentTarget);
+    const target = event.currentTarget;
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    setAnchorEl(target);
   };
 
   const handleClose = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     setAnchorEl(null);
   };
 
@@ -89,6 +96,10 @@ export const TenantSwitcher: React.FC = () => {
       <Button
         ref={buttonRef}
         id="tenant-switcher-button"
+        onMouseDown={(e) => {
+          // Prevent focus retention on trigger button before modal/portal attaches aria-hidden to #root
+          (e.currentTarget as HTMLElement)?.blur();
+        }}
         aria-haspopup="true"
         aria-expanded={isMenuOpen}
         aria-controls={isMenuOpen ? 'tenant-switcher-menu' : undefined}
@@ -155,8 +166,14 @@ export const TenantSwitcher: React.FC = () => {
         anchorEl={anchorEl}
         open={isMenuOpen}
         onClose={handleClose}
+        disableAutoFocusItem
+        autoFocus={false}
+        disableRestoreFocus
+        disableScrollLock
         MenuListProps={{
           'aria-labelledby': 'tenant-switcher-button',
+          autoFocus: false,
+          autoFocusItem: false,
         }}
         slotProps={{
           paper: {

@@ -31,7 +31,7 @@ import Edit from '@mui/icons-material/Edit';
 import Sync from '@mui/icons-material/Sync';
 import Close from '@mui/icons-material/Close';
 import { apiClient } from '../../api/client.ts';
-import { toast } from 'react-hot-toast';
+import { notify } from '../../utils/notify.ts';
 import PageHeader from '../../components/PageHeader.tsx';
 import StatCard from '../../components/StatCard.tsx';
 import StatusChip from '../../components/StatusChip.tsx';
@@ -74,7 +74,7 @@ export const PlatformBillingAdmin: React.FC = () => {
       if (plansRes.data?.success) setPlans(plansRes.data.data);
       if (subsRes.data?.success) setSubscriptions(subsRes.data.data);
     } catch {
-      toast.error('Failed to load platform billing data');
+      notify.error('Failed to load platform billing data');
     } finally {
       setLoading(false);
     }
@@ -87,12 +87,12 @@ export const PlatformBillingAdmin: React.FC = () => {
       const res = await apiClient.put(`/billing/admin/plans/${selectedPlan._id}`, selectedPlan);
 
       if (res.data?.success) {
-        toast.success('Plan configuration updated successfully!');
+        notify.success('Plan configuration updated successfully!');
         setEditPlanModal(false);
         fetchAdminBillingData();
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to update plan');
+      notify.error(err, { fallback: 'Failed to update plan' });
     } finally {
       setSavingPlan(false);
     }

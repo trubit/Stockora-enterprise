@@ -11,6 +11,7 @@ export default defineConfig({
     testTimeout: 30_000,
     pool: 'forks',
     maxWorkers: 4,
+    fileParallelism: false,
     env: {
       NODE_ENV: 'test',
       MONGODB_URI: 'mongodb://127.0.0.1:27017/stockora_test',

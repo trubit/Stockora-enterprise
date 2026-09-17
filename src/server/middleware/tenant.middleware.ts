@@ -109,6 +109,18 @@ export async function resolveTenantContext(
         .lean();
     }
 
+    // Platform Super Admin check
+    const isSuperAdmin = Boolean(
+      userDoc.isPlatformAdmin || userDoc.roleName === 'Super Administrator'
+    );
+
+    // Platform Super Admin fallback: if admin does not have direct tenancy, resolve primary platform tenant
+    if (!tenantDoc && isSuperAdmin) {
+      tenantDoc = await Tenant.findOne({ status: { $ne: 'DELETED' } })
+        .sort({ createdAt: 1 })
+        .lean();
+    }
+
     if (!tenantDoc) {
       return next(
         new NotFoundError('Active tenant could not be resolved. Please complete company setup.')
@@ -118,9 +130,6 @@ export async function resolveTenantContext(
     const resolvedTenantId = (tenantDoc as any)._id.toString();
 
     // 2. Validate tenant membership (unless platform admin or Super Administrator)
-    const isSuperAdmin = Boolean(
-      userDoc.isPlatformAdmin || userDoc.roleName === 'Super Administrator'
-    );
     if (!isSuperAdmin) {
       const isPrimaryTenant = userDoc.tenantId && userDoc.tenantId.toString() === resolvedTenantId;
       const isMember =

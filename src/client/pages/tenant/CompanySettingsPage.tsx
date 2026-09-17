@@ -1,3 +1,4 @@
+import { normalizeErrorMessage } from '../../utils/notify.ts';
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../../api/client.ts';
 import {
@@ -267,7 +268,7 @@ export const CompanySettingsPage: React.FC = () => {
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
+          {typeof error === 'string' ? error : normalizeErrorMessage(error)}
         </Alert>
       )}
 

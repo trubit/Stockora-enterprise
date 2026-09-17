@@ -1,3 +1,4 @@
+import { normalizeErrorMessage } from '../../utils/notify.ts';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -215,7 +216,7 @@ export const PlatformAdminDashboard: React.FC = () => {
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
+          {typeof error === 'string' ? error : normalizeErrorMessage(error)}
         </Alert>
       )}
 

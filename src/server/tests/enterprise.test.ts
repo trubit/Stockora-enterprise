@@ -56,7 +56,7 @@ describe('Phases 19 - 22 Enterprise Capabilities', () => {
 
   describe('Phase 21: ERP Double-Entry Ledger mapping', () => {
     it('should construct double-entry journal credits and debits from transaction details', async () => {
-      await Transaction.deleteMany({});
+      await Transaction.deleteMany({ transactionNumber: 'TX-ERP-99' });
       const tx = await Transaction.create({
         transactionNumber: 'TX-ERP-99',
         type: 'SALE',

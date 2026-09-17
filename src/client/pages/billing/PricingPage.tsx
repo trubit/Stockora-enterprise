@@ -30,7 +30,7 @@ import Apartment from '@mui/icons-material/Apartment';
 import Inventory2 from '@mui/icons-material/Inventory2';
 import Psychology from '@mui/icons-material/Psychology';
 import { apiClient } from '../../api/client';
-import { toast } from 'react-hot-toast';
+import { notify } from '../../utils/notify.ts';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTenantStore } from '../../store/tenant.js';
@@ -103,17 +103,17 @@ export const PricingPage: React.FC = () => {
     if (!reference) return;
 
     try {
-      toast.loading('Verifying payment with gateway...', { id: 'gateway-verify' });
+      notify.loading('Verifying payment with gateway...', { id: 'gateway-verify' });
 
       const verifyRes = await apiClient.post('/billing/subscription/verify', {
         reference,
         provider,
       });
 
-      toast.dismiss('gateway-verify');
+      notify.dismiss('gateway-verify');
 
       if (verifyRes.data?.success) {
-        toast.success(
+        notify.success(
           verifyRes.data?.message || 'Payment confirmed! Subscription activated successfully! 🎉',
           {
             duration: 5000,
@@ -126,17 +126,17 @@ export const PricingPage: React.FC = () => {
         queryClient.invalidateQueries({ queryKey: ['tenant'] });
         navigate('/pricing', { replace: true });
       } else {
-        toast.error(verifyRes.data?.message || 'Payment verification failed at gateway.');
+        notify.error(verifyRes.data?.message || 'Payment verification failed at gateway.');
         navigate('/pricing', { replace: true });
       }
     } catch (e: any) {
-      toast.dismiss('gateway-verify');
+      notify.dismiss('gateway-verify');
       const verifyErrMsg =
         e.response?.data?.error?.message ||
         e.response?.data?.message ||
         e.message ||
         'Payment verification failed';
-      toast.error(verifyErrMsg);
+      notify.error(verifyErrMsg);
       navigate('/pricing', { replace: true });
     }
   };
@@ -149,7 +149,7 @@ export const PricingPage: React.FC = () => {
         setPlans(res.data.data);
       }
     } catch {
-      toast.error('Failed to load subscription plans');
+      notify.error('Failed to load subscription plans');
     } finally {
       setLoading(false);
     }
@@ -187,7 +187,7 @@ export const PricingPage: React.FC = () => {
           billingInterval,
         });
         if (res.data?.success) {
-          toast.success('Successfully switched to Free Starter Plan!');
+          notify.success('Successfully switched to Free Starter Plan!');
           setCheckoutModalOpen(false);
           fetchCurrentSubscription();
           navigate('/company/billing');
@@ -208,7 +208,7 @@ export const PricingPage: React.FC = () => {
         const { reference, authorizationUrl } = initRes.data.data;
 
         if (authorizationUrl) {
-          toast.success(
+          notify.success(
             `Redirecting to secure ${selectedProvider === 'STRIPE' ? 'Stripe' : 'Paystack'} checkout...`,
             {
               duration: 2500,
@@ -222,14 +222,14 @@ export const PricingPage: React.FC = () => {
         }
 
         // Direct server verification fallback for testing / simulation
-        toast.loading(`Verifying payment reference ${reference}...`, { duration: 2500 });
+        notify.loading(`Verifying payment reference ${reference}...`, { duration: 2500 });
         const verifyRes = await apiClient.post('/billing/subscription/verify', {
           reference,
           provider: selectedProvider,
         });
 
         if (verifyRes.data?.success) {
-          toast.success(`Upgraded to ${selectedPlan.name} successfully! 🎉`);
+          notify.success(`Upgraded to ${selectedPlan.name} successfully! 🎉`);
           setCheckoutModalOpen(false);
           await fetchCurrentSubscription();
           await useTenantStore.getState().fetchCurrentTenant();
@@ -238,7 +238,7 @@ export const PricingPage: React.FC = () => {
           queryClient.invalidateQueries({ queryKey: ['tenant'] });
           navigate('/company/billing');
         } else {
-          toast.error(verifyRes.data?.message || 'Payment verification failed');
+          notify.error(verifyRes.data?.message || 'Payment verification failed');
         }
       }
     } catch (err: any) {
@@ -248,7 +248,7 @@ export const PricingPage: React.FC = () => {
         (typeof err.response?.data?.error === 'string' ? err.response.data.error : null) ||
         err.message ||
         'Checkout failed';
-      toast.error(errMsg);
+      notify.error(errMsg);
     } finally {
       setProcessingPayment(false);
     }

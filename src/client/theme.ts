@@ -100,54 +100,27 @@ const baseTheme = createTheme({
       defaultProps: {
         ModalProps: {
           keepMounted: false,
+          disableAutoFocus: true,
+          disableRestoreFocus: true,
+          disableEnforceFocus: true,
+          disableScrollLock: true,
         },
       },
     },
     MuiModal: {
       defaultProps: {
         keepMounted: false,
-      },
-    },
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-          padding: '8px 18px',
-          transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-          boxShadow: 'none',
-          '&:hover': {
-            boxShadow: '0 4px 14px rgba(139, 92, 246, 0.2)',
-            transform: 'translateY(-1px)',
-          },
-          '&:active': {
-            transform: 'translateY(0)',
-          },
-        },
-        containedSecondary: {
-          '&:hover': {
-            boxShadow: '0 4px 14px rgba(16, 185, 129, 0.2)',
-          },
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          backgroundImage: 'none',
-          backgroundColor: '#0f131f',
-          border: '1px solid rgba(255, 255, 255, 0.05)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-          transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-          borderRadius: 16,
-          '&:hover': {
-            borderColor: 'rgba(139, 92, 246, 0.25)',
-            transform: 'translateY(-2px)',
-            boxShadow: '0 12px 40px rgba(0, 0, 0, 0.5)',
-          },
-        },
+        disableAutoFocus: true,
+        disableRestoreFocus: true,
+        disableEnforceFocus: true,
+        disableScrollLock: true,
       },
     },
     MuiDialog: {
+      defaultProps: {
+        disableRestoreFocus: true,
+        disableScrollLock: true,
+      },
       styleOverrides: {
         paper: {
           background: 'linear-gradient(135deg, #0f1322 0%, #07090e 100%)',
@@ -157,6 +130,24 @@ const baseTheme = createTheme({
           padding: '12px',
           margin: '16px',
           boxSizing: 'border-box',
+        },
+      },
+    },
+    MuiPopover: {
+      defaultProps: {
+        disableRestoreFocus: true,
+        disableScrollLock: true,
+      },
+    },
+    MuiMenu: {
+      defaultProps: {
+        disableRestoreFocus: true,
+        disableScrollLock: true,
+        autoFocus: false,
+        disableAutoFocusItem: true,
+        MenuListProps: {
+          autoFocus: false,
+          autoFocusItem: false,
         },
       },
     },

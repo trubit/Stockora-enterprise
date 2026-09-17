@@ -489,7 +489,11 @@ export class BillingController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const plan = await Plan.create(req.body);
+      const payload = { ...(req.body || {}) };
+      if (!payload._id) {
+        delete payload._id;
+      }
+      const plan = await Plan.create(payload);
       res.status(201).json({ success: true, data: plan });
     } catch (err) {
       next(err);
@@ -505,9 +509,10 @@ export class BillingController {
     next: NextFunction
   ): Promise<void> {
     try {
+      const { _id, version, createdAt, updatedAt, __v, ...updateData } = req.body || {};
       const plan = await Plan.findByIdAndUpdate(
         req.params.id,
-        { $set: req.body, $inc: { version: 1 } },
+        { $set: updateData, $inc: { version: 1 } },
         { new: true, runValidators: true }
       );
       if (!plan) {

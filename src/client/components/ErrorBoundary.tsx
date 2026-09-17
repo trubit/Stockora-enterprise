@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Box, Typography, Button, Container } from '@mui/material';
 import { appNavigate } from '../utils/navigation.ts';
+import { normalizeErrorMessage } from '../utils/notify.ts';
 
 interface Props {
   children?: ReactNode;
@@ -8,7 +9,7 @@ interface Props {
 
 interface State {
   hasError: boolean;
-  error: Error | null;
+  error: Error | unknown | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -17,7 +18,7 @@ export class ErrorBoundary extends Component<Props, State> {
     error: null,
   };
 
-  public static getDerivedStateFromError(error: Error): State {
+  public static getDerivedStateFromError(error: Error | unknown): State {
     return { hasError: true, error };
   }
 
@@ -32,10 +33,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public override render() {
     if (this.state.hasError) {
-      const errorMsg =
-        typeof this.state.error?.message === 'string'
-          ? this.state.error.message
-          : 'An unexpected layout error occurred.';
+      const errorMsg = normalizeErrorMessage(
+        this.state.error,
+        'An unexpected layout error occurred.'
+      );
 
       return (
         <Container maxWidth="sm">

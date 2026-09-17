@@ -37,7 +37,7 @@ import SecurityIcon from '@mui/icons-material/Security';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PageHeader from '../../components/PageHeader.tsx';
 import { apiClient } from '../../api/client.ts';
-import toast from 'react-hot-toast';
+import { notify } from '../../utils/notify.ts';
 
 interface StructuredAIAnalysis {
   summary: string;
@@ -78,8 +78,59 @@ interface ChatMessage {
   latencyMs?: number;
 }
 
+interface UnavailableCardProps {
+  tabIdx: number;
+  onRetry: () => void;
+  customMsg?: string;
+  tabErrorMsg?: string;
+}
+
+const UnavailableStateCard: React.FC<UnavailableCardProps> = ({
+  onRetry,
+  customMsg,
+  tabErrorMsg,
+}) => (
+  <Card
+    sx={{
+      borderRadius: 2,
+      p: 4,
+      textAlign: 'center',
+      bgcolor: 'background.paper',
+      border: '1px dashed',
+      borderColor: 'warning.main',
+      my: 2,
+    }}
+  >
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, py: 2 }}>
+      <WarningAmberIcon sx={{ fontSize: 48, color: 'warning.main' }} />
+      <Typography variant="h6" fontWeight={700}>
+        AI Intelligence Temporarily Unavailable
+      </Typography>
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ maxWidth: 640, mb: 1, lineHeight: 1.6 }}
+      >
+        {customMsg ||
+          tabErrorMsg ||
+          'Google Gemini AI quota or rate limits reached on your configured project. Core Stockora inventory and operations remain 100% functional.'}
+      </Typography>
+      <Button
+        variant="contained"
+        color="primary"
+        startIcon={<RefreshIcon />}
+        onClick={onRetry}
+        sx={{ textTransform: 'none', px: 3, py: 1 }}
+      >
+        Retry Analysis
+      </Button>
+    </Box>
+  </Card>
+);
+
 export const AIIntelligenceConsole: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
+  const isFetchingRef = useRef<{ [key: string]: boolean }>({});
 
   // Status state
   const [aiStatus, setAiStatus] = useState<{
@@ -123,45 +174,6 @@ export const AIIntelligenceConsole: React.FC = () => {
   // Granular tab error state to render professional AI unavailable card
   const [tabError, setTabError] = useState<{ [key: number]: string }>({});
 
-  const renderUnavailableState = (tabIdx: number, retryFn: () => void, customMsg?: string) => (
-    <Card
-      sx={{
-        borderRadius: 2,
-        p: 4,
-        textAlign: 'center',
-        bgcolor: 'background.paper',
-        border: '1px dashed',
-        borderColor: 'warning.main',
-        my: 2,
-      }}
-    >
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, py: 2 }}>
-        <WarningAmberIcon sx={{ fontSize: 48, color: 'warning.main' }} />
-        <Typography variant="h6" fontWeight={700}>
-          AI Intelligence Temporarily Unavailable
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ maxWidth: 640, mb: 1, lineHeight: 1.6 }}
-        >
-          {customMsg ||
-            tabError[tabIdx] ||
-            'Google Gemini AI quota or rate limits reached on your configured project. Core Stockora inventory and operations remain 100% functional.'}
-        </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<RefreshIcon />}
-          onClick={retryFn}
-          sx={{ textTransform: 'none', px: 3, py: 1 }}
-        >
-          Retry Analysis
-        </Button>
-      </Box>
-    </Card>
-  );
-
   useEffect(() => {
     fetchStatus();
     fetchInventoryIntelligence();
@@ -182,7 +194,9 @@ export const AIIntelligenceConsole: React.FC = () => {
     }
   };
 
-  const fetchInventoryIntelligence = async () => {
+  const fetchInventoryIntelligence = async (force = false) => {
+    if (isFetchingRef.current['inventory'] && !force) return;
+    isFetchingRef.current['inventory'] = true;
     setInventoryLoading(true);
     setTabError((prev) => ({ ...prev, [1]: '' }));
     try {
@@ -191,11 +205,19 @@ export const AIIntelligenceConsole: React.FC = () => {
         setInventoryAnalysis(res.data.data);
       }
     } catch (err: any) {
-      const msg = err.response?.data?.error?.message || 'Failed to load inventory intelligence.';
-      setTabError((prev) => ({ ...prev, [1]: msg }));
-      toast.error(msg);
+      if (err.response?.status === 429) {
+        const msg =
+          'AI request limit reached. Please wait a moment before refreshing analytical data.';
+        setTabError((prev) => ({ ...prev, [1]: msg }));
+        notify.warning(msg);
+      } else {
+        const msg = err.response?.data?.error?.message || 'Failed to load inventory intelligence.';
+        setTabError((prev) => ({ ...prev, [1]: msg }));
+        notify.error(err, { fallback: 'Failed to load inventory intelligence.' });
+      }
     } finally {
       setInventoryLoading(false);
+      isFetchingRef.current['inventory'] = false;
     }
   };
 
@@ -212,7 +234,7 @@ export const AIIntelligenceConsole: React.FC = () => {
       const msg =
         err.response?.data?.error?.message || 'Failed to generate reorder recommendations.';
       setTabError((prev) => ({ ...prev, [2]: msg }));
-      toast.error(msg);
+      notify.error(msg);
     } finally {
       setReordersLoading(false);
     }
@@ -229,7 +251,7 @@ export const AIIntelligenceConsole: React.FC = () => {
     } catch (err: any) {
       const msg = err.response?.data?.error?.message || 'Failed to generate demand forecast.';
       setTabError((prev) => ({ ...prev, [3]: msg }));
-      toast.error(msg);
+      notify.error(msg);
     } finally {
       setForecastLoading(false);
     }
@@ -246,7 +268,7 @@ export const AIIntelligenceConsole: React.FC = () => {
     } catch (err: any) {
       const msg = err.response?.data?.error?.message || 'Failed to generate business briefing.';
       setTabError((prev) => ({ ...prev, [4]: msg }));
-      toast.error(msg);
+      notify.error(msg);
     } finally {
       setSummaryLoading(false);
     }
@@ -315,7 +337,7 @@ export const AIIntelligenceConsole: React.FC = () => {
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success('Copied to clipboard');
+    notify.success('Copied to clipboard');
   };
 
   const quickQuestions = [
@@ -601,7 +623,7 @@ export const AIIntelligenceConsole: React.FC = () => {
               startIcon={<RefreshIcon />}
               variant="outlined"
               size="small"
-              onClick={fetchInventoryIntelligence}
+              onClick={() => fetchInventoryIntelligence(true)}
               disabled={inventoryLoading}
             >
               Refresh Analysis
@@ -760,7 +782,11 @@ export const AIIntelligenceConsole: React.FC = () => {
               </Grid>
             </Grid>
           ) : tabError[1] ? (
-            renderUnavailableState(1, fetchInventoryIntelligence)
+            <UnavailableStateCard
+              tabIdx={1}
+              onRetry={fetchInventoryIntelligence}
+              tabErrorMsg={tabError[1]}
+            />
           ) : (
             <Alert severity="info">
               Click Refresh to generate inventory intelligence for your company.
@@ -901,7 +927,7 @@ export const AIIntelligenceConsole: React.FC = () => {
               </TableContainer>
             </Card>
           ) : tabError[2] ? (
-            renderUnavailableState(2, fetchReorders)
+            <UnavailableStateCard tabIdx={2} onRetry={fetchReorders} tabErrorMsg={tabError[2]} />
           ) : (
             <Card sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}>
               <CheckCircleOutlineIcon color="success" sx={{ fontSize: 48, mb: 1 }} />
@@ -1030,7 +1056,7 @@ export const AIIntelligenceConsole: React.FC = () => {
               </Grid>
             </Grid>
           ) : tabError[3] ? (
-            renderUnavailableState(3, fetchForecast)
+            <UnavailableStateCard tabIdx={3} onRetry={fetchForecast} tabErrorMsg={tabError[3]} />
           ) : (
             <Alert severity="info">Click Regenerate to produce demand forecasts.</Alert>
           )}
@@ -1192,7 +1218,11 @@ export const AIIntelligenceConsole: React.FC = () => {
               </Grid>
             </Grid>
           ) : tabError[4] ? (
-            renderUnavailableState(4, () => fetchExecutiveSummary())
+            <UnavailableStateCard
+              tabIdx={4}
+              onRetry={fetchExecutiveSummary}
+              tabErrorMsg={tabError[4]}
+            />
           ) : (
             <Alert severity="info">Select a briefing window to view executive intelligence.</Alert>
           )}

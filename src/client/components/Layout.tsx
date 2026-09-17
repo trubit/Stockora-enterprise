@@ -116,8 +116,20 @@ export default function Layout() {
     };
   }, []);
 
+  useEffect(() => {
+    if (mobileOpen) {
+      setMobileOpen(false);
+    }
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  }, [location.pathname]);
+
   const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    setMobileOpen((prev) => !prev);
   };
 
   const menuItems = [
@@ -1246,18 +1258,28 @@ export default function Layout() {
           variant="temporary"
           open={mobileOpen}
           onClose={() => {
-            (document.activeElement as HTMLElement)?.blur();
+            if (document.activeElement instanceof HTMLElement) {
+              document.activeElement.blur();
+            }
             setMobileOpen(false);
           }}
           ModalProps={{
             keepMounted: false,
+            disableAutoFocus: true,
+            disableRestoreFocus: true,
+            disableEnforceFocus: true,
+            disableScrollLock: true,
           }}
           SlideProps={{
             onExit: () => {
-              (document.activeElement as HTMLElement)?.blur();
+              if (document.activeElement instanceof HTMLElement) {
+                document.activeElement.blur();
+              }
             },
             onExited: () => {
-              (document.activeElement as HTMLElement)?.blur();
+              if (document.activeElement instanceof HTMLElement) {
+                document.activeElement.blur();
+              }
             },
           }}
           sx={{
@@ -1287,7 +1309,10 @@ export default function Layout() {
       {/* Main Content Area */}
       <Box
         component="main"
+        id="main-content"
+        tabIndex={-1}
         sx={{
+          outline: 'none',
           flexGrow: 1,
           p: { xs: 1.5, sm: 2.5, md: 3.5 },
           width: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` },

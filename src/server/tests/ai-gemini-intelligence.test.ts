@@ -11,9 +11,10 @@ import { SYSTEM_PERMISSIONS } from '../../shared/constants.js';
 import { DEFAULT_ROLE_PERMISSIONS, SYSTEM_ROLES } from '../../shared/permissions.js';
 
 describe('Stockora Enterprise — Gemini AI Intelligence & Multi-Tenant Analytics Test Suite', () => {
-  const tenantA = 'tenant_company_alpha_101';
-  const tenantB = 'tenant_company_beta_202';
-  const emptyTenant = 'tenant_company_new_303';
+  const runId = Date.now().toString(36) + '_' + Math.random().toString(36).substring(7);
+  const tenantA = 'tenant_company_alpha_' + runId;
+  const tenantB = 'tenant_company_beta_' + runId;
+  const emptyTenant = 'tenant_company_new_' + runId;
 
   beforeAll(async () => {
     if (mongoose.connection.readyState === 0) {

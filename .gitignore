@@ -59,3 +59,7 @@ crash.*.log
 *.tfplan
 .terraform/
 .terraform.lock.hcl
+
+# Playwright Test Artifacts
+test-results/
+playwright-report/

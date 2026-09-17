@@ -33,7 +33,7 @@ import Inventory2 from '@mui/icons-material/Inventory2';
 import Apartment from '@mui/icons-material/Apartment';
 import Stars from '@mui/icons-material/Stars';
 import { apiClient } from '../../api/client.ts';
-import { toast } from 'react-hot-toast';
+import { notify } from '../../utils/notify.ts';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTenantStore } from '../../store/tenant.js';
@@ -108,17 +108,17 @@ export const BillingDashboard: React.FC = () => {
     if (!reference) return;
 
     try {
-      toast.loading('Verifying payment with gateway...', { id: 'dashboard-gateway-verify' });
+      notify.loading('Verifying payment with gateway...', { id: 'dashboard-gateway-verify' });
 
       const verifyRes = await apiClient.post('/billing/subscription/verify', {
         reference,
         provider,
       });
 
-      toast.dismiss('dashboard-gateway-verify');
+      notify.dismiss('dashboard-gateway-verify');
 
       if (verifyRes.data?.success) {
-        toast.success(verifyRes.data?.message || 'Payment confirmed! Subscription active! 🎉', {
+        notify.success(verifyRes.data?.message || 'Payment confirmed! Subscription active! 🎉', {
           duration: 5000,
         });
         await fetchBillingData();
@@ -128,17 +128,17 @@ export const BillingDashboard: React.FC = () => {
         queryClient.invalidateQueries({ queryKey: ['tenant'] });
         navigate('/company/billing', { replace: true });
       } else {
-        toast.error(verifyRes.data?.message || 'Payment verification failed at gateway.');
+        notify.error(verifyRes.data?.message || 'Payment verification failed at gateway.');
         navigate('/company/billing', { replace: true });
       }
     } catch (e: any) {
-      toast.dismiss('dashboard-gateway-verify');
+      notify.dismiss('dashboard-gateway-verify');
       const verifyErrMsg =
         e.response?.data?.error?.message ||
         e.response?.data?.message ||
         e.message ||
         'Payment verification failed';
-      toast.error(verifyErrMsg);
+      notify.error(verifyErrMsg);
       navigate('/company/billing', { replace: true });
     }
   };
@@ -166,7 +166,7 @@ export const BillingDashboard: React.FC = () => {
       if (txRes.data?.success) setTransactions(txRes.data.data);
     } catch (err: any) {
       if (err?.response?.status !== 401) {
-        toast.error('Failed to load billing details');
+        notify.error('Failed to load billing details');
       }
     } finally {
       setLoading(false);
@@ -182,7 +182,7 @@ export const BillingDashboard: React.FC = () => {
       });
 
       if (res.data?.success) {
-        toast.success(
+        notify.success(
           cancelImmediately
             ? 'Subscription cancelled immediately.'
             : 'Subscription will cancel at the end of the billing period.'
@@ -191,7 +191,7 @@ export const BillingDashboard: React.FC = () => {
         fetchBillingData();
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Cancellation failed');
+      notify.error(err, { fallback: 'Cancellation failed' });
     } finally {
       setCancelling(false);
     }
@@ -201,11 +201,11 @@ export const BillingDashboard: React.FC = () => {
     try {
       const res = await apiClient.post('/billing/subscription/reactivate', {});
       if (res.data?.success) {
-        toast.success('Subscription reactivated successfully!');
+        notify.success('Subscription reactivated successfully!');
         fetchBillingData();
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Reactivation failed');
+      notify.error(err, { fallback: 'Reactivation failed' });
     }
   };
 

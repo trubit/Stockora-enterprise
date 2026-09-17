@@ -17,8 +17,8 @@ describe('Secure Multi-Provider Payment Gateway & Zero-Trust Verification Tests'
     if (mongoose.connection.readyState === 0) {
       await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_payments');
     }
-    await Product.deleteMany({});
-    await Transaction.deleteMany({});
+    await Product.deleteMany({ sku: 'SKU-CARD-PAY-1' });
+    await Transaction.deleteMany({ transactionNumber: { $regex: /^TX-PAY-/ } });
 
     // Create a catalog test product
     const product = await Product.create({
@@ -36,8 +36,8 @@ describe('Secure Multi-Provider Payment Gateway & Zero-Trust Verification Tests'
   });
 
   afterAll(async () => {
-    await Product.deleteMany({});
-    await Transaction.deleteMany({});
+    await Product.deleteMany({ sku: 'SKU-CARD-PAY-1' });
+    await Transaction.deleteMany({ transactionNumber: { $regex: /^TX-PAY-/ } });
     await mongoose.connection.close();
   });
 
@@ -136,7 +136,7 @@ describe('Secure Multi-Provider Payment Gateway & Zero-Trust Verification Tests'
   });
 
   it('should block double-spend and verify details mismatch strictly', async () => {
-    const reference = 'TX-SEC-FRAUD-1';
+    const reference = `TX-SEC-FRAUD-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
     await Transaction.create({
       transactionNumber: reference,
       type: 'SALE',
@@ -190,7 +190,7 @@ describe('Secure Multi-Provider Payment Gateway & Zero-Trust Verification Tests'
   });
 
   it('should guarantee idempotency on multiple verify calls for already COMPLETED transaction', async () => {
-    const reference = 'TX-IDEMPOTENT-1';
+    const reference = `TX-IDEMPOTENT-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
     const tx = await Transaction.create({
       transactionNumber: reference,
       type: 'SALE',

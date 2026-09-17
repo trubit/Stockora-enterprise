@@ -235,6 +235,7 @@ async function seed() {
             isPlatformAdmin: true,
             isActive: true,
             isVerified: true,
+            password: hashedPassword,
             tenantId: primaryTenant._id,
             tenants: [
               {

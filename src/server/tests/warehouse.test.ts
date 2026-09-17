@@ -16,6 +16,7 @@ import { Product } from '../models/Product.js';
 import { User } from '../models/User.js';
 
 describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => {
+  let companyId: string;
   let warehouseId: string;
   let zoneId: string;
   let recLocId: string;
@@ -54,8 +55,9 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
 
   it('should create warehouse, zone, receiving location, and storage location', async () => {
     const code = `WH-TEST-${Date.now().toString().slice(-4)}`;
+    companyId = new mongoose.Types.ObjectId().toString();
     const wh = await warehouseService.createWarehouse({
-      companyId: new mongoose.Types.ObjectId().toString(),
+      companyId,
       branchId: new mongoose.Types.ObjectId().toString(),
       name: 'Central Distribution Center',
       code,
@@ -151,7 +153,7 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
   it('should allocate order stock and reserve inventory at storage location', async () => {
     const orderId = new mongoose.Types.ObjectId().toString();
     const alloc = await allocationService.allocateOrder({
-      companyId: new mongoose.Types.ObjectId().toString(),
+      companyId,
       orderId,
       orderNumber: 'STK-2026-TEST-99',
       items: [{ productId, quantity: 20 }],
@@ -167,7 +169,7 @@ describe('Phase 34 — Advanced Warehouse Management System (WMS) Tests', () => 
   it('should enforce wrong product and wrong location protection during barcode picking', async () => {
     const orderId = new mongoose.Types.ObjectId().toString();
     const alloc = await allocationService.allocateOrder({
-      companyId: new mongoose.Types.ObjectId().toString(),
+      companyId,
       orderId,
       orderNumber: 'STK-2026-PICK-01',
       items: [{ productId, quantity: 10 }],

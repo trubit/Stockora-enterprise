@@ -11,13 +11,17 @@ export const aiRouter = Router();
 // Dedicated rate limiter for AI operations: 25 requests per minute per client
 const aiRateLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 25,
+  max: process.env.NODE_ENV === 'production' ? 60 : 120,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
     success: false,
-    error:
-      'AI request limit reached. Please wait a moment before sending additional analytical queries.',
+    error: {
+      message:
+        'AI request limit reached. Please wait a moment before sending additional analytical queries.',
+      code: 'RATE_LIMITED',
+      status: 429,
+    },
   },
 });
 

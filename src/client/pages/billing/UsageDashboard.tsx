@@ -26,7 +26,7 @@ import AutoMode from '@mui/icons-material/AutoMode';
 import Sync from '@mui/icons-material/Sync';
 import Stars from '@mui/icons-material/Stars';
 import { apiClient } from '../../api/client.ts';
-import { toast } from 'react-hot-toast';
+import { notify } from '../../utils/notify.ts';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/PageHeader.tsx';
 
@@ -58,7 +58,7 @@ export const UsageDashboard: React.FC = () => {
       }
     } catch (err: any) {
       if (err?.response?.status !== 401) {
-        toast.error('Failed to load usage data');
+        notify.error('Failed to load usage data');
       }
     } finally {
       setLoading(false);
@@ -70,11 +70,11 @@ export const UsageDashboard: React.FC = () => {
       setReconciling(true);
       const res = await apiClient.post('/billing/usage/reconcile', {});
       if (res.data?.success) {
-        toast.success('Authoritative quota usage reconciled!');
+        notify.success('Authoritative quota usage reconciled!');
         await fetchUsage();
       }
     } catch {
-      toast.error('Reconciliation failed');
+      notify.error('Reconciliation failed');
     } finally {
       setReconciling(false);
     }
