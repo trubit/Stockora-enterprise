@@ -36,6 +36,9 @@ export default defineConfig({
     port: 3000,
     strictPort: true,
     host: true,
+    hmr: {
+      clientPort: 3000,
+    },
     proxy: {
       '/api': {
         target: process.env.VITE_API_URL || 'http://127.0.0.1:8080',
@@ -56,6 +59,32 @@ export default defineConfig({
           proxy.on('error', (_err, _req, _res) => {
             // Suppress noisy transient socket proxy ECONNREFUSED logs during restarts
           });
+        },
+      },
+    },
+  },
+  build: {
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'vendor-react';
+            }
+            if (id.includes('@mui') || id.includes('@emotion')) {
+              return 'vendor-mui';
+            }
+            if (id.includes('ag-grid')) {
+              return 'vendor-aggrid';
+            }
+            if (id.includes('recharts') || id.includes('d3-')) {
+              return 'vendor-charts';
+            }
+            if (id.includes('@tanstack') || id.includes('axios') || id.includes('zustand')) {
+              return 'vendor-state';
+            }
+          }
         },
       },
     },

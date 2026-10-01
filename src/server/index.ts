@@ -5,7 +5,7 @@ import cluster from 'cluster';
 import os from 'os';
 import { config } from '../config/environment.js';
 import { logger } from './logger.js';
-import { securityMiddleware } from './middleware/security.js';
+import { securityMiddleware, mongoSanitizeMiddleware } from './middleware/security.js';
 import { DBConnectionManager } from './database/connection.js';
 import { SocketManager } from './sockets/manager.js';
 import { QueueManager } from './queue/bullmq.js';
@@ -37,6 +37,7 @@ app.use(securityMiddleware);
 // Limits prevent DoS attacks via oversized request payloads.
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(mongoSanitizeMiddleware);
 
 // ── Static Assets ───────────────────────────────────────────────────────────
 // Serve uploaded files from configured runtime storage directory.

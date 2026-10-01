@@ -6,7 +6,6 @@ import {
   Grid,
   Button,
   Chip,
-  CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -37,6 +36,7 @@ import { useTenantStore } from '../../store/tenant.js';
 import { getPublicFrontendUrl, safeExternalRedirect } from '../../utils/url.ts';
 import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 import { CurrencySelector } from '../../components/CurrencySelector.tsx';
+import LoadingScreen from '../../components/LoadingScreen.tsx';
 
 interface PlanLimit {
   count: number;
@@ -265,20 +265,11 @@ export const PricingPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          minHeight: '65vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <CircularProgress size={45} sx={{ color: '#8b5cf6', mb: 2 }} />
-        <Typography variant="body1" sx={{ color: isDark ? '#9ca3af' : '#64748b', fontWeight: 600 }}>
-          Loading enterprise SaaS tiers...
-        </Typography>
-      </Box>
+      <LoadingScreen
+        message="Stockora Enterprise Pro"
+        submessage="Loading enterprise SaaS tiers & subscription parameters..."
+        minHeight="65vh"
+      />
     );
   }
 

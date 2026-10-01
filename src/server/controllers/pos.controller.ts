@@ -76,11 +76,13 @@ export class POSController {
     try {
       const orderNumber = String(req.params.orderNumber);
       const width = (req.query.width as '58mm' | '80mm') || '80mm';
-      const receipt = await POSService.generateReceipt(orderNumber, width);
+      const tenantId = (req as any).tenantId || (req as any).user?.tenantId;
+      const receipt = await POSService.generateReceipt(orderNumber, width, tenantId);
       res.status(200).json({ success: true, data: receipt });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      res.status(404).json({ success: false, message: msg });
+      const status = (err as any)?.statusCode || 404;
+      res.status(status).json({ success: false, message: msg });
     }
   }
 

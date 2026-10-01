@@ -126,17 +126,27 @@ apiRouter.get(
       }
       const cacheKey = `tenant:${tenantId}:transactions:all`;
 
-      const cached = await redis.get(cacheKey);
-      if (cached) {
-        res.json(JSON.parse(cached));
-        return;
+      try {
+        const cached = await redis.get(cacheKey);
+        if (cached) {
+          res.json(JSON.parse(cached));
+          return;
+        }
+      } catch (cacheErr) {
+        console.warn('[Transactions] Redis cache get failed:', cacheErr);
       }
 
       const transactions = await Transaction.find({ tenantId })
         .sort({ createdAt: -1 })
         .limit(100)
         .lean();
-      await redis.setex(cacheKey, 60, JSON.stringify(transactions));
+
+      try {
+        await redis.setex(cacheKey, 60, JSON.stringify(transactions));
+      } catch (cacheErr) {
+        console.warn('[Transactions] Redis cache set failed:', cacheErr);
+      }
+
       res.json(transactions);
     } catch (err) {
       next(err);
@@ -180,44 +190,57 @@ apiRouter.post(
         }
       }
 
-      // Process each item: deduct stock and emit real-time updates within tenant scope
-      for (const item of items) {
-        const isObjectId = mongoose.Types.ObjectId.isValid(item.productId);
-        const query: Record<string, unknown> = isObjectId
-          ? { $or: [{ _id: item.productId }, { sku: item.sku }] }
-          : { sku: item.sku };
+      // Concurrently process items: deduct stock and emit real-time updates within tenant scope
+      await Promise.all(
+        items.map(async (item: any) => {
+          const isObjectId = mongoose.Types.ObjectId.isValid(item.productId);
+          const query: Record<string, unknown> = isObjectId
+            ? { $or: [{ _id: item.productId }, { sku: item.sku }] }
+            : { sku: item.sku };
 
-        if (tenantId) {
-          query.tenantId = tenantId;
-        }
+          if (tenantId) {
+            query.tenantId = tenantId;
+          }
 
-        const product = await Product.findOne(query);
-        if (product) {
-          product.quantity = Math.max(0, product.quantity - item.quantity);
-          await product.save();
-          io.emitGlobal('product:stock-updated', {
-            productId: product._id,
-            quantity: product.quantity,
-            tenantId,
-          });
-
-          if (product.quantity <= product.lowStockAlert) {
-            io.emitGlobal('notification:low-stock', {
+          const product = await Product.findOne(query);
+          if (product) {
+            product.quantity = Math.max(0, product.quantity - (Number(item.quantity) || 1));
+            await product.save();
+            io.emitGlobal('product:stock-updated', {
               productId: product._id,
-              name: product.name,
               quantity: product.quantity,
-              lowStockAlert: product.lowStockAlert,
               tenantId,
             });
+
+            if (product.quantity <= product.lowStockAlert) {
+              io.emitGlobal('notification:low-stock', {
+                productId: product._id,
+                name: product.name,
+                quantity: product.quantity,
+                lowStockAlert: product.lowStockAlert,
+                tenantId,
+              });
+            }
           }
-        }
-      }
+        })
+      );
 
       const resolvedCashierId = user?.id || 'cashier-anonymous';
       const resolvedCashierName = cashierName || user?.username || 'POS Cashier';
 
       const branchQuery = tenantId ? { tenantId, isActive: true } : { isActive: true };
-      const activeBranch = await Branch.findOne(branchQuery);
+
+      // Concurrently fetch branch, tenant record, and company record
+      const [activeBranch, tenantRecord, companyRecord]: [any, any, any] = await Promise.all([
+        Branch.findOne(branchQuery).lean(),
+        tenantId
+          ? mongoose.Types.ObjectId.isValid(tenantId)
+            ? Tenant.findById(tenantId).lean()
+            : Tenant.findOne({ slug: tenantId }).lean()
+          : Promise.resolve(null),
+        tenantId ? Company.findOne({ tenantId }).lean() : Promise.resolve(null),
+      ]);
+
       const resolvedBranchId = activeBranch?._id?.toString() || 'branch-default';
       const resolvedBranchName = branchName || activeBranch?.name || 'Primary Branch';
 
@@ -282,12 +305,6 @@ apiRouter.post(
           ? Number(total)
           : Math.max(0, computedSubtotal + computedTax - computedDiscount);
 
-      // Resolve tenant / company metadata
-      const tenantRecord = tenantId
-        ? (await Tenant.findById(tenantId).lean()) ||
-          (await Tenant.findOne({ slug: tenantId }).lean())
-        : null;
-      const companyRecord: any = tenantId ? await Company.findOne({ tenantId }).lean() : null;
       const authUser = user as any;
 
       const resolvedCompanyName =
@@ -329,6 +346,9 @@ apiRouter.post(
         tenantRecord?.branding?.receiptFooter ||
         'Thank you for shopping with us! Please keep this receipt.';
 
+      const randomSuffix = Math.floor(100000 + Math.random() * 900000);
+      const uniqueTxNumber = `TX-${Date.now().toString().slice(-6)}-${randomSuffix}`;
+
       const newTransaction = await Transaction.create({
         tenantId,
         companyName: resolvedCompanyName,
@@ -340,7 +360,7 @@ apiRouter.post(
         receiptHeader: resolvedReceiptHeader,
         receiptFooter: resolvedReceiptFooter,
         idempotencyKey,
-        transactionNumber: `TX-${Date.now().toString().slice(-6)}`,
+        transactionNumber: uniqueTxNumber,
         type: 'SALE',
         status: 'COMPLETED',
         items: mappedItems,
@@ -355,16 +375,20 @@ apiRouter.post(
         branchName: resolvedBranchName,
       });
 
-      // Invalidate Redis cache for affected tenant resources
-      if (tenantId) {
-        await redis.del([
-          `tenant:${tenantId}:products:all`,
-          `tenant:${tenantId}:transactions:all`,
-          'products:all',
-          'transactions:all',
-        ]);
-      } else {
-        await redis.del(['products:all', 'transactions:all']);
+      // Invalidate Redis cache safely for affected tenant resources
+      try {
+        if (tenantId) {
+          await redis.del([
+            `tenant:${tenantId}:products:all`,
+            `tenant:${tenantId}:transactions:all`,
+            'products:all',
+            'transactions:all',
+          ]);
+        } else {
+          await redis.del(['products:all', 'transactions:all']);
+        }
+      } catch (cacheErr) {
+        console.warn('[Transactions] Redis cache invalidation failed:', cacheErr);
       }
 
       await Receipt.create({

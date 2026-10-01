@@ -57,13 +57,19 @@ if (typeof window !== 'undefined') {
   );
 }
 
-// Create a client for React Query cache management
+import { registerServiceWorker } from './registerServiceWorker.ts';
+
+// Register enterprise PWA service worker safely in production/supported environments
+registerServiceWorker();
+
+// Create a client for React Query cache management with enterprise low-data usage defaults
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
       retry: 1,
-      staleTime: 5000,
+      staleTime: 30_000, // 30s stale-time eliminates duplicate requests on quick re-renders
+      gcTime: 300_000, // 5 minutes garbage collection window
     },
   },
 });

@@ -487,7 +487,8 @@ export class POSService {
    */
   public static async generateReceipt(
     orderNumberOrId: string,
-    paperWidth: '58mm' | '80mm' = '80mm'
+    paperWidth: '58mm' | '80mm' = '80mm',
+    tenantId?: string
   ) {
     const order = await OmnichannelOrder.findOne(
       mongoose.isValidObjectId(orderNumberOrId)
@@ -496,6 +497,12 @@ export class POSService {
     );
     if (!order) {
       throw new Error(`Order #${orderNumberOrId} not found.`);
+    }
+
+    if (tenantId && order.tenantId && String(order.tenantId) !== String(tenantId)) {
+      const authErr = new Error('Access denied: Receipt belongs to another organization.');
+      (authErr as any).statusCode = 403;
+      throw authErr;
     }
 
     const tenant: any = order.tenantId

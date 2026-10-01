@@ -93,6 +93,12 @@ interface TenantState {
   clearTenantState: () => void;
 }
 
+let inFlightTenantPromise: Promise<TenantInfo | null> | null = null;
+let lastTenantFetchTime = 0;
+let inFlightUserTenantsPromise: Promise<UserTenantItem[]> | null = null;
+let lastUserTenantsFetchTime = 0;
+const CACHE_TTL_MS = 15_000;
+
 export const useTenantStore = create<TenantState>((set, get) => ({
   activeTenant: null,
   activeTenantId:
@@ -104,6 +110,7 @@ export const useTenantStore = create<TenantState>((set, get) => ({
   error: null,
 
   setActiveTenant: (tenant) => {
+    lastTenantFetchTime = Date.now();
     const tenantId = tenant._id || tenant.id || '';
     if (typeof window !== 'undefined') {
       localStorage.setItem('stockora_active_tenant_id', tenantId);
@@ -117,30 +124,51 @@ export const useTenantStore = create<TenantState>((set, get) => ({
     });
   },
 
-  setUserTenants: (userTenants) => set({ userTenants }),
+  setUserTenants: (userTenants) => {
+    lastUserTenantsFetchTime = Date.now();
+    set({ userTenants });
+  },
 
   fetchCurrentTenant: async () => {
-    set({ isLoading: true });
-    try {
-      const token = localStorage.getItem('stockora_token');
-      if (!token) {
+    // 1. In-flight request deduplication & TTL cache hit
+    const current = get().activeTenant;
+    if (current && Date.now() - lastTenantFetchTime < CACHE_TTL_MS) {
+      return current;
+    }
+    if (inFlightTenantPromise) {
+      return inFlightTenantPromise;
+    }
+
+    inFlightTenantPromise = (async () => {
+      set({ isLoading: true });
+      try {
+        const token = localStorage.getItem('stockora_token');
+        if (!token) {
+          set({ isLoading: false });
+          return null;
+        }
+
+        const activeTenantId = get().activeTenantId;
+        const headers: Record<string, string> = {};
+        if (activeTenantId) {
+          headers['x-tenant-id'] = activeTenantId;
+        }
+
+        const res = await apiClient.get('/tenants/current', { headers });
+        const tenant = res.data;
+        if (tenant) {
+          lastTenantFetchTime = Date.now();
+          get().setActiveTenant(tenant);
+        }
         set({ isLoading: false });
-        return null;
+        return tenant;
+      } finally {
+        inFlightTenantPromise = null;
       }
+    })();
 
-      const activeTenantId = get().activeTenantId;
-      const headers: Record<string, string> = {};
-      if (activeTenantId) {
-        headers['x-tenant-id'] = activeTenantId;
-      }
-
-      const res = await apiClient.get('/tenants/current', { headers });
-      const tenant = res.data;
-      if (tenant) {
-        get().setActiveTenant(tenant);
-      }
-      set({ isLoading: false });
-      return tenant;
+    try {
+      return await inFlightTenantPromise;
     } catch (err: any) {
       const status = err?.response?.status;
       const errorMsg =
@@ -179,23 +207,39 @@ export const useTenantStore = create<TenantState>((set, get) => ({
   },
 
   fetchUserTenants: async () => {
-    try {
-      const token = localStorage.getItem('stockora_token');
-      if (!token) return [];
-      const res = await apiClient.get('/tenants/user-tenants');
-      const list = res.data || [];
-      set({ userTenants: list });
-      return list;
-    } catch (err: any) {
-      if (err?.response?.status !== 401) {
-        console.error('Failed to fetch user tenants:', err);
-      }
-      return [];
+    if (get().userTenants.length > 0 && Date.now() - lastUserTenantsFetchTime < CACHE_TTL_MS) {
+      return get().userTenants;
     }
+    if (inFlightUserTenantsPromise) {
+      return inFlightUserTenantsPromise;
+    }
+
+    inFlightUserTenantsPromise = (async () => {
+      try {
+        const token = localStorage.getItem('stockora_token');
+        if (!token) return [];
+        const res = await apiClient.get('/tenants/user-tenants');
+        const list = res.data || [];
+        lastUserTenantsFetchTime = Date.now();
+        set({ userTenants: list });
+        return list;
+      } catch (err: any) {
+        if (err?.response?.status !== 401) {
+          console.error('Failed to fetch user tenants:', err);
+        }
+        return [];
+      } finally {
+        inFlightUserTenantsPromise = null;
+      }
+    })();
+
+    return inFlightUserTenantsPromise;
   },
 
   switchTenant: async (targetTenantIdOrSlug: string) => {
     set({ isLoading: true });
+    lastTenantFetchTime = 0;
+    lastUserTenantsFetchTime = 0;
     try {
       const token = localStorage.getItem('stockora_token');
       if (!token) return false;
@@ -237,6 +281,10 @@ export const useTenantStore = create<TenantState>((set, get) => ({
   },
 
   clearTenantState: () => {
+    lastTenantFetchTime = 0;
+    lastUserTenantsFetchTime = 0;
+    inFlightTenantPromise = null;
+    inFlightUserTenantsPromise = null;
     if (typeof window !== 'undefined') {
       localStorage.removeItem('stockora_active_tenant_id');
       localStorage.removeItem('stockora_active_tenant_slug');

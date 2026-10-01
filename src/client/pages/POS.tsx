@@ -47,6 +47,7 @@ import { useRegionalSettings } from '../hooks/useRegionalSettings.js';
 import { useTranslation } from '../hooks/useTranslation.js';
 import { CurrencySelector } from '../components/CurrencySelector.tsx';
 import { useTenantStore } from '../store/tenant.ts';
+import { useModalFocus } from '../hooks/useModalFocus.ts';
 import {
   queueOfflineTransaction,
   getPendingQueueCount,
@@ -77,8 +78,9 @@ const fetchProducts = async (): Promise<Product[]> => {
 export default function POS() {
   const queryClient = useQueryClient();
   const { activeTenant } = useTenantStore();
+  const tenantId = activeTenant?._id || activeTenant?.id || '';
   const { data: products = [] } = useQuery({
-    queryKey: ['products'],
+    queryKey: ['products', tenantId],
     queryFn: fetchProducts,
   });
 
@@ -102,13 +104,34 @@ export default function POS() {
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
   const [recentSalesOpen, setRecentSalesOpen] = useState(false);
 
+  // WAI-ARIA Accessible Modal Focus Orchestrator
+  const isTransitioningToReceipt = useRef(false);
+
+  const {
+    triggerRef: checkoutTriggerRef,
+    prepareOpen: prepareCheckoutOpen,
+    transitionProps: checkoutTransitionProps,
+  } = useModalFocus({
+    fallbackSelector: '#pos-cart-panel',
+    isHandoff: () => isTransitioningToReceipt.current,
+  });
+
+  const {
+    triggerRef: recentSalesTriggerRef,
+    prepareOpen: prepareRecentSalesOpen,
+    transitionProps: recentSalesTransitionProps,
+  } = useModalFocus({
+    fallbackSelector: '#pos-cart-panel',
+    isHandoff: () => isTransitioningToReceipt.current,
+  });
+
   const { user, accessToken } = useAuthStore();
   const { t } = useTranslation();
   const { baseCurrency, activeCurrency, currencySymbol, taxConfig, formatAmount, convertAmount } =
     useRegionalSettings();
 
   const { data: branches = [] } = useQuery({
-    queryKey: ['branches'],
+    queryKey: ['branches', tenantId],
     queryFn: async () => {
       try {
         const { data } = await apiClient.get('/org/branches');
@@ -305,16 +328,69 @@ export default function POS() {
     },
     onSuccess: (data: Transaction) => {
       toast.success('Sale Completed & Recorded Successfully!');
+      // 1. Extract authoritative line items from server response or fallback snapshot
+      const rawServerItems = (data as any)?.items;
+      const authoritativeItems =
+        Array.isArray(rawServerItems) && rawServerItems.length > 0
+          ? rawServerItems.map((item: any) => ({
+              productName: String(item.productName || item.name || 'Item'),
+              sku: String(item.sku || 'N/A'),
+              quantity: Math.max(1, Number(item.quantity ?? item.qty ?? 1)),
+              price: Math.max(0, Number(item.price ?? item.unitPrice ?? 0)),
+              total: Math.max(
+                0,
+                Number(
+                  item.total ??
+                    item.lineTotal ??
+                    Number(item.quantity || 1) * Number(item.price || 0)
+                )
+              ),
+              priceTier: item.priceTier,
+            }))
+          : cart.map((item) => ({
+              productName: item.productName,
+              sku: item.sku,
+              quantity: item.quantity,
+              price: item.price,
+              total: item.total,
+              priceTier: item.priceTier,
+            }));
+
+      // 1. Close checkout modal and release focus before opening receipt modal to avoid dialog stacking
+      isTransitioningToReceipt.current = true;
+      clearCompletedSaleState();
+      if (
+        document.activeElement &&
+        typeof (document.activeElement as HTMLElement).blur === 'function'
+      ) {
+        (document.activeElement as HTMLElement).blur();
+      }
+
+      // 2. Prepare immutable receipt data payload from authoritative transaction
       triggerPrintReceipt({
         ...data,
-        items: cart,
-        subtotal,
-        tax,
-        discount,
-        total,
-        paymentMethod,
+        transactionNumber: data.transactionNumber,
+        createdAt: data.createdAt,
+        items: authoritativeItems,
+        subtotal: data.subtotal !== undefined ? data.subtotal : subtotal,
+        tax: data.tax !== undefined ? data.tax : tax,
+        discount: data.discount !== undefined ? data.discount : discount,
+        total: data.total !== undefined ? data.total : total,
+        paymentMethod: data.paymentMethod || paymentMethod,
+        cashierName: (data as any).cashierName || activeCashierName,
+        branchName: (data as any).branchName || activeBranchName,
+        companyName: (data as any).companyName || activeTenant?.name,
+        companyLegalName: (data as any).companyLegalName || activeTenant?.legalName,
+        companyLogoUrl:
+          (data as any).companyLogoUrl || activeTenant?.branding?.logoUrl || activeTenant?.logoUrl,
+        companyAddress: (data as any).companyAddress,
+        companyPhone: (data as any).companyPhone || activeTenant?.contact?.phone,
+        companyEmail: (data as any).companyEmail || activeTenant?.contact?.email,
+        companyTaxId: (data as any).companyTaxId || (activeTenant as any)?.taxConfig?.taxId,
+        receiptHeader: (data as any).receiptHeader || activeTenant?.branding?.receiptHeader,
+        receiptFooter: (data as any).receiptFooter || activeTenant?.branding?.receiptFooter,
       });
-      clearCompletedSaleState();
+
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['recent-receipts'] });
@@ -488,15 +564,23 @@ export default function POS() {
     : Math.max(0, subtotal + tax - discount);
 
   // Open Checkout Modal and initialize tender amount in active display currency
-  const handleOpenCheckoutModal = () => {
+  const handleOpenCheckoutModal = (e?: React.SyntheticEvent) => {
     if (cart.length === 0) {
       toast.error('Cart is empty.');
       return;
     }
+    prepareCheckoutOpen(e);
+    isTransitioningToReceipt.current = false;
     const displayTotal = convertAmount(total, baseCurrency, activeCurrency);
     setCashTendered(Number(displayTotal.toFixed(2)));
     setManualReference('');
     setCheckoutModalOpen(true);
+  };
+
+  const handleOpenRecentSales = (e?: React.SyntheticEvent) => {
+    prepareRecentSalesOpen(e);
+    isTransitioningToReceipt.current = false;
+    setRecentSalesOpen(true);
   };
 
   // Execute Cashier-Confirmed Payment
@@ -565,9 +649,18 @@ export default function POS() {
       }).then(async () => {
         const count = await getPendingQueueCount();
         setOfflineCount(count);
+        const offlineItems = cart.map((item) => ({
+          productName: item.productName,
+          sku: item.sku,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.total,
+          priceTier: item.priceTier,
+        }));
+        isTransitioningToReceipt.current = true;
         triggerPrintReceipt({
           transactionNumber: txNum,
-          items: cart,
+          items: offlineItems,
           subtotal,
           tax,
           discount,
@@ -613,10 +706,11 @@ export default function POS() {
             <CurrencySelector size="small" />
 
             <Button
+              ref={recentSalesTriggerRef}
               variant="outlined"
               color="inherit"
               size="small"
-              onClick={() => setRecentSalesOpen(true)}
+              onClick={handleOpenRecentSales}
               startIcon={<ReceiptLongIcon color="secondary" />}
               sx={{
                 fontWeight: 700,
@@ -1244,6 +1338,8 @@ export default function POS() {
               </Box>
 
               <Button
+                ref={checkoutTriggerRef}
+                id="pos-checkout-btn"
                 variant="contained"
                 color="secondary"
                 fullWidth
@@ -1272,6 +1368,10 @@ export default function POS() {
         onClose={() => !checkoutMutation.isPending && setCheckoutModalOpen(false)}
         maxWidth="sm"
         fullWidth
+        disableRestoreFocus
+        aria-labelledby="checkout-dialog-title"
+        aria-describedby="checkout-dialog-description"
+        TransitionProps={checkoutTransitionProps}
         PaperProps={{
           sx: {
             maxWidth: '520px !important',
@@ -1287,10 +1387,13 @@ export default function POS() {
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 800, fontSize: '1.3rem', pb: 1, textAlign: 'center' }}>
+        <DialogTitle
+          id="checkout-dialog-title"
+          sx={{ fontWeight: 800, fontSize: '1.3rem', pb: 1, textAlign: 'center' }}
+        >
           Tender Confirmation & Receipt
         </DialogTitle>
-        <DialogContent sx={{ pb: 2 }}>
+        <DialogContent id="checkout-dialog-description" sx={{ pb: 2 }}>
           <Box sx={{ textAlign: 'center', my: 1.5 }}>
             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
               <Chip
@@ -1405,6 +1508,7 @@ export default function POS() {
           {paymentMethod === 'CASH' && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField
+                autoFocus
                 label="Cash Amount Received"
                 type="number"
                 fullWidth
@@ -1578,6 +1682,10 @@ export default function POS() {
         onClose={() => setRecentSalesOpen(false)}
         maxWidth="md"
         fullWidth
+        disableRestoreFocus
+        aria-labelledby="recent-sales-dialog-title"
+        aria-describedby="recent-sales-dialog-description"
+        TransitionProps={recentSalesTransitionProps}
         PaperProps={{
           sx: {
             bgcolor: '#0f131f',
@@ -1589,6 +1697,7 @@ export default function POS() {
         }}
       >
         <DialogTitle
+          id="recent-sales-dialog-title"
           sx={{
             fontWeight: 800,
             fontSize: '1.25rem',
@@ -1608,7 +1717,11 @@ export default function POS() {
             {t('common.cancel')}
           </Button>
         </DialogTitle>
-        <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+        <DialogContent
+          id="recent-sales-dialog-description"
+          dividers
+          sx={{ borderColor: 'rgba(255,255,255,0.08)' }}
+        >
           {receipts.length === 0 ? (
             <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
               {t('pos.noProducts')}
@@ -1666,6 +1779,7 @@ export default function POS() {
                         startIcon={<PrintIcon />}
                         onClick={() => {
                           const rData = (receipt.data || {}) as any;
+                          isTransitioningToReceipt.current = true;
                           triggerPrintReceipt({
                             transactionNumber: receipt.transactionNumber,
                             createdAt: rData.createdAt,

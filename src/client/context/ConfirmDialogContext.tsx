@@ -7,11 +7,13 @@ import {
   DialogActions,
   Button,
   Typography,
+  CircularProgress,
 } from '@mui/material';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
+import { normalizeErrorMessage, notify } from '../utils/notify.ts';
 
 export interface ConfirmOptions {
   title?: string;
@@ -20,6 +22,7 @@ export interface ConfirmOptions {
   cancelText?: string;
   severity?: 'error' | 'warning' | 'info' | 'primary';
   confirmColor?: 'error' | 'warning' | 'info' | 'primary' | 'success';
+  onConfirmAsync?: () => Promise<unknown>;
 }
 
 interface ConfirmContextType {
@@ -30,6 +33,7 @@ const ConfirmContext = createContext<ConfirmContextType | undefined>(undefined);
 
 export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [open, setOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [options, setOptions] = useState<ConfirmOptions>({
     title: 'Are you sure?',
     message: '',
@@ -39,13 +43,34 @@ export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const confirm = useCallback((opts: ConfirmOptions): Promise<boolean> => {
     setOptions(opts);
+    setIsProcessing(false);
     setOpen(true);
     return new Promise((resolve) => {
       resolverRef.current = resolve;
     });
   }, []);
 
-  const handleClose = (confirmed: boolean) => {
+  const handleClose = async (confirmed: boolean) => {
+    if (isProcessing) return; // Prevent double trigger while async action runs
+
+    if (confirmed && options.onConfirmAsync) {
+      setIsProcessing(true);
+      try {
+        await options.onConfirmAsync();
+        setIsProcessing(false);
+        setOpen(false);
+        if (resolverRef.current) {
+          resolverRef.current(true);
+          resolverRef.current = null;
+        }
+      } catch (err: unknown) {
+        setIsProcessing(false);
+        notify.error(normalizeErrorMessage(err, 'Failed to complete requested action.'));
+        // Keep dialog open on failure so the user can retry or cancel
+      }
+      return;
+    }
+
     setOpen(false);
     if (resolverRef.current) {
       resolverRef.current(confirmed);
@@ -127,6 +152,7 @@ export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
             onClick={() => handleClose(false)}
             variant="outlined"
             size="medium"
+            disabled={isProcessing}
             sx={{
               borderColor: 'rgba(255, 255, 255, 0.12)',
               color: '#9ca3af',
@@ -147,7 +173,9 @@ export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
             variant="contained"
             color={getConfirmButtonColor()}
             size="medium"
+            disabled={isProcessing}
             autoFocus
+            startIcon={isProcessing ? <CircularProgress size={16} color="inherit" /> : null}
             sx={{
               textTransform: 'none',
               fontWeight: 700,
@@ -155,7 +183,7 @@ export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
               px: 3,
             }}
           >
-            {options.confirmText || 'Confirm'}
+            {isProcessing ? 'Processing...' : options.confirmText || 'Confirm'}
           </Button>
         </DialogActions>
       </Dialog>

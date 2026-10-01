@@ -23,6 +23,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useRegionalSettings } from '../hooks/useRegionalSettings.js';
 import { useTenantStore } from '../store/tenant.ts';
 import { useAuthStore } from '../store/auth.ts';
+import { printReceipt } from '../utils/printReceipt.ts';
 
 export interface ReceiptItem {
   productName: string;
@@ -74,27 +75,21 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ open, onClose, recei
   const { activeTenant } = useTenantStore();
   const { user } = useAuthStore();
 
-  if (!receiptData) return null;
-
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const formattedDate = receiptData.createdAt
+  const formattedDate = receiptData?.createdAt
     ? new Date(receiptData.createdAt).toLocaleString()
     : new Date().toLocaleString();
 
   const displayCompanyName =
-    receiptData.companyName ||
+    receiptData?.companyName ||
     activeTenant?.name ||
     (user as any)?.tenantName ||
     (user as any)?.companyName ||
     user?.branchName ||
     'Store';
 
-  const displayLegalName = receiptData.companyLegalName || activeTenant?.legalName;
+  const displayLegalName = receiptData?.companyLegalName || activeTenant?.legalName;
   const displayLogoUrl =
-    receiptData.companyLogoUrl || activeTenant?.branding?.logoUrl || activeTenant?.logoUrl;
+    receiptData?.companyLogoUrl || activeTenant?.branding?.logoUrl || activeTenant?.logoUrl;
   const sanitizeAddress = (addr?: string): string => {
     if (!addr) return '';
     const trimmed = addr.trim();
@@ -106,7 +101,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ open, onClose, recei
   };
 
   const rawAddress =
-    receiptData.companyAddress ||
+    receiptData?.companyAddress ||
     (activeTenant?.contact
       ? [
           activeTenant.contact.addressLine1,
@@ -122,14 +117,59 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ open, onClose, recei
           .join(', ')
       : '');
   const displayAddress = sanitizeAddress(rawAddress);
-  const displayPhone = receiptData.companyPhone || activeTenant?.contact?.phone;
-  const displayEmail = receiptData.companyEmail || activeTenant?.contact?.email;
-  const displayTaxId = receiptData.companyTaxId || (activeTenant as any)?.taxConfig?.taxId;
-  const displayHeaderNotice = receiptData.receiptHeader || activeTenant?.branding?.receiptHeader;
+  const displayPhone = receiptData?.companyPhone || activeTenant?.contact?.phone;
+  const displayEmail = receiptData?.companyEmail || activeTenant?.contact?.email;
+  const displayTaxId = receiptData?.companyTaxId || (activeTenant as any)?.taxConfig?.taxId;
+  const displayHeaderNotice = receiptData?.receiptHeader || activeTenant?.branding?.receiptHeader;
   const displayFooterNotice =
-    receiptData.receiptFooter ||
+    receiptData?.receiptFooter ||
     activeTenant?.branding?.receiptFooter ||
     'Thank you for shopping with us! Please keep this receipt.';
+
+  const fullAuthoritativeData = receiptData
+    ? {
+        ...receiptData,
+        companyName: displayCompanyName,
+        companyLegalName: displayLegalName,
+        companyLogoUrl: displayLogoUrl,
+        companyAddress: displayAddress,
+        companyPhone: displayPhone,
+        companyEmail: displayEmail,
+        companyTaxId: displayTaxId,
+        receiptHeader: displayHeaderNotice,
+        receiptFooter: displayFooterNotice,
+      }
+    : null;
+
+  const handlePrint = (format: 'THERMAL' | 'THERMAL_80' | 'THERMAL_58' | 'A4' = 'THERMAL_80') => {
+    if (
+      document.activeElement &&
+      typeof (document.activeElement as HTMLElement).blur === 'function'
+    ) {
+      (document.activeElement as HTMLElement).blur();
+    }
+    if (fullAuthoritativeData) {
+      printReceipt(fullAuthoritativeData, formatAmount, format);
+    }
+  };
+
+  // Intercept Ctrl+P / Cmd+P to route through the iframe print engine
+  // instead of Chrome's default main-window print behavior.
+  React.useEffect(() => {
+    if (!open || !receiptData) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        handlePrint('THERMAL_80');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, receiptData, fullAuthoritativeData]);
+
+  if (!receiptData) return null;
 
   return (
     <Dialog
@@ -137,6 +177,20 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ open, onClose, recei
       onClose={onClose}
       maxWidth="sm"
       fullWidth
+      disableRestoreFocus
+      aria-labelledby="receipt-dialog-title"
+      aria-describedby="receipt-dialog-description"
+      TransitionProps={{
+        onExited: () => {
+          if (typeof document !== 'undefined') {
+            const fallback = document.querySelector<HTMLElement>(
+              '#barcode-search-input, #pos-cart-panel, [role="main"], main'
+            );
+            fallback?.focus();
+          }
+        },
+      }}
+      className="receipt-modal-dialog"
       PaperProps={{
         sx: {
           maxWidth: '520px !important',
@@ -152,6 +206,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ open, onClose, recei
       }}
     >
       <DialogTitle
+        id="receipt-dialog-title"
         className="no-print"
         sx={{
           display: 'flex',
@@ -172,7 +227,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ open, onClose, recei
         </Button>
       </DialogTitle>
 
-      <DialogContent sx={{ p: { xs: 2, sm: 3 } }}>
+      <DialogContent id="receipt-dialog-description" sx={{ p: { xs: 2, sm: 3 } }}>
         {/* PRINTABLE RECEIPT CONTAINER */}
         <Box
           id="printable-receipt"
@@ -187,33 +242,6 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ open, onClose, recei
             mx: 'auto',
           }}
         >
-          {/* Print specific CSS */}
-          <style>{`
-            @media print {
-              body * {
-                visibility: hidden !important;
-              }
-              #printable-receipt, #printable-receipt * {
-                visibility: visible !important;
-              }
-              #printable-receipt {
-                position: absolute !important;
-                left: 0 !important;
-                top: 0 !important;
-                width: 100% !important;
-                max-width: 450px !important;
-                margin: 0 auto !important;
-                padding: 20px !important;
-                background: #ffffff !important;
-                color: #000000 !important;
-                box-shadow: none !important;
-              }
-              .no-print {
-                display: none !important;
-              }
-            }
-          `}</style>
-
           {/* RECEIPT HEADER — AUTHORITATIVE TENANT/COMPANY IDENTITY */}
           <Box sx={{ textAlign: 'center', mb: 2 }}>
             {displayLogoUrl && (
@@ -631,7 +659,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ open, onClose, recei
         </Box>
       </DialogContent>
 
-      <DialogActions className="no-print" sx={{ px: 3, pb: 2.5, gap: 1 }}>
+      <DialogActions className="no-print" sx={{ px: 3, pb: 2.5, gap: 1, flexWrap: 'wrap' }}>
         <Button
           onClick={onClose}
           variant="outlined"
@@ -641,13 +669,38 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ open, onClose, recei
           Close
         </Button>
         <Button
-          onClick={handlePrint}
+          onClick={() => handlePrint('A4')}
+          variant="outlined"
+          color="primary"
+          startIcon={<PrintIcon />}
+          sx={{ borderRadius: '8px', fontWeight: 700 }}
+        >
+          Print A4 Invoice
+        </Button>
+        <Button
+          onClick={() => handlePrint('THERMAL_58')}
+          variant="outlined"
+          color="primary"
+          startIcon={<PrintIcon />}
+          sx={{ borderRadius: '8px', fontWeight: 700 }}
+        >
+          Print Thermal (58mm)
+        </Button>
+        <Button
+          autoFocus
+          onClick={() => handlePrint('THERMAL_80')}
           variant="contained"
           color="primary"
           startIcon={<PrintIcon />}
-          sx={{ borderRadius: '8px', fontWeight: 800, px: 3 }}
+          sx={{
+            borderRadius: '8px',
+            fontWeight: 800,
+            px: 3,
+            bgcolor: '#7c3aed',
+            '&:hover': { bgcolor: '#6d28d9' },
+          }}
         >
-          Print Invoice Receipt
+          Print Invoice Receipt (80mm)
         </Button>
       </DialogActions>
     </Dialog>

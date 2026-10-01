@@ -1,14 +1,28 @@
-import { Box, Card, CardContent, Typography, TextField, Button, Link } from '@mui/material';
+import { useState } from 'react';
+import {
+  Box,
+  TextField,
+  Button,
+  Link,
+  IconButton,
+  InputAdornment,
+  CircularProgress,
+} from '@mui/material';
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-hot-toast';
 import { apiClient } from '../../api/client.ts';
 import { useAuthStore } from '../../store/auth.ts';
 import { useTenantStore } from '../../store/tenant.ts';
-import { motion } from 'framer-motion';
-import { toast } from 'react-hot-toast';
+import AuthShell from '../../components/auth/AuthShell.tsx';
 import type { AuthResponse } from '../../../shared/types.js';
 
 const signInSchema = z.object({
@@ -21,12 +35,32 @@ const signInSchema = z.object({
 
 type SignInInputs = z.infer<typeof signInSchema>;
 
-const textFieldStyle = {};
+const inputSx = {
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: 'rgba(11, 15, 26, 0.65)',
+    borderRadius: 2.5,
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+    '& fieldset': {
+      borderColor: 'rgba(255, 255, 255, 0.08)',
+    },
+    '&:hover fieldset': {
+      borderColor: 'rgba(139, 92, 246, 0.35)',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: '#8b5cf6',
+      borderWidth: '1px',
+    },
+    '&.Mui-focused': {
+      boxShadow: '0 0 16px rgba(139, 92, 246, 0.18)',
+    },
+  },
+};
 
 export default function SignIn() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const setSession = useAuthStore((s) => s.setSession);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -76,234 +110,190 @@ export default function SignIn() {
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        bgcolor: '#030712',
-        position: 'relative',
-        overflow: 'hidden',
-        px: 2,
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: '20%',
-          left: '30%',
-          width: 400,
-          height: 400,
-          borderRadius: '50%',
-          background:
-            'radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, rgba(139, 92, 246, 0) 70%)',
-          filter: 'blur(40px)',
-          zIndex: 0,
-        },
-        '&::after': {
-          content: '""',
-          position: 'absolute',
-          bottom: '20%',
-          right: '30%',
-          width: 400,
-          height: 400,
-          borderRadius: '50%',
-          background:
-            'radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0) 70%)',
-          filter: 'blur(40px)',
-          zIndex: 0,
-        },
-      }}
+    <AuthShell
+      mode="signin"
+      title="Sign In to Workspace"
+      subtitle="Enter your authorized credentials to access your tenant dashboard and POS registers."
+      visualHeadline="Mission-Critical Inventory & POS Control"
+      visualDescription="Log in to manage live POS transactions, warehouse stock distributions, automated ledger audits, and procurement pipelines."
+      highlights={[
+        'High-throughput POS terminal register synchronization',
+        'End-to-end encrypted multi-tenant session isolation',
+        'Sub-second catalog lookups & barcode scanner support',
+        'Live low-stock telemetry & automated replenishment',
+      ]}
     >
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        style={{ zIndex: 1 }}
+      <Box
+        component="form"
+        onSubmit={handleSubmit(onSubmit)}
+        noValidate
+        sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
       >
-        <Card
+        <TextField
+          id="email"
+          label="Email Address"
+          type="email"
+          autoComplete="email"
+          fullWidth
+          {...register('email')}
+          error={!!errors.email}
+          helperText={errors.email?.message}
+          InputLabelProps={{ shrink: true }}
+          inputProps={{
+            autoCapitalize: 'none',
+            autoCorrect: 'off',
+            spellCheck: 'false',
+            'aria-required': 'true',
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <EmailOutlinedIcon sx={{ color: '#a78bfa', fontSize: 20 }} />
+              </InputAdornment>
+            ),
+          }}
+          sx={inputSx}
+        />
+
+        <TextField
+          id="password"
+          label="Password"
+          type={showPassword ? 'text' : 'password'}
+          autoComplete="current-password"
+          fullWidth
+          {...register('password')}
+          error={!!errors.password}
+          helperText={errors.password?.message}
+          InputLabelProps={{ shrink: true }}
+          inputProps={{
+            autoCapitalize: 'none',
+            autoCorrect: 'off',
+            spellCheck: 'false',
+            'aria-required': 'true',
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <LockOutlinedIcon sx={{ color: '#a78bfa', fontSize: 20 }} />
+              </InputAdornment>
+            ),
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  edge="end"
+                  size="small"
+                  sx={{ color: '#9ca3af', '&:hover': { color: '#f3f4f6' } }}
+                >
+                  {showPassword ? (
+                    <VisibilityOff sx={{ fontSize: 20 }} />
+                  ) : (
+                    <Visibility sx={{ fontSize: 20 }} />
+                  )}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+          sx={inputSx}
+        />
+
+        <Button
+          variant="contained"
+          type="submit"
+          fullWidth
+          disabled={mutation.isPending}
+          startIcon={
+            mutation.isPending ? <CircularProgress size={18} sx={{ color: '#ffffff' }} /> : null
+          }
           sx={{
-            width: '100%',
-            maxWidth: 420,
-            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4), 0 0 40px rgba(139, 92, 246, 0.08)',
-            border: '1px solid rgba(139, 92, 246, 0.15)',
-            background:
-              'linear-gradient(135deg, rgba(23, 27, 44, 0.75) 0%, rgba(11, 13, 26, 0.85) 100%)',
-            backdropFilter: 'blur(20px)',
-            borderRadius: 4,
-            overflow: 'hidden',
-            position: 'relative',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: '4px',
-              background: 'linear-gradient(90deg, #8b5cf6, #3b82f6)',
+            py: 1.5,
+            mt: 0.5,
+            fontWeight: 700,
+            borderRadius: 2.5,
+            textTransform: 'none',
+            fontSize: '0.95rem',
+            letterSpacing: '0.01em',
+            background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
+            boxShadow: '0 4px 20px rgba(124, 58, 237, 0.35)',
+            transition: 'all 0.25s ease',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #6d28d9 0%, #4338ca 100%)',
+              boxShadow: '0 6px 24px rgba(124, 58, 237, 0.5)',
+              transform: 'translateY(-1px)',
+            },
+            '&:disabled': {
+              background: 'rgba(124, 58, 237, 0.4)',
+              color: 'rgba(255, 255, 255, 0.7)',
             },
           }}
         >
-          <CardContent
-            sx={{ p: { xs: 3.5, md: 5 }, display: 'flex', flexDirection: 'column', gap: 3.5 }}
-          >
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.2, duration: 0.4 }}
-              >
-                <img
-                  src="/logo.png"
-                  alt="Stockora Logo"
-                  style={{
-                    height: 64,
-                    width: 64,
-                    objectFit: 'contain',
-                    filter: 'drop-shadow(0 4px 10px rgba(139, 92, 246, 0.3))',
-                  }}
-                />
-              </motion.div>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 900,
-                  textAlign: 'center',
-                  letterSpacing: '0.08em',
-                  background: 'linear-gradient(90deg, #a78bfa 0%, #3b82f6 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  mt: 1,
-                }}
-              >
-                STOCKORA
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ textAlign: 'center', color: 'text.secondary', fontWeight: 500 }}
-              >
-                Sign in to manage your inventory and POS terminals
-              </Typography>
-            </Box>
+          {mutation.isPending ? 'Verifying Credentials...' : 'Sign In to Workspace'}
+        </Button>
 
-            <form
-              onSubmit={handleSubmit(onSubmit)}
-              style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
-            >
-              <TextField
-                id="email"
-                label="Email Address"
-                type="email"
-                autoComplete="email"
-                fullWidth
-                {...register('email')}
-                error={!!errors.email}
-                helperText={errors.email?.message}
-                sx={textFieldStyle}
-                inputProps={{
-                  autoCapitalize: 'none',
-                  autoCorrect: 'off',
-                  spellCheck: 'false',
-                }}
-                InputLabelProps={{ shrink: true }}
-              />
-              <TextField
-                id="password"
-                label="Password"
-                type="password"
-                autoComplete="current-password"
-                fullWidth
-                {...register('password')}
-                error={!!errors.password}
-                helperText={errors.password?.message}
-                sx={textFieldStyle}
-                inputProps={{
-                  autoCapitalize: 'none',
-                  autoCorrect: 'off',
-                  spellCheck: 'false',
-                }}
-                InputLabelProps={{ shrink: true }}
-              />
-              <Button
-                variant="contained"
-                type="submit"
-                fullWidth
-                disabled={mutation.isPending}
-                sx={{
-                  py: 1.6,
-                  fontWeight: 800,
-                  borderRadius: 2.5,
-                  textTransform: 'none',
-                  fontSize: '0.975rem',
-                  background: 'linear-gradient(90deg, #8b5cf6 0%, #3b82f6 100%)',
-                  boxShadow: '0 4px 20px rgba(139, 92, 246, 0.3)',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    background: 'linear-gradient(90deg, #7c3aed 0%, #2563eb 100%)',
-                    boxShadow: '0 6px 24px rgba(139, 92, 246, 0.45)',
-                    transform: 'translateY(-1px)',
-                  },
-                }}
-              >
-                {mutation.isPending ? 'Signing In...' : 'Sign In'}
-              </Button>
-            </form>
-
-            <Box
+        {/* Secondary Links */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1.75,
+            borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+            pt: 2.25,
+          }}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Link
+              onClick={() => navigate('/forgot-password')}
               sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1.5,
-                borderTop: '1px solid rgba(255,255,255,0.05)',
-                pt: 2.5,
+                cursor: 'pointer',
+                fontSize: '0.825rem',
+                color: '#9ca3af',
+                fontWeight: 500,
+                textDecoration: 'none',
+                transition: 'color 0.2s',
+                '&:hover': { color: '#a78bfa' },
               }}
             >
-              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Link
-                  onClick={() => navigate('/forgot-password')}
-                  sx={{
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                    color: 'text.secondary',
-                    textDecoration: 'none',
-                    transition: 'color 0.2s',
-                    '&:hover': { color: 'primary.light' },
-                  }}
-                >
-                  Forgot Password?
-                </Link>
-                <Link
-                  onClick={() => navigate('/signup')}
-                  sx={{
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                    color: 'primary.light',
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                    transition: 'color 0.2s',
-                    '&:hover': { color: 'primary.main' },
-                  }}
-                >
-                  Create Account
-                </Link>
-              </Box>
+              Forgot Password?
+            </Link>
+            <Link
+              onClick={() => navigate('/signup')}
+              sx={{
+                cursor: 'pointer',
+                fontSize: '0.825rem',
+                color: '#a78bfa',
+                fontWeight: 700,
+                textDecoration: 'none',
+                transition: 'color 0.2s',
+                '&:hover': { color: '#c4b5fd' },
+              }}
+            >
+              Create Account
+            </Link>
+          </Box>
 
-              <Typography variant="caption" sx={{ textAlign: 'center', mt: 1 }}>
-                <Link
-                  onClick={() => navigate('/landing')}
-                  sx={{
-                    cursor: 'pointer',
-                    color: '#9ca3af',
-                    textDecoration: 'none',
-                    '&:hover': { color: '#34d399' },
-                  }}
-                >
-                  ← Back to Enterprise Landing Page
-                </Link>
-              </Typography>
-            </Box>
-          </CardContent>
-        </Card>
-      </motion.div>
-    </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
+            <Link
+              onClick={() => navigate('/landing')}
+              sx={{
+                cursor: 'pointer',
+                color: '#9ca3af',
+                fontSize: '0.8rem',
+                fontWeight: 500,
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.75,
+                transition: 'color 0.2s',
+                '&:hover': { color: '#34d399' },
+              }}
+            >
+              <ArrowBackRoundedIcon sx={{ fontSize: 16 }} />
+              Back to Enterprise Landing Page
+            </Link>
+          </Box>
+        </Box>
+      </Box>
+    </AuthShell>
   );
 }

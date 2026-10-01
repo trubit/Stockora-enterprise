@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import { SupplierController } from '../controllers/supplier.controller.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { resolveTenantContext } from '../middleware/tenant.middleware.js';
 import { rbacMiddleware } from '../middleware/rbac.js';
 import { SYSTEM_PERMISSIONS } from '../../shared/constants.js';
 
 export const supplierRouter = Router();
 
 supplierRouter.use(authMiddleware);
+supplierRouter.use(resolveTenantContext);
 
 supplierRouter.get(
   '/',

@@ -292,8 +292,12 @@ export default function RegisterSessionManager() {
         onClose={() => setMovementModalOpen(false)}
         maxWidth="xs"
         fullWidth
+        disableRestoreFocus
+        aria-labelledby="cash-movement-dialog-title"
       >
-        <DialogTitle sx={{ fontWeight: 'bold' }}>Record {movementType}</DialogTitle>
+        <DialogTitle id="cash-movement-dialog-title" sx={{ fontWeight: 'bold' }}>
+          Record {movementType}
+        </DialogTitle>
         <DialogContent dividers>
           <TextField
             label={`Amount (${currencySymbol})`}
@@ -327,8 +331,12 @@ export default function RegisterSessionManager() {
         onClose={() => setCloseModalOpen(false)}
         maxWidth="sm"
         fullWidth
+        disableRestoreFocus
+        aria-labelledby="close-reconciliation-dialog-title"
       >
-        <DialogTitle sx={{ fontWeight: 'bold' }}>Close Register & Shift Reconciliation</DialogTitle>
+        <DialogTitle id="close-reconciliation-dialog-title" sx={{ fontWeight: 'bold' }}>
+          Close Register & Shift Reconciliation
+        </DialogTitle>
         <DialogContent dividers>
           <Alert severity="info" sx={{ mb: 2 }}>
             Expected Cash in Register Drawer:{' '}

@@ -17,6 +17,7 @@ import {
   Badge,
   Tooltip,
   Chip,
+  Dialog,
 } from '@mui/material';
 import type { Theme } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -57,6 +58,9 @@ import { TenantSwitcher } from './Tenant/TenantSwitcher.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
 import { CurrencySelector } from './CurrencySelector.tsx';
 import { useTranslation } from '../hooks/useTranslation.js';
+import SignOutCard from './auth/SignOutCard.tsx';
+import LoadingScreen from './LoadingScreen.tsx';
+import { normalizeErrorMessage } from '../utils/notify.ts';
 
 const drawerWidth = 260;
 
@@ -64,10 +68,12 @@ export default function Layout() {
   const { t } = useTranslation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [signOutOpen, setSignOutOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, accessToken, setUser, clearSession } = useAuthStore();
+  const [authInitError, setAuthInitError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -88,6 +94,7 @@ export default function Layout() {
           // The 401 interceptor in apiClient will handle expired tokens automatically.
           const { data } = await apiClient.get('/auth/me');
           setUser(data);
+          setAuthInitError(null);
         } catch (err: unknown) {
           // Only clear session if it's a genuine 401 (handled by the interceptor).
           // Network or server errors should NOT log the user out.
@@ -95,8 +102,11 @@ export default function Layout() {
           if (status === 401) {
             clearSession();
             navigate('/login');
+          } else {
+            setAuthInitError(
+              normalizeErrorMessage(err, 'Unable to connect to enterprise services.')
+            );
           }
-          // For all other errors (500, network), keep the session alive and let the user retry.
         }
       }
     };
@@ -126,9 +136,6 @@ export default function Layout() {
   }, [location.pathname]);
 
   const handleDrawerToggle = () => {
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
     setMobileOpen((prev) => !prev);
   };
 
@@ -920,9 +927,7 @@ export default function Layout() {
                 <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
                   <ListItemButton
                     className={isActive ? 'premium-sidebar-item active' : 'premium-sidebar-item'}
-                    onClick={(e) => {
-                      (e.currentTarget as HTMLElement)?.blur();
-                      (document.activeElement as HTMLElement)?.blur();
+                    onClick={() => {
                       navigate(item.path);
                       setMobileOpen(false);
                     }}
@@ -986,9 +991,7 @@ export default function Layout() {
                         className={
                           isActive ? 'premium-sidebar-item active' : 'premium-sidebar-item'
                         }
-                        onClick={(e) => {
-                          (e.currentTarget as HTMLElement)?.blur();
-                          (document.activeElement as HTMLElement)?.blur();
+                        onClick={() => {
                           navigate(item.path);
                           setMobileOpen(false);
                         }}
@@ -1031,18 +1034,8 @@ export default function Layout() {
           <Divider sx={{ my: 2.5, borderColor: 'rgba(255,255,255,0.03)' }} />
           <ListItem disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton
-              onClick={async () => {
-                try {
-                  const refreshToken = localStorage.getItem('stockora_refresh_token');
-                  // Tell the server to revoke the session and refresh token
-                  await apiClient.post('/auth/logout', { refreshToken }, {
-                    _skipGlobalErrorToast: true,
-                  } as any);
-                } catch {
-                  // Even if the server call fails, clean up client state
-                }
-                clearSession();
-                navigate('/login');
+              onClick={() => {
+                setSignOutOpen(true);
               }}
               sx={{
                 borderRadius: '8px',
@@ -1115,6 +1108,35 @@ export default function Layout() {
     </Box>
   );
 
+  if (accessToken && !user) {
+    return (
+      <LoadingScreen
+        error={authInitError}
+        onRetry={() => {
+          setAuthInitError(null);
+          apiClient
+            .get('/auth/me')
+            .then(({ data }) => setUser(data))
+            .catch((err: unknown) => {
+              const status = (err as { response?: { status?: number } })?.response?.status;
+              if (status === 401) {
+                clearSession();
+                navigate('/login');
+              } else {
+                setAuthInitError(
+                  normalizeErrorMessage(err, 'Unable to connect to enterprise services.')
+                );
+              }
+            });
+        }}
+        onClearSession={() => {
+          clearSession();
+          navigate('/login');
+        }}
+      />
+    );
+  }
+
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#07090e' }}>
       {/* Top Navbar */}
@@ -1140,10 +1162,7 @@ export default function Layout() {
               color="inherit"
               aria-label="open drawer"
               edge="start"
-              onClick={(e) => {
-                (e.currentTarget as HTMLElement)?.blur();
-                handleDrawerToggle();
-              }}
+              onClick={handleDrawerToggle}
               sx={{ mr: { xs: 0.5, sm: 1 }, display: { md: 'none' } }}
             >
               <MenuIcon />
@@ -1157,8 +1176,7 @@ export default function Layout() {
           <Chip
             icon={<SearchIcon style={{ color: '#8b5cf6', fontSize: 16 }} />}
             label="Search modules... (Ctrl+K)"
-            onClick={(e) => {
-              (e.currentTarget as HTMLElement)?.blur();
+            onClick={() => {
               setSearchOpen(true);
             }}
             sx={{
@@ -1257,30 +1275,11 @@ export default function Layout() {
         <Drawer
           variant="temporary"
           open={mobileOpen}
-          onClose={() => {
-            if (document.activeElement instanceof HTMLElement) {
-              document.activeElement.blur();
-            }
-            setMobileOpen(false);
-          }}
+          onClose={() => setMobileOpen(false)}
           ModalProps={{
             keepMounted: false,
-            disableAutoFocus: true,
             disableRestoreFocus: true,
-            disableEnforceFocus: true,
             disableScrollLock: true,
-          }}
-          SlideProps={{
-            onExit: () => {
-              if (document.activeElement instanceof HTMLElement) {
-                document.activeElement.blur();
-              }
-            },
-            onExited: () => {
-              if (document.activeElement instanceof HTMLElement) {
-                document.activeElement.blur();
-              }
-            },
           }}
           sx={{
             display: { xs: 'block', md: 'none' },
@@ -1334,6 +1333,27 @@ export default function Layout() {
 
       {/* Global Quick Jump Modal */}
       <QuickSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+
+      {/* Stockora Enterprise Pro Sign Out Confirmation Card Modal */}
+      <Dialog
+        open={signOutOpen}
+        onClose={() => setSignOutOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        disableRestoreFocus
+        aria-label="Sign out confirmation"
+        PaperProps={{
+          sx: {
+            bgcolor: 'transparent',
+            boxShadow: 'none',
+            backgroundImage: 'none',
+            overflow: 'visible',
+            m: { xs: 2, sm: 3 },
+          },
+        }}
+      >
+        <SignOutCard variant="modal" onClose={() => setSignOutOpen(false)} />
+      </Dialog>
     </Box>
   );
 }

@@ -101,5 +101,9 @@ const TransactionSchema = new Schema<ITransaction>(
 TransactionSchema.index({ tenantId: 1, createdAt: -1 });
 TransactionSchema.index({ tenantId: 1, status: 1 });
 TransactionSchema.index({ tenantId: 1, cashierId: 1 });
+TransactionSchema.index(
+  { tenantId: 1, idempotencyKey: 1 },
+  { unique: true, partialFilterExpression: { idempotencyKey: { $type: 'string' } } }
+);
 
 export const Transaction = mongoose.model<ITransaction>('Transaction', TransactionSchema);

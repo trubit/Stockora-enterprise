@@ -42,8 +42,11 @@ import StatCard from '../components/StatCard.tsx';
 import { useTranslation } from '../hooks/useTranslation.js';
 import { useRegionalSettings } from '../hooks/useRegionalSettings.js';
 import { usePermission } from '../hooks/usePermission.js';
+import { useTenantStore } from '../store/tenant.ts';
 import { CurrencySelector } from '../components/CurrencySelector.tsx';
 import { SUPPORTED_CURRENCIES } from '../../shared/currencies.js';
+import EmptyState from '../components/EmptyState.tsx';
+import { ENTERPRISE_IMAGERY } from '../constants/imagery.ts';
 
 // Zod Validation Schema for Product Creation
 const productSchema = z.object({
@@ -73,6 +76,8 @@ const fetchProducts = async (): Promise<Product[]> => {
 export default function Inventory() {
   const { t } = useTranslation();
   const { formatAmount, currencySymbol, baseCurrency, activeCurrency } = useRegionalSettings();
+  const { activeTenant } = useTenantStore();
+  const tenantId = activeTenant?._id || activeTenant?.id || '';
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -81,7 +86,7 @@ export default function Inventory() {
   const canWriteProducts = usePermission('products:write');
 
   const { data: products = [], refetch } = useQuery({
-    queryKey: ['products'],
+    queryKey: ['products', tenantId],
     queryFn: fetchProducts,
   });
 
@@ -89,7 +94,7 @@ export default function Inventory() {
     data: valuation = { weightedAverage: 0, fifo: 0, lifo: 0, totalItemsCount: 0 },
     refetch: refetchValuation,
   } = useQuery({
-    queryKey: ['valuation'],
+    queryKey: ['valuation', tenantId],
     queryFn: async () => {
       const { data } = await apiClient.get('/inventory/valuation');
       return data;
@@ -97,7 +102,7 @@ export default function Inventory() {
   });
 
   const { data: movements = [], refetch: refetchMovements } = useQuery({
-    queryKey: ['movements'],
+    queryKey: ['movements', tenantId],
     queryFn: async () => {
       const { data } = await apiClient.get('/inventory/movements');
       return data;
@@ -107,14 +112,14 @@ export default function Inventory() {
   // Real-time synchronization directly to cache
   useEffect(() => {
     socket.on('product:stock-updated', (data: { productId: string; quantity: number }) => {
-      queryClient.setQueryData<Product[]>(['products'], (old) => {
+      queryClient.setQueryData<Product[]>(['products', tenantId], (old) => {
         if (!old) return old;
         return old.map((p) => (p.id === data.productId ? { ...p, quantity: data.quantity } : p));
       });
     });
 
     socket.on('product:created', (newProduct: Product) => {
-      queryClient.setQueryData<Product[]>(['products'], (old) => {
+      queryClient.setQueryData<Product[]>(['products', tenantId], (old) => {
         if (!old) return [newProduct];
         return [...old, newProduct];
       });
@@ -124,7 +129,7 @@ export default function Inventory() {
       socket.off('product:stock-updated');
       socket.off('product:created');
     };
-  }, [queryClient]);
+  }, [queryClient, tenantId]);
 
   // Mutation for creating product
   const createProductMutation = useMutation({
@@ -403,34 +408,47 @@ export default function Inventory() {
         />
       </Tabs>
 
-      {activeTab === 0 && (
-        <Card
-          className="glass-panel"
-          sx={{ height: 'calc(100vh - 360px)', width: '100%', minHeight: 400 }}
-        >
-          <Box
-            className="ag-theme-alpine-dark"
-            sx={{
-              height: '100%',
-              width: '100%',
-              '--ag-background-color': 'transparent',
-              '--ag-header-background-color': '#1f2937',
-            }}
-          >
-            <AgGridReact
-              key={activeCurrency}
-              theme="legacy"
-              rowData={products}
-              columnDefs={columnDefs}
-              pagination={true}
-              paginationPageSize={15}
-              paginationPageSizeSelector={[10, 15, 25, 50]}
-              loadingCellRenderer={undefined}
-              domLayout="normal"
+      {activeTab === 0 &&
+        (products.length === 0 ? (
+          <Box sx={{ mt: 2, mb: 4 }}>
+            <EmptyState
+              title="No Inventory Products Registered"
+              description="Register new catalog SKUs, assign pricing and barcodes, or distribute stock across branch warehouses to start tracking live inventory."
+              imageSrc={ENTERPRISE_IMAGERY.warehouseLogistics.src}
+              imageAlt={ENTERPRISE_IMAGERY.warehouseLogistics.alt}
+              imageHeight={160}
+              actionLabel="Add First Product"
+              onAction={() => setOpen(true)}
             />
           </Box>
-        </Card>
-      )}
+        ) : (
+          <Card
+            className="glass-panel"
+            sx={{ height: 'calc(100vh - 360px)', width: '100%', minHeight: 400 }}
+          >
+            <Box
+              className="ag-theme-alpine-dark"
+              sx={{
+                height: '100%',
+                width: '100%',
+                '--ag-background-color': 'transparent',
+                '--ag-header-background-color': '#1f2937',
+              }}
+            >
+              <AgGridReact
+                key={activeCurrency}
+                theme="legacy"
+                rowData={products}
+                columnDefs={columnDefs}
+                pagination={true}
+                paginationPageSize={15}
+                paginationPageSizeSelector={[10, 15, 25, 50]}
+                loadingCellRenderer={undefined}
+                domLayout="normal"
+              />
+            </Box>
+          </Card>
+        ))}
 
       {activeTab === 1 && (
         <TableContainer

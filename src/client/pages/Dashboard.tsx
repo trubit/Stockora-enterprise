@@ -42,6 +42,7 @@ import { useTranslation } from '../hooks/useTranslation.js';
 import { useRegionalSettings } from '../hooks/useRegionalSettings.js';
 import { hasPermission } from '../../shared/permissions.js';
 import { Can } from '../components/auth/Can.tsx';
+import DashboardHero from '../components/dashboard/DashboardHero.tsx';
 
 // Query functions
 const fetchProducts = async (): Promise<Product[]> => {
@@ -222,6 +223,12 @@ export default function Dashboard() {
             </Button>
           </Can>
         }
+      />
+
+      <DashboardHero
+        workspaceName={workspaceName}
+        totalProductsCount={products.length}
+        totalSalesCount={transactions.length}
       />
 
       {/* Persistent Onboarding Alert */}

@@ -33,6 +33,8 @@ import { useConfirm } from '../../context/ConfirmDialogContext.tsx';
 import type { Customer } from '../../../shared/types.js';
 import { motion } from 'framer-motion';
 import { Can } from '../../components/auth/Can.tsx';
+import EmptyState from '../../components/EmptyState.tsx';
+import { ENTERPRISE_IMAGERY } from '../../constants/imagery.ts';
 
 const textFieldStyle = {};
 
@@ -257,12 +259,24 @@ export default function Customers() {
             <TableBody>
               {filteredCustomers.length === 0 ? (
                 <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    align="center"
-                    sx={{ py: 6, color: 'text.secondary', border: 'none' }}
-                  >
-                    No customers registered.
+                  <TableCell colSpan={6} align="center" sx={{ py: 6, border: 'none' }}>
+                    <EmptyState
+                      title={
+                        searchQuery ? 'No Matching Customers Found' : 'No Customers Registered Yet'
+                      }
+                      description={
+                        searchQuery
+                          ? `No customer records matched "${searchQuery}". Try adjusting your keywords or clearing the filter.`
+                          : 'Register wholesale buyers, retail shoppers, and VIP accounts to track credit limits and transaction history.'
+                      }
+                      imageSrc={ENTERPRISE_IMAGERY.retailCustomer.src}
+                      imageAlt={ENTERPRISE_IMAGERY.retailCustomer.alt}
+                      imageHeight={160}
+                      actionLabel="Register Customer"
+                      onAction={() => handleOpenCreate()}
+                      secondaryActionLabel={searchQuery ? 'Clear Filter' : undefined}
+                      onSecondaryAction={searchQuery ? () => setSearchQuery('') : undefined}
+                    />
                   </TableCell>
                 </TableRow>
               ) : (

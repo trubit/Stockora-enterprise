@@ -153,6 +153,8 @@ export const QuickSearchModal: React.FC<QuickSearchModalProps> = ({ open, onClos
       onClose={handleClose}
       fullWidth
       maxWidth="sm"
+      disableRestoreFocus
+      aria-label="Quick search navigation"
       PaperProps={{
         sx: {
           background: 'linear-gradient(135deg, #0b0f19 0%, #030712 100%) !important',

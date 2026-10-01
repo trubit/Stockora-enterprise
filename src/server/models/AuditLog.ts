@@ -1,6 +1,7 @@
 import mongoose, { Schema, type Document } from 'mongoose';
 
 export interface IAuditLog extends Document {
+  tenantId?: string;
   userId?: mongoose.Types.ObjectId;
   action: string;
   targetModel: string;
@@ -17,6 +18,7 @@ export interface IAuditLog extends Document {
 
 const AuditLogSchema = new Schema<IAuditLog>(
   {
+    tenantId: { type: String, index: true },
     userId: { type: Schema.Types.ObjectId, ref: 'User', index: true },
     action: { type: String, required: true, index: true },
     targetModel: { type: String, required: true, index: true },
@@ -30,7 +32,10 @@ const AuditLogSchema = new Schema<IAuditLog>(
   { timestamps: { createdAt: true, updatedAt: false } }
 );
 
-// Indexes for performance/filtering
+// Indexes for high-throughput tenant audit logs and sorting
+AuditLogSchema.index({ tenantId: 1, createdAt: -1 });
+AuditLogSchema.index({ userId: 1, createdAt: -1 });
+AuditLogSchema.index({ targetModel: 1, targetId: 1, createdAt: -1 });
 AuditLogSchema.index({ createdAt: -1 });
 
 export const AuditLog = mongoose.model<IAuditLog>('AuditLog', AuditLogSchema);

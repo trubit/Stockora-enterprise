@@ -34,6 +34,7 @@ import { api } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 import { CurrencySelector } from '../../components/CurrencySelector.tsx';
+import { printReceipt } from '../../utils/printReceipt.ts';
 
 export default function POSTerminalConsole() {
   const { formatAmount, currencySymbol, baseCurrency, activeCurrency, convertAmount } =
@@ -779,8 +780,47 @@ export default function POSTerminalConsole() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenReceiptModal(false)}>Close</Button>
-          <Button variant="contained" onClick={() => window.print()}>
-            Print Receipt
+          <Button
+            variant="outlined"
+            onClick={() => {
+              if (
+                document.activeElement &&
+                typeof (document.activeElement as HTMLElement).blur === 'function'
+              ) {
+                (document.activeElement as HTMLElement).blur();
+              }
+              printReceipt(lastReceipt, formatAmount, 'A4');
+            }}
+          >
+            Print A4 Invoice
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => {
+              if (
+                document.activeElement &&
+                typeof (document.activeElement as HTMLElement).blur === 'function'
+              ) {
+                (document.activeElement as HTMLElement).blur();
+              }
+              printReceipt(lastReceipt, formatAmount, 'THERMAL_58');
+            }}
+          >
+            Print Thermal (58mm)
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              if (
+                document.activeElement &&
+                typeof (document.activeElement as HTMLElement).blur === 'function'
+              ) {
+                (document.activeElement as HTMLElement).blur();
+              }
+              printReceipt(lastReceipt, formatAmount, 'THERMAL_80');
+            }}
+          >
+            Print Thermal Receipt (80mm)
           </Button>
         </DialogActions>
       </Dialog>

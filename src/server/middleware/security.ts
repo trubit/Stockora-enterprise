@@ -160,12 +160,107 @@ const authLimiter = rateLimit({
     message: 'Too many authentication attempts from this IP. Please try again after 15 minutes.',
   },
 });
-securityMiddleware.use('/api/v1/auth/login', authLimiter);
-securityMiddleware.use('/api/v1/auth/register', authLimiter);
-securityMiddleware.use('/api/v1/auth/forgot-password', authLimiter);
+
+const authPaths = [
+  '/api/v1/auth/login',
+  '/api/v1/auth/register',
+  '/api/v1/auth/forgot-password',
+  '/api/v1/auth/reset-password',
+  '/api/v1/auth/verify-reset-otp',
+  '/api/v1/auth/verify-email',
+  '/api/v1/auth/accept-invitation',
+  '/api/auth/login',
+  '/api/auth/register',
+  '/api/auth/forgot-password',
+  '/api/auth/reset-password',
+  '/api/auth/verify-reset-otp',
+  '/api/auth/verify-email',
+  '/api/auth/accept-invitation',
+];
+
+for (const path of authPaths) {
+  securityMiddleware.use(path, authLimiter);
+}
 
 // 6. Gzip/Brotli compression for performance optimization
 securityMiddleware.use(compression());
 
 // 7. Parse cookies securely — use dedicated COOKIE_SECRET (not the JWT signing secret)
 securityMiddleware.use(cookieParser(config.cookieSecret));
+
+/**
+ * Recursive sanitizer to neutralize NoSQL / MongoDB Operator Injection attacks
+ * (OWASP Top 10:2025 A05 - Injection). Strips keys starting with '$' or containing '.'
+ */
+export function sanitizeData<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(sanitizeData) as unknown as T;
+  }
+  const clean: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (key.startsWith('$') || key.includes('.')) {
+      continue;
+    }
+    clean[key] = sanitizeData(value);
+  }
+  return clean as T;
+}
+
+/**
+ * Recursively sanitizes an object in-place without reassigning the parent reference.
+ * This prevents "Cannot set property query of #<IncomingMessage> which has only a getter"
+ * errors in Express 5 / Node.js IncomingMessage.
+ */
+export function sanitizeInPlace(obj: unknown): void {
+  if (!obj || typeof obj !== 'object') {
+    return;
+  }
+
+  if (Array.isArray(obj)) {
+    for (let i = 0; i < obj.length; i++) {
+      const item = obj[i];
+      if (item && typeof item === 'object') {
+        sanitizeInPlace(item);
+      }
+    }
+    return;
+  }
+
+  const record = obj as Record<string, unknown>;
+  const keys = Object.keys(record);
+
+  for (const key of keys) {
+    if (key.startsWith('$') || key.includes('.')) {
+      delete record[key];
+    } else {
+      const val = record[key];
+      if (val && typeof val === 'object') {
+        sanitizeInPlace(val);
+      }
+    }
+  }
+}
+
+/**
+ * Express middleware that sanitizes body, query, and params against NoSQL injection
+ * mutating objects in-place safely for Express 5 compatibility.
+ */
+export const mongoSanitizeMiddleware = (
+  req: { body?: unknown; query?: unknown; params?: unknown },
+  _res: unknown,
+  next: () => void
+): void => {
+  if (req.body && typeof req.body === 'object') {
+    sanitizeInPlace(req.body);
+  }
+  if (req.query && typeof req.query === 'object') {
+    sanitizeInPlace(req.query);
+  }
+  if (req.params && typeof req.params === 'object') {
+    sanitizeInPlace(req.params);
+  }
+  next();
+};

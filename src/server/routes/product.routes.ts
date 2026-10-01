@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { ProductController } from '../controllers/product.controller.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { resolveTenantContext } from '../middleware/tenant.middleware.js';
 import { rbacMiddleware } from '../middleware/rbac.js';
 import { requirePlanLimit } from '../middleware/billing.middleware.js';
 import { SYSTEM_PERMISSIONS } from '../../shared/constants.js';
@@ -8,6 +9,7 @@ import { SYSTEM_PERMISSIONS } from '../../shared/constants.js';
 export const productRouter = Router();
 
 productRouter.use(authMiddleware);
+productRouter.use(resolveTenantContext);
 
 productRouter.get(
   '/',

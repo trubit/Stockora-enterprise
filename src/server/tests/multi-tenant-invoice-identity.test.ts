@@ -25,6 +25,7 @@ describe('Multi-Tenant Company-Specific Invoice & Receipt Identity Tests', () =>
       await mongoose.disconnect();
     }
     await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_multi_tenant_identity');
+    await Transaction.syncIndexes();
 
     // 1. Create Tenant A & Company A
     const tenantA = await Tenant.create({

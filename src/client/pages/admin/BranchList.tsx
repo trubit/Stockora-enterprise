@@ -21,6 +21,8 @@ import { toast } from 'react-hot-toast';
 import type { Branch } from '../../../shared/types.js';
 import { motion } from 'framer-motion';
 import { Can } from '../../components/auth/Can.tsx';
+import EmptyState from '../../components/EmptyState.tsx';
+import { ENTERPRISE_IMAGERY } from '../../constants/imagery.ts';
 
 const textFieldStyle = {};
 
@@ -109,72 +111,90 @@ export default function BranchList() {
           Configure retail branches, operational physical outlets, and warehouse assignments.
         </Typography>
 
-        <Grid container spacing={3}>
-          {branches.map((b) => (
-            <Grid item xs={12} sm={6} md={4} key={b._id || b.id}>
-              <Card
-                className="glass-panel"
-                sx={{
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                  background:
-                    'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
-                  borderRadius: 3,
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  overflow: 'hidden',
-                  position: 'relative',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '2px',
-                    background: 'linear-gradient(90deg, #8b5cf6, #3b82f6)',
-                    opacity: 0.6,
-                  },
-                  '&:hover': {
-                    transform: 'translateY(-3px)',
-                    boxShadow: '0 10px 25px rgba(139, 92, 246, 0.12)',
-                    borderColor: 'rgba(139, 92, 246, 0.25)',
+        {branches.length === 0 ? (
+          <Box sx={{ mt: 2, mb: 4 }}>
+            <EmptyState
+              title="No Enterprise Branches Registered"
+              description="Establish multi-location physical branches, distribution warehouses, or retail storefronts to manage localized inventory and terminal terminals."
+              imageSrc={ENTERPRISE_IMAGERY.teamOperations.src}
+              imageAlt={ENTERPRISE_IMAGERY.teamOperations.alt}
+              imageHeight={160}
+              actionLabel="Register First Branch"
+              onAction={() => setOpen(true)}
+            />
+          </Box>
+        ) : (
+          <Grid container spacing={3}>
+            {branches.map((b) => (
+              <Grid item xs={12} sm={6} md={4} key={b._id || b.id}>
+                <Card
+                  className="glass-panel"
+                  sx={{
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    background:
+                      'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%)',
+                    borderRadius: 3,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    overflow: 'hidden',
+                    position: 'relative',
                     '&::before': {
-                      opacity: 1,
+                      content: '""',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: '2px',
+                      background: 'linear-gradient(90deg, #8b5cf6, #3b82f6)',
+                      opacity: 0.6,
                     },
-                  },
-                }}
-              >
-                <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, p: 3 }}>
-                  <Box
-                    sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                  >
-                    <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                      {b.name}
-                    </Typography>
-                    <Chip
-                      label={b.code}
-                      size="small"
-                      color="primary"
+                    '&:hover': {
+                      transform: 'translateY(-3px)',
+                      boxShadow: '0 10px 25px rgba(139, 92, 246, 0.12)',
+                      borderColor: 'rgba(139, 92, 246, 0.25)',
+                      '&::before': {
+                        opacity: 1,
+                      },
+                    },
+                  }}
+                >
+                  <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, p: 3 }}>
+                    <Box
                       sx={{
-                        fontWeight: 700,
-                        fontSize: '0.75rem',
-                        boxShadow: '0 2px 8px rgba(139, 92, 246, 0.2)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
                       }}
-                    />
-                  </Box>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: 'text.secondary', minHeight: 40, fontWeight: 500 }}
-                  >
-                    {b.address || 'No address registered'}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                    Phone: {b.phone || 'N/A'}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+                    >
+                      <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                        {b.name}
+                      </Typography>
+                      <Chip
+                        label={b.code}
+                        size="small"
+                        color="primary"
+                        sx={{
+                          fontWeight: 700,
+                          fontSize: '0.75rem',
+                          boxShadow: '0 2px 8px rgba(139, 92, 246, 0.2)',
+                        }}
+                      />
+                    </Box>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: 'text.secondary', minHeight: 40, fontWeight: 500 }}
+                    >
+                      {b.address || 'No address registered'}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                      Phone: {b.phone || 'N/A'}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )}
 
         <Dialog
           open={open}

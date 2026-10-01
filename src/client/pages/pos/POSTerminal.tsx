@@ -38,10 +38,12 @@ import PaymentsIcon from '@mui/icons-material/Payments';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import PageHeader from '../../components/PageHeader.tsx';
+import { useModalFocus } from '../../hooks/useModalFocus.ts';
 import { apiClient } from '../../api/client.ts';
 import { toast } from 'react-hot-toast';
 import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 import { CurrencySelector } from '../../components/CurrencySelector.tsx';
+import { printReceipt } from '../../utils/printReceipt.ts';
 
 interface ProductItem {
   _id: string;
@@ -100,6 +102,16 @@ export default function POSTerminal() {
   const [referenceNo, setReferenceNo] = useState<string>('');
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const addingLockRef = useRef<{ [key: string]: number }>({});
+
+  const isTransitioningToReceipt = useRef(false);
+  const {
+    triggerRef: terminalCheckoutTriggerRef,
+    prepareOpen: prepareTerminalCheckoutOpen,
+    transitionProps: terminalCheckoutTransitionProps,
+  } = useModalFocus({
+    fallbackSelector: '#terminal-checkout-btn, [role="main"], main',
+    isHandoff: () => isTransitioningToReceipt.current,
+  });
 
   const handleFetchReceipt = async (orderNum: string) => {
     try {
@@ -317,11 +329,13 @@ export default function POSTerminal() {
 
   const displayGrandTotal = convertAmount(grandTotal, baseCurrency, activeCurrency);
 
-  const handleOpenCheckout = () => {
+  const handleOpenCheckout = (e?: React.SyntheticEvent) => {
     if (cart.length === 0) {
       toast.error('Cart is empty.');
       return;
     }
+    prepareTerminalCheckoutOpen(e);
+    isTransitioningToReceipt.current = false;
     const currentTotal = Number(displayGrandTotal.toFixed(2));
     setSelectedTender('CASH');
     setCashTendered(currentTotal);
@@ -388,14 +402,22 @@ export default function POSTerminal() {
         const createdOrderNumber = resObj.orderNumber;
         toast.success(`Checkout Complete! Order #${createdOrderNumber}`);
 
+        // Close tender modal and release focus before opening receipt modal to avoid dialog stacking
+        isTransitioningToReceipt.current = true;
+        setCheckoutModalOpen(false);
+        setCart([]);
+        setCartDiscount(0);
+        setSelectedCustomer(null);
+        if (
+          document.activeElement &&
+          typeof (document.activeElement as HTMLElement).blur === 'function'
+        ) {
+          (document.activeElement as HTMLElement).blur();
+        }
+
         // Fetch & display receipt modal automatically
         await handleFetchReceipt(createdOrderNumber);
       }
-
-      setCart([]);
-      setCartDiscount(0);
-      setSelectedCustomer(null);
-      setCheckoutModalOpen(false);
 
       // Refresh product stock live on the cashier interface
       await fetchProducts(searchQuery);
@@ -974,6 +996,8 @@ export default function POSTerminal() {
             </Box>
 
             <Button
+              ref={terminalCheckoutTriggerRef}
+              id="terminal-checkout-btn"
               variant="contained"
               color="primary"
               size="large"
@@ -1033,6 +1057,10 @@ export default function POSTerminal() {
         onClose={() => setCheckoutModalOpen(false)}
         maxWidth="sm"
         fullWidth
+        disableRestoreFocus
+        aria-labelledby="terminal-checkout-title"
+        aria-describedby="terminal-checkout-description"
+        TransitionProps={terminalCheckoutTransitionProps}
         PaperProps={{
           sx: {
             maxWidth: '520px !important',
@@ -1044,10 +1072,10 @@ export default function POSTerminal() {
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 'bold', textAlign: 'center' }}>
+        <DialogTitle id="terminal-checkout-title" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
           POS Tender Confirmation
         </DialogTitle>
-        <DialogContent dividers>
+        <DialogContent id="terminal-checkout-description" dividers>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
             <Chip
               label={
@@ -1190,6 +1218,7 @@ export default function POSTerminal() {
                   />
                 </Box>
                 <TextField
+                  autoFocus
                   label={`Cash Received (${currencySymbol})`}
                   type="number"
                   fullWidth
@@ -1290,6 +1319,8 @@ export default function POSTerminal() {
         onClose={() => setHeldModalOpen(false)}
         maxWidth="md"
         fullWidth
+        disableRestoreFocus
+        aria-labelledby="held-sales-dialog-title"
         PaperProps={{
           sx: {
             maxWidth: '680px !important',
@@ -1301,7 +1332,9 @@ export default function POSTerminal() {
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 'bold' }}>Parked & Held Carts</DialogTitle>
+        <DialogTitle id="held-sales-dialog-title" sx={{ fontWeight: 'bold' }}>
+          Parked & Held Carts
+        </DialogTitle>
         <DialogContent dividers sx={{ p: { xs: 1, sm: 2 } }}>
           <Box sx={{ overflowX: 'auto', width: '100%' }}>
             <Table size="small" sx={{ minWidth: 550 }}>
@@ -1349,6 +1382,8 @@ export default function POSTerminal() {
         onClose={() => setReceiptHistoryModalOpen(false)}
         maxWidth="md"
         fullWidth
+        disableRestoreFocus
+        aria-labelledby="receipt-history-dialog-title"
         PaperProps={{
           sx: {
             maxWidth: '720px !important',
@@ -1441,6 +1476,19 @@ export default function POSTerminal() {
           onClose={() => setReceiptData(null)}
           maxWidth="xs"
           fullWidth
+          disableRestoreFocus
+          aria-labelledby="terminal-receipt-title"
+          aria-describedby="terminal-receipt-description"
+          TransitionProps={{
+            onExited: () => {
+              if (typeof document !== 'undefined') {
+                const target = document.querySelector<HTMLElement>(
+                  '#terminal-checkout-btn, [role="main"], main'
+                );
+                target?.focus();
+              }
+            },
+          }}
           PaperProps={{
             sx: {
               maxWidth: '460px !important',
@@ -1455,7 +1503,10 @@ export default function POSTerminal() {
             },
           }}
         >
-          <DialogTitle sx={{ textAlign: 'center', fontWeight: 'bold', pb: 1 }}>
+          <DialogTitle
+            id="terminal-receipt-title"
+            sx={{ textAlign: 'center', fontWeight: 'bold', pb: 1 }}
+          >
             {receiptData.logoUrl ? (
               <Box
                 component="img"
@@ -1607,13 +1658,56 @@ export default function POSTerminal() {
               Close
             </Button>
             <Button
+              variant="outlined"
+              color="primary"
+              onClick={() => {
+                if (
+                  document.activeElement &&
+                  typeof (document.activeElement as HTMLElement).blur === 'function'
+                ) {
+                  (document.activeElement as HTMLElement).blur();
+                }
+                printReceipt(receiptData, formatAmount, 'A4');
+              }}
+              startIcon={<ReceiptIcon />}
+              sx={{ fontWeight: 700, borderRadius: '8px' }}
+            >
+              Print A4 Invoice
+            </Button>
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={() => {
+                if (
+                  document.activeElement &&
+                  typeof (document.activeElement as HTMLElement).blur === 'function'
+                ) {
+                  (document.activeElement as HTMLElement).blur();
+                }
+                printReceipt(receiptData, formatAmount, 'THERMAL_58');
+              }}
+              startIcon={<ReceiptIcon />}
+              sx={{ fontWeight: 700, borderRadius: '8px' }}
+            >
+              Print Thermal (58mm)
+            </Button>
+            <Button
+              autoFocus
               variant="contained"
               color="primary"
-              onClick={() => window.print()}
+              onClick={() => {
+                if (
+                  document.activeElement &&
+                  typeof (document.activeElement as HTMLElement).blur === 'function'
+                ) {
+                  (document.activeElement as HTMLElement).blur();
+                }
+                printReceipt(receiptData, formatAmount, 'THERMAL_80');
+              }}
               startIcon={<ReceiptIcon />}
               sx={{ fontWeight: 800, borderRadius: '8px', px: 2.5 }}
             >
-              Print Receipt
+              Print Thermal Receipt (80mm)
             </Button>
           </DialogActions>
         </Dialog>

@@ -413,7 +413,11 @@ export class BillingController {
   ): Promise<void> {
     try {
       const signature = (req.headers['x-paystack-signature'] as string) || '';
-      const webhookSecret = config.paystackSecretKey || process.env.PAYSTACK_WEBHOOK_SECRET || '';
+      const webhookSecret =
+        config.paystackWebhookSecret ||
+        config.paystackSecretKey ||
+        process.env.PAYSTACK_WEBHOOK_SECRET ||
+        '';
 
       // In production/sandbox, verify signature
       const rawPayload = JSON.stringify(req.body);

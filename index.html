@@ -3,8 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Stockora Enterprise pro</title>
+    <meta name="theme-color" content="#8b5cf6" />
+    <meta name="description" content="Mission-Critical Multi-Tenant Inventory Management, Point-of-Sale, and ERP Platform" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Stockora Pro" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>Stockora Enterprise Pro</title>
     <script>
       (function() {
         function shouldSuppress(msg, source) {
@@ -49,7 +57,74 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Stockora Enterprise Pro Tier-1 Executive Logo Loading Screen -->
+      <div id="preboot-loader" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background-color:#03050c;background-image:radial-gradient(at 50% 30%, rgba(139, 92, 246, 0.12) 0px, transparent 60%), radial-gradient(at 80% 80%, rgba(6, 182, 212, 0.05) 0px, transparent 50%);color:#f8fafc;font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;user-select:none;position:relative;overflow:hidden;">
+        <!-- Ambient radial glow -->
+        <div style="position:absolute;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,0.22) 0%,rgba(56,189,248,0.08) 45%,transparent 70%);pointer-events:none;animation:preboot-breathe 4s ease-in-out infinite;"></div>
+        
+        <!-- Center Emblem Container -->
+        <div style="position:relative;width:104px;height:104px;display:flex;align-items:center;justify-content:center;margin-bottom:28px;z-index:2;">
+          <!-- Kinetic Orbit Ring -->
+          <svg style="position:absolute;top:0;left:0;width:100%;height:100%;animation:preboot-spin 2.2s linear infinite;" viewBox="0 0 104 104">
+            <defs>
+              <linearGradient id="prebootGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#8b5cf6" stop-opacity="1" />
+                <stop offset="50%" stop-color="#38bdf8" stop-opacity="0.8" />
+                <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0" />
+              </linearGradient>
+            </defs>
+            <circle cx="52" cy="52" r="48" fill="none" stroke="rgba(255, 255, 255, 0.06)" stroke-width="1.5" />
+            <circle cx="52" cy="52" r="48" fill="none" stroke="url(#prebootGrad)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="75 225" />
+          </svg>
+          
+          <!-- Floating Master Real Logo with no bounding box or white border square -->
+          <div style="width:76px;height:76px;display:flex;align-items:center;justify-content:center;z-index:3;background:none;border:none;box-shadow:none;">
+            <img src="/logo.png" alt="Stockora Enterprise Pro Logo" style="width:58px;height:58px;object-fit:contain;filter:drop-shadow(0 4px 16px rgba(0,0,0,0.7));" />
+          </div>
+        </div>
+        
+        <!-- Brand Title & Enterprise Pill Badge -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;z-index:2;flex-wrap:wrap;justify-content:center;">
+          <h1 style="margin:0;font-size:24px;font-weight:900;letter-spacing:0.2em;text-transform:uppercase;background:linear-gradient(180deg,#FFFFFF 30%,#94A3B8 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.2;">Stockora</h1>
+          <div style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:rgba(139,92,246,0.14);border:1px solid rgba(139,92,246,0.35);box-shadow:0 0 14px rgba(139,92,246,0.22);">
+            <div style="width:6px;height:6px;border-radius:50%;background:#10b981;"></div>
+            <span style="font-size:10px;font-weight:800;letter-spacing:0.14em;color:#c084fc;text-transform:uppercase;">ENTERPRISE PRO</span>
+          </div>
+        </div>
+        
+        <!-- Subtitle Micro-copy -->
+        <p style="margin:0 0 22px 0;font-size:13px;color:#94a3b8;font-weight:500;letter-spacing:0.03em;z-index:2;">Initializing High-Availability Runtime...</p>
+        
+        <!-- Precision Kinetic Shimmer Beam Track -->
+        <div style="width:220px;height:3px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;position:relative;margin-bottom:28px;z-index:2;box-shadow:inset 0 1px 2px rgba(0,0,0,0.4);">
+          <div style="width:60%;height:100%;background:linear-gradient(90deg,transparent 0%,#8b5cf6 35%,#38bdf8 70%,transparent 100%);border-radius:99px;position:absolute;box-shadow:0 0 14px rgba(139,92,246,0.8);animation:preboot-shimmer 1.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;"></div>
+        </div>
+        
+        <!-- Security Watermark -->
+        <div style="font-size:10px;letter-spacing:0.12em;color:#475569;font-weight:600;text-transform:uppercase;font-family:monospace;z-index:2;">
+          🔒 256-BIT TLS 1.3 • SOC 2 RUNTIME • TENANT ISOLATED
+        </div>
+        
+        <style>
+          @keyframes preboot-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          @keyframes preboot-shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(200%); }
+          }
+          @keyframes preboot-breathe {
+            0%, 100% { transform: scale(0.95); opacity: 0.45; }
+            50% { transform: scale(1.15); opacity: 0.8; }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            #preboot-loader div, #preboot-loader svg { animation: none !important; }
+          }
+        </style>
+      </div>
+    </div>
     <script type="module" src="/src/client/main.tsx"></script>
   </body>
 </html>

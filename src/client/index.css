@@ -253,3 +253,73 @@ body {
   animation: rippleGlow 1.8s infinite ease-in-out;
   animation-delay: 0.5s;
 }
+
+/* ============================================================
+   Enterprise Print Engine Optimization Styles
+   Guarantees 100% visible, high-contrast, black-on-white printouts
+   ============================================================ */
+
+@media print {
+  *,
+  *::before,
+  *::after {
+    color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    background-image: none !important;
+    color: #000000 !important;
+  }
+
+  /* When printing via the iframe engine, hide absolutely everything
+     from the main document so only the iframe content prints. */
+  .stockora-printing #root,
+  .stockora-printing .MuiDialog-root,
+  .stockora-printing .MuiModal-root,
+  .stockora-printing .MuiBackdrop-root {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Hide app chrome during standard (non-iframe) print operations
+     e.g. Financial Statements window.print() */
+  nav,
+  aside,
+  header,
+  .no-print,
+  button:not(.allow-print),
+  .MuiButton-root:not(.allow-print),
+  .MuiFab-root,
+  .MuiSpeedDial-root {
+    display: none !important;
+  }
+
+  /* Ensure card backgrounds and typography are high-contrast black on white */
+  .MuiPaper-root,
+  .MuiCard-root {
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+
+  /* Table cells must be clearly delineated */
+  .MuiTableCell-root {
+    color: #000000 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+
+  /* Prevent awkward page break clipping */
+  tr,
+  .MuiTableRow-root,
+  .MuiCard-root {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}

@@ -1,21 +1,31 @@
+import { useState } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
   Typography,
   TextField,
   Button,
   Link,
   MenuItem,
+  IconButton,
+  InputAdornment,
+  CircularProgress,
 } from '@mui/material';
+import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
+import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
+import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from '../../api/client.ts';
-import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import AuthShell from '../../components/auth/AuthShell.tsx';
 
 const signUpSchema = z
   .object({
@@ -46,10 +56,30 @@ const signUpSchema = z
 
 type SignUpInputs = z.infer<typeof signUpSchema>;
 
-const textFieldStyle = {};
+const inputSx = {
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: 'rgba(11, 15, 26, 0.65)',
+    borderRadius: 2.5,
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+    '& fieldset': {
+      borderColor: 'rgba(255, 255, 255, 0.08)',
+    },
+    '&:hover fieldset': {
+      borderColor: 'rgba(139, 92, 246, 0.35)',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: '#8b5cf6',
+      borderWidth: '1px',
+    },
+    '&.Mui-focused': {
+      boxShadow: '0 0 16px rgba(139, 92, 246, 0.18)',
+    },
+  },
+};
 
 export default function SignUp() {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -106,251 +136,312 @@ export default function SignUp() {
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        bgcolor: '#030712',
-        position: 'relative',
-        overflow: 'hidden',
-        px: 2,
-        py: 4,
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: '15%',
-          left: '25%',
-          width: 450,
-          height: 450,
-          borderRadius: '50%',
-          background:
-            'radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, rgba(139, 92, 246, 0) 70%)',
-          filter: 'blur(45px)',
-          zIndex: 0,
-        },
-        '&::after': {
-          content: '""',
-          position: 'absolute',
-          bottom: '15%',
-          right: '25%',
-          width: 450,
-          height: 450,
-          borderRadius: '50%',
-          background:
-            'radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0) 70%)',
-          filter: 'blur(45px)',
-          zIndex: 0,
-        },
-      }}
+    <AuthShell
+      mode="signup"
+      title="Create Enterprise Account"
+      subtitle="Initialize your organization workspace, branch networks, and point-of-sale registers."
+      visualHeadline="Powering Scalable Retail & Warehouse Operations"
+      visualDescription="Stockora Enterprise Pro brings unified inventory intelligence, sub-second POS registers, multi-warehouse logistics, and real-time offline sync to your business."
+      highlights={[
+        'Omnichannel POS with hardware peripheral integration',
+        'Multi-warehouse logistics with real-time stock allocation',
+        'Isolated multi-tenant data architecture with 99.99% SLA',
+        'Autonomous demand forecasting & automated supplier replenishment',
+      ]}
     >
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        style={{ zIndex: 1 }}
+      <Box
+        component="form"
+        onSubmit={handleSubmit(onSubmit)}
+        noValidate
+        sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
       >
-        <Card
+        {/* ========================================================
+            SECTION 1: ACCOUNT CREDENTIALS
+            ======================================================== */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: '#a78bfa',
+              fontWeight: 800,
+              letterSpacing: '0.06em',
+              fontSize: '0.72rem',
+              textTransform: 'uppercase',
+            }}
+          >
+            1. Account Credentials
+          </Typography>
+
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+              gap: 1.5,
+            }}
+          >
+            <TextField
+              id="username"
+              label="Username"
+              autoComplete="username"
+              fullWidth
+              {...register('username')}
+              error={!!errors.username}
+              helperText={errors.username?.message}
+              InputLabelProps={{ shrink: true }}
+              inputProps={{
+                autoCapitalize: 'none',
+                autoCorrect: 'off',
+                spellCheck: 'false',
+                'aria-required': 'true',
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PersonOutlineRoundedIcon sx={{ color: '#a78bfa', fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={inputSx}
+            />
+
+            <TextField
+              id="email"
+              label="Email Address"
+              type="email"
+              autoComplete="email"
+              fullWidth
+              {...register('email')}
+              error={!!errors.email}
+              helperText={errors.email?.message}
+              InputLabelProps={{ shrink: true }}
+              inputProps={{
+                autoCapitalize: 'none',
+                autoCorrect: 'off',
+                spellCheck: 'false',
+                'aria-required': 'true',
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailOutlinedIcon sx={{ color: '#a78bfa', fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={inputSx}
+            />
+          </Box>
+
+          <TextField
+            id="password"
+            label="Password"
+            type={showPassword ? 'text' : 'password'}
+            autoComplete="new-password"
+            fullWidth
+            {...register('password')}
+            error={!!errors.password}
+            helperText={
+              errors.password?.message ||
+              'Min. 8 characters with uppercase, lowercase, number & symbol'
+            }
+            InputLabelProps={{ shrink: true }}
+            inputProps={{
+              autoCapitalize: 'none',
+              autoCorrect: 'off',
+              spellCheck: 'false',
+              'aria-required': 'true',
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <LockOutlinedIcon sx={{ color: '#a78bfa', fontSize: 20 }} />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    edge="end"
+                    size="small"
+                    sx={{ color: '#9ca3af', '&:hover': { color: '#f3f4f6' } }}
+                  >
+                    {showPassword ? (
+                      <VisibilityOff sx={{ fontSize: 20 }} />
+                    ) : (
+                      <Visibility sx={{ fontSize: 20 }} />
+                    )}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+            sx={inputSx}
+          />
+        </Box>
+
+        {/* ========================================================
+            SECTION 2: WORKSPACE & ORGANIZATION
+            ======================================================== */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: '#34d399',
+              fontWeight: 800,
+              letterSpacing: '0.06em',
+              fontSize: '0.72rem',
+              textTransform: 'uppercase',
+            }}
+          >
+            2. Workspace & Organization
+          </Typography>
+
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: '5fr 7fr' },
+              gap: 1.5,
+            }}
+          >
+            <TextField
+              select
+              id="roleName"
+              label="Workspace Role"
+              fullWidth
+              value={roleName || ''}
+              {...register('roleName')}
+              onChange={(e) => setValue('roleName', e.target.value, { shouldValidate: true })}
+              error={!!errors.roleName}
+              helperText={errors.roleName?.message}
+              InputLabelProps={{ shrink: true }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <AdminPanelSettingsOutlinedIcon sx={{ color: '#34d399', fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={inputSx}
+            >
+              <MenuItem value="Company Owner">Company Owner</MenuItem>
+              <MenuItem value="Branch Manager">Branch Manager</MenuItem>
+              <MenuItem value="Warehouse Manager">Warehouse Manager</MenuItem>
+              <MenuItem value="Cashier">Cashier</MenuItem>
+            </TextField>
+
+            <TextField
+              id="companyName"
+              label={roleName === 'Company Owner' ? 'Company Name *' : 'Company Name (Optional)'}
+              placeholder="e.g. Truson Logistics Limited"
+              fullWidth
+              {...register('companyName')}
+              error={!!errors.companyName}
+              helperText={errors.companyName?.message}
+              InputLabelProps={{ shrink: true }}
+              inputProps={{
+                'aria-required': roleName === 'Company Owner' ? 'true' : 'false',
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <BusinessOutlinedIcon sx={{ color: '#34d399', fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={inputSx}
+            />
+          </Box>
+        </Box>
+
+        {/* ========================================================
+            SECTION 3: PRIMARY ACTION
+            ======================================================== */}
+        <Button
+          variant="contained"
+          type="submit"
+          fullWidth
+          disabled={mutation.isPending}
+          startIcon={
+            mutation.isPending ? <CircularProgress size={18} sx={{ color: '#ffffff' }} /> : null
+          }
           sx={{
-            width: '100%',
-            maxWidth: 420,
-            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4), 0 0 40px rgba(139, 92, 246, 0.08)',
-            border: '1px solid rgba(139, 92, 246, 0.15)',
-            background:
-              'linear-gradient(135deg, rgba(23, 27, 44, 0.75) 0%, rgba(11, 13, 26, 0.85) 100%)',
-            backdropFilter: 'blur(20px)',
-            borderRadius: 4,
-            overflow: 'hidden',
-            position: 'relative',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: '4px',
-              background: 'linear-gradient(90deg, #8b5cf6, #3b82f6)',
+            py: 1.5,
+            mt: 0.5,
+            fontWeight: 700,
+            borderRadius: 2.5,
+            textTransform: 'none',
+            fontSize: '0.95rem',
+            letterSpacing: '0.01em',
+            background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
+            boxShadow: '0 4px 20px rgba(124, 58, 237, 0.35)',
+            transition: 'all 0.25s ease',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #6d28d9 0%, #4338ca 100%)',
+              boxShadow: '0 6px 24px rgba(124, 58, 237, 0.5)',
+              transform: 'translateY(-1px)',
+            },
+            '&:disabled': {
+              background: 'rgba(124, 58, 237, 0.4)',
+              color: 'rgba(255, 255, 255, 0.7)',
             },
           }}
         >
-          <CardContent
-            sx={{ p: { xs: 3.5, md: 5 }, display: 'flex', flexDirection: 'column', gap: 3.5 }}
-          >
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.2, duration: 0.4 }}
-              >
-                <img
-                  src="/logo.png"
-                  alt="Stockora Logo"
-                  style={{
-                    height: 64,
-                    width: 64,
-                    objectFit: 'contain',
-                    filter: 'drop-shadow(0 4px 10px rgba(139, 92, 246, 0.3))',
-                  }}
-                />
-              </motion.div>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 900,
-                  textAlign: 'center',
-                  letterSpacing: '0.08em',
-                  background: 'linear-gradient(90deg, #a78bfa 0%, #3b82f6 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  mt: 1,
-                }}
-              >
-                Create Account
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ textAlign: 'center', color: 'text.secondary', fontWeight: 500 }}
-              >
-                Register to initialize your branch terminals
-              </Typography>
-            </Box>
+          {mutation.isPending ? 'Initializing Workspace...' : 'Register Enterprise Account'}
+        </Button>
 
-            <form
-              onSubmit={handleSubmit(onSubmit)}
-              style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
-            >
-              <TextField
-                id="username"
-                label="Username"
-                autoComplete="username"
-                fullWidth
-                {...register('username')}
-                error={!!errors.username}
-                helperText={errors.username?.message}
-                sx={textFieldStyle}
-                InputLabelProps={{ shrink: true }}
-              />
-              <TextField
-                id="email"
-                label="Email Address"
-                type="email"
-                autoComplete="email"
-                fullWidth
-                {...register('email')}
-                error={!!errors.email}
-                helperText={errors.email?.message}
-                sx={textFieldStyle}
-                InputLabelProps={{ shrink: true }}
-              />
-              <TextField
-                id="password"
-                label="Password"
-                type="password"
-                autoComplete="new-password"
-                fullWidth
-                {...register('password')}
-                error={!!errors.password}
-                helperText={errors.password?.message}
-                sx={textFieldStyle}
-                InputLabelProps={{ shrink: true }}
-              />
-              <TextField
-                select
-                label="Workspace Role"
-                fullWidth
-                value={roleName || ''}
-                {...register('roleName')}
-                onChange={(e) => setValue('roleName', e.target.value)}
-                error={!!errors.roleName}
-                helperText={errors.roleName?.message}
-                sx={textFieldStyle}
-                InputLabelProps={{ shrink: true }}
-              >
-                <MenuItem value="Company Owner">Company Owner</MenuItem>
-                <MenuItem value="Branch Manager">Branch Manager</MenuItem>
-                <MenuItem value="Warehouse Manager">Warehouse Manager</MenuItem>
-                <MenuItem value="Cashier">Cashier</MenuItem>
-              </TextField>
-
-              <TextField
-                id="companyName"
-                label={roleName === 'Company Owner' ? 'Company Name *' : 'Company Name (Optional)'}
-                placeholder="e.g. Truson Foods Limited"
-                fullWidth
-                {...register('companyName')}
-                error={!!errors.companyName}
-                helperText={errors.companyName?.message}
-                sx={textFieldStyle}
-                InputLabelProps={{ shrink: true }}
-              />
-
-              <Button
-                variant="contained"
-                type="submit"
-                fullWidth
-                disabled={mutation.isPending}
-                sx={{
-                  py: 1.6,
-                  fontWeight: 800,
-                  borderRadius: 2.5,
-                  textTransform: 'none',
-                  fontSize: '0.975rem',
-                  background: 'linear-gradient(90deg, #8b5cf6 0%, #3b82f6 100%)',
-                  boxShadow: '0 4px 20px rgba(139, 92, 246, 0.3)',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    background: 'linear-gradient(90deg, #7c3aed 0%, #2563eb 100%)',
-                    boxShadow: '0 6px 24px rgba(139, 92, 246, 0.45)',
-                    transform: 'translateY(-1px)',
-                  },
-                }}
-              >
-                {mutation.isPending ? 'Registering...' : 'Register'}
-              </Button>
-            </form>
-
-            <Box
+        {/* ========================================================
+            SECTION 4: FOOTER LINKS
+            ======================================================== */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 1.25,
+            borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+            pt: 2,
+            mt: 0.5,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+            <Typography variant="body2" sx={{ color: '#9ca3af', fontSize: '0.85rem' }}>
+              Already registered?
+            </Typography>
+            <Link
+              onClick={() => navigate('/login')}
               sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 1.5,
-                borderTop: '1px solid rgba(255,255,255,0.05)',
-                pt: 2.5,
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                color: '#a78bfa',
+                fontWeight: 700,
+                textDecoration: 'none',
+                transition: 'color 0.2s',
+                '&:hover': { color: '#c4b5fd' },
               }}
             >
-              <Link
-                onClick={() => navigate('/login')}
-                sx={{
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  color: 'primary.light',
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                  transition: 'color 0.2s',
-                  '&:hover': { color: 'primary.main' },
-                }}
-              >
-                Already have an account? Sign In
-              </Link>
-              <Typography variant="caption" sx={{ textAlign: 'center', mt: 0.5 }}>
-                <Link
-                  onClick={() => navigate('/landing')}
-                  sx={{
-                    cursor: 'pointer',
-                    color: '#9ca3af',
-                    textDecoration: 'none',
-                    '&:hover': { color: '#34d399' },
-                  }}
-                >
-                  ← Back to Enterprise Landing Page
-                </Link>
-              </Typography>
-            </Box>
-          </CardContent>
-        </Card>
-      </motion.div>
-    </Box>
+              Sign In to Workspace
+            </Link>
+          </Box>
+
+          <Link
+            onClick={() => navigate('/landing')}
+            sx={{
+              cursor: 'pointer',
+              color: '#9ca3af',
+              fontSize: '0.8rem',
+              fontWeight: 500,
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.75,
+              transition: 'color 0.2s',
+              '&:hover': { color: '#34d399' },
+            }}
+          >
+            <ArrowBackRoundedIcon sx={{ fontSize: 16 }} />
+            Back to Enterprise Landing Page
+          </Link>
+        </Box>
+      </Box>
+    </AuthShell>
   );
 }

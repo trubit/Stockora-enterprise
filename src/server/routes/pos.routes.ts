@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import { POSController } from '../controllers/pos.controller.js';
 import { authenticate } from '../middleware/auth.js';
+import { resolveTenantContext } from '../middleware/tenant.middleware.js';
 
 export const posRouter = Router();
 
 posRouter.use(authenticate);
+posRouter.use(resolveTenantContext);
 
 posRouter.post('/checkout', POSController.checkout);
 posRouter.post('/hold', POSController.holdSale);

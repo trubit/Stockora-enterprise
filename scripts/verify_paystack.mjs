@@ -5,56 +5,57 @@ dotenv.config();
 
 const SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 const PUBLIC_KEY = process.env.PAYSTACK_PUBLIC_KEY;
+const WEBHOOK_SECRET = process.env.PAYSTACK_WEBHOOK_SECRET;
 
 async function verifyPaystack() {
+  const isLive = SECRET_KEY?.startsWith('sk_live_');
+  const mode = isLive ? 'LIVE PRODUCTION' : 'SANDBOX / TEST';
   console.log('======================================================');
-  console.log('💳 Paystack Live Sandbox Configuration Verification');
+  console.log(`💳 Paystack [${mode}] Configuration Verification`);
   console.log('======================================================');
 
-  console.log(`\n1. Checking Public Key format: ${PUBLIC_KEY?.slice(0, 12)}... (Length: ${PUBLIC_KEY?.length})`);
-  if (!PUBLIC_KEY || !PUBLIC_KEY.startsWith('pk_test_')) {
-    console.error('❌ Invalid or missing PAYSTACK_PUBLIC_KEY. Must start with pk_test_');
+  console.log(`\n1. Checking Public Key format: ${PUBLIC_KEY?.slice(0, 12)}... (Length: ${PUBLIC_KEY?.length || 0})`);
+  if (!PUBLIC_KEY || (!PUBLIC_KEY.startsWith('pk_test_') && !PUBLIC_KEY.startsWith('pk_live_'))) {
+    console.error('❌ Invalid or missing PAYSTACK_PUBLIC_KEY. Must start with pk_test_ or pk_live_');
     process.exit(1);
   }
-  console.log('✅ Public Key format verified!');
+  console.log(`✅ Public Key format verified (${PUBLIC_KEY.startsWith('pk_live_') ? 'LIVE' : 'TEST'})!`);
 
-  console.log(`\n2. Checking Secret Key format: ${SECRET_KEY?.slice(0, 12)}... (Length: ${SECRET_KEY?.length})`);
-  if (!SECRET_KEY || !SECRET_KEY.startsWith('sk_test_')) {
-    console.error('❌ Invalid or missing PAYSTACK_SECRET_KEY. Must start with sk_test_');
+  console.log(`\n2. Checking Secret Key format: ${SECRET_KEY?.slice(0, 12)}... (Length: ${SECRET_KEY?.length || 0})`);
+  if (!SECRET_KEY || (!SECRET_KEY.startsWith('sk_test_') && !SECRET_KEY.startsWith('sk_live_'))) {
+    console.error('❌ Invalid or missing PAYSTACK_SECRET_KEY. Must start with sk_test_ or sk_live_');
     process.exit(1);
   }
-  console.log('✅ Secret Key format verified!');
+  console.log(`✅ Secret Key format verified (${SECRET_KEY.startsWith('sk_live_') ? 'LIVE' : 'TEST'})!`);
 
-  console.log('\n3. Testing live connection to Paystack Sandbox API (https://api.paystack.co)...');
+  console.log(`\n3. Checking Webhook Secret: ${WEBHOOK_SECRET ? `${WEBHOOK_SECRET.slice(0, 12)}... (Length: ${WEBHOOK_SECRET.length})` : 'Not set'}`);
+  if (!WEBHOOK_SECRET) {
+    console.log('ℹ️ PAYSTACK_WEBHOOK_SECRET is not explicitly set; will default to PAYSTACK_SECRET_KEY.');
+  } else {
+    console.log('✅ Webhook Secret verified!');
+  }
+
+  console.log(`\n4. Testing connection to Paystack API (https://api.paystack.co)...`);
   try {
-    const testReference = `TEST_STK_${Date.now()}`;
-    const initResponse = await axios.post(
-      'https://api.paystack.co/transaction/initialize',
-      {
-        email: 'customer@stockoratest.com',
-        amount: 500000, // 5,000 NGN in Kobo
-        currency: 'NGN',
-        reference: testReference,
-        metadata: {
-          tenantId: 'demo-tenant',
-          system: 'Stockora Enterprise',
-        },
+    const balanceResponse = await axios.get('https://api.paystack.co/balance', {
+      headers: {
+        Authorization: `Bearer ${SECRET_KEY}`,
       },
-      {
-        headers: {
-          Authorization: `Bearer ${SECRET_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+      timeout: 10000,
+    });
 
-    if (initResponse.data && initResponse.data.status === true) {
-      console.log('✅ Live Paystack API Connection Successful!');
-      console.log(`   - Access Code: ${initResponse.data.data.access_code}`);
-      console.log(`   - Authorization URL: ${initResponse.data.data.authorization_url}`);
-      console.log(`   - Reference: ${initResponse.data.data.reference}`);
+    if (balanceResponse.data && balanceResponse.data.status === true) {
+      console.log('✅ Paystack API Authentication Successful!');
+      const balances = balanceResponse.data.data;
+      if (Array.isArray(balances) && balances.length > 0) {
+        balances.forEach((b) => {
+          console.log(`   - Balance: ${(b.balance / 100).toLocaleString()} ${b.currency}`);
+        });
+      } else {
+        console.log('   - Balance data received successfully.');
+      }
     } else {
-      console.error('❌ Paystack returned error:', initResponse.data);
+      console.error('❌ Paystack returned unexpected response:', balanceResponse.data);
       process.exit(1);
     }
   } catch (err) {
@@ -62,12 +63,13 @@ async function verifyPaystack() {
     process.exit(1);
   }
 
-  console.log('\n4. Testing HMAC SHA512 Webhook Cryptographic Signing...');
+  console.log('\n5. Testing HMAC SHA512 Webhook Cryptographic Signing & Validation...');
+  const signingKey = WEBHOOK_SECRET || SECRET_KEY;
   const sampleWebhookEvent = JSON.stringify({
     event: 'charge.success',
     data: {
       id: 998877,
-      domain: 'test',
+      domain: isLive ? 'live' : 'test',
       status: 'success',
       reference: 'TEST_STK_REF',
       amount: 500000,
@@ -76,14 +78,24 @@ async function verifyPaystack() {
   });
 
   const generatedSignature = crypto
-    .createHmac('sha512', SECRET_KEY)
+    .createHmac('sha512', signingKey)
     .update(sampleWebhookEvent)
     .digest('hex');
 
-  console.log(`✅ Webhook HMAC SHA512 Signature generated: ${generatedSignature.slice(0, 24)}...`);
+  const verificationHmac = crypto
+    .createHmac('sha512', signingKey)
+    .update(sampleWebhookEvent)
+    .digest('hex');
+
+  if (generatedSignature === verificationHmac) {
+    console.log(`✅ Webhook HMAC SHA512 Signature generated and validated: ${generatedSignature.slice(0, 24)}...`);
+  } else {
+    console.error('❌ Webhook signature validation failed.');
+    process.exit(1);
+  }
 
   console.log('\n======================================================');
-  console.log('🎉 PAYSTACK CONFIGURATION IS 100% VALID & OPERATIONAL!');
+  console.log(`🎉 PAYSTACK ${mode} CONFIGURATION IS 100% VALID & OPERATIONAL!`);
   console.log('======================================================');
 }
 

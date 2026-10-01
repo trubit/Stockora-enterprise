@@ -6,6 +6,22 @@ import { redis } from '../database/redis.js';
 import { ValidationError, NotFoundError } from '../errors/AppError.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 
+function escapeRegex(text: string): string {
+  return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+}
+
+async function invalidateProductCache(tenantId?: string): Promise<void> {
+  try {
+    if (tenantId) {
+      await redis.del([`tenant:${tenantId}:products:all`, 'products:all']);
+    } else {
+      await redis.del('products:all');
+    }
+  } catch (err) {
+    console.warn('[ProductController] Failed to invalidate Redis cache:', err);
+  }
+}
+
 export class ProductController {
   public static async getProducts(
     req: AuthenticatedRequest,
@@ -18,29 +34,55 @@ export class ProductController {
         res.json([]);
         return;
       }
-      const search = req.query.search as string;
+      const rawSearch = (req.query.search as string)?.trim();
 
-      if (search && search.trim() !== '') {
-        const regex = new RegExp(search.trim(), 'i');
+      if (rawSearch) {
+        // Fast path: Exact match on SKU or Barcode using indexed lookup
+        const exactMatch = await Product.find({
+          tenantId,
+          $or: [{ sku: rawSearch }, { barcode: rawSearch }],
+        })
+          .limit(50)
+          .lean();
+
+        if (exactMatch.length > 0) {
+          res.json(exactMatch);
+          return;
+        }
+
+        // Broad search with escaped regex
+        const sanitized = escapeRegex(rawSearch);
+        const regex = new RegExp(sanitized, 'i');
         const filter: Record<string, unknown> = {
           tenantId,
           $or: [{ name: regex }, { sku: regex }, { category: regex }, { barcode: regex }],
         };
 
-        const products = await Product.find(filter).lean();
+        const products = await Product.find(filter).limit(200).lean();
         res.json(products);
         return;
       }
 
       const cacheKey = `tenant:${tenantId}:products:all`;
-      const cached = await redis.get(cacheKey);
-      if (cached) {
-        res.json(JSON.parse(cached));
-        return;
+      try {
+        const cached = await redis.get(cacheKey);
+        if (cached) {
+          res.json(JSON.parse(cached));
+          return;
+        }
+      } catch (cacheErr) {
+        // Redis cache failure should not block database retrieval
+        console.warn('[ProductController] Redis cache read failed:', cacheErr);
       }
 
-      const products = await Product.find({ tenantId }).lean();
-      await redis.setex(cacheKey, 300, JSON.stringify(products));
+      const products = await Product.find({ tenantId }).sort({ createdAt: -1 }).lean();
+
+      try {
+        await redis.setex(cacheKey, 300, JSON.stringify(products));
+      } catch (cacheErr) {
+        console.warn('[ProductController] Redis cache write failed:', cacheErr);
+      }
+
       res.json(products);
     } catch (err: unknown) {
       next(err);
@@ -54,7 +96,13 @@ export class ProductController {
   ): Promise<void> {
     const { id } = req.params;
     try {
-      const tenantId = req.user?.tenantId;
+      const tenantId = (req as any).tenantId || req.user?.tenantId;
+      const isSuperAdmin = Boolean(
+        req.user?.isPlatformAdmin || req.user?.roleName === 'SUPER_ADMIN'
+      );
+      if (!tenantId && !isSuperAdmin) {
+        return next(new NotFoundError('Product not found or access denied.'));
+      }
       const query: Record<string, unknown> = { _id: id };
       if (tenantId) query.tenantId = tenantId;
 
@@ -167,11 +215,7 @@ export class ProductController {
         ...rest,
       });
 
-      if (tenantId) {
-        await redis.del([`tenant:${tenantId}:products:all`, 'products:all']);
-      } else {
-        await redis.del('products:all');
-      }
+      await invalidateProductCache(tenantId);
 
       await AuditLog.create({
         userId: req.user?.id,
@@ -195,7 +239,13 @@ export class ProductController {
   ): Promise<void> {
     const { id } = req.params;
     try {
-      const tenantId = req.user?.tenantId;
+      const tenantId = (req as any).tenantId || req.user?.tenantId;
+      const isSuperAdmin = Boolean(
+        req.user?.isPlatformAdmin || req.user?.roleName === 'SUPER_ADMIN'
+      );
+      if (!tenantId && !isSuperAdmin) {
+        return next(new NotFoundError('Product not found or access denied.'));
+      }
       const query: Record<string, unknown> = { _id: id };
       if (tenantId) query.tenantId = tenantId;
 
@@ -300,11 +350,7 @@ export class ProductController {
       Object.assign(product, updatableData);
       await product.save();
 
-      if (tenantId) {
-        await redis.del([`tenant:${tenantId}:products:all`, 'products:all']);
-      } else {
-        await redis.del('products:all');
-      }
+      await invalidateProductCache(tenantId);
 
       await AuditLog.create({
         userId: req.user?.id,
@@ -329,7 +375,13 @@ export class ProductController {
   ): Promise<void> {
     const { id } = req.params;
     try {
-      const tenantId = req.user?.tenantId;
+      const tenantId = (req as any).tenantId || req.user?.tenantId;
+      const isSuperAdmin = Boolean(
+        req.user?.isPlatformAdmin || req.user?.roleName === 'SUPER_ADMIN'
+      );
+      if (!tenantId && !isSuperAdmin) {
+        return next(new NotFoundError('Product not found or access denied.'));
+      }
       const query: Record<string, unknown> = { _id: id };
       if (tenantId) query.tenantId = tenantId;
 
@@ -343,11 +395,7 @@ export class ProductController {
       product.status = 'INACTIVE';
       await product.save();
 
-      if (tenantId) {
-        await redis.del([`tenant:${tenantId}:products:all`, 'products:all']);
-      } else {
-        await redis.del('products:all');
-      }
+      await invalidateProductCache(tenantId);
 
       await AuditLog.create({
         userId: req.user?.id,
@@ -385,7 +433,13 @@ export class ProductController {
     }
 
     try {
-      const tenantId = req.user?.tenantId;
+      const tenantId = (req as any).tenantId || req.user?.tenantId;
+      const isSuperAdmin = Boolean(
+        req.user?.isPlatformAdmin || req.user?.roleName === 'SUPER_ADMIN'
+      );
+      if (!tenantId && !isSuperAdmin) {
+        return next(new NotFoundError('Product not found or access denied.'));
+      }
       const query: Record<string, unknown> = { _id: id };
       if (tenantId) query.tenantId = tenantId;
 
@@ -406,11 +460,7 @@ export class ProductController {
 
       await product.save();
 
-      if (tenantId) {
-        await redis.del([`tenant:${tenantId}:products:all`, 'products:all']);
-      } else {
-        await redis.del('products:all');
-      }
+      await invalidateProductCache(tenantId);
 
       await AuditLog.create({
         userId: req.user?.id,

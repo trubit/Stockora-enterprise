@@ -42,6 +42,7 @@ import StatCard from '../../components/StatCard.tsx';
 import StatusChip from '../../components/StatusChip.tsx';
 import { useRegionalSettings } from '../../hooks/useRegionalSettings.js';
 import { CurrencySelector } from '../../components/CurrencySelector.tsx';
+import { printReceipt } from '../../utils/printReceipt.ts';
 
 export const BillingDashboard: React.FC = () => {
   const { formatAmount, activeCurrency } = useRegionalSettings();
@@ -977,7 +978,28 @@ export const BillingDashboard: React.FC = () => {
               <Button
                 variant="contained"
                 startIcon={<Print />}
-                onClick={() => window.print()}
+                onClick={() => {
+                  if (!selectedInvoice) return;
+                  printReceipt({
+                    businessName: 'Stockora Enterprise Pro Billing',
+                    receiptNumber: selectedInvoice.invoiceNumber,
+                    createdAt: selectedInvoice.issueDate,
+                    items: selectedInvoice.lineItems?.map((li: any) => ({
+                      name: li.description,
+                      qty: 1,
+                      price: li.amount,
+                      total: li.amount,
+                    })),
+                    subtotal: selectedInvoice.subtotal ?? selectedInvoice.total,
+                    tax: selectedInvoice.tax || 0,
+                    total: selectedInvoice.total,
+                    currencyCode: selectedInvoice.currency || activeCurrency || 'USD',
+                    customerName: selectedInvoice.tenantName || 'Enterprise Account',
+                    paymentMethod: selectedInvoice.paymentMethod || 'Online / Card',
+                    footer:
+                      'Thank you for subscribing to Stockora Enterprise Pro. For billing support, contact billing@stockora.com',
+                  });
+                }}
                 sx={{
                   bgcolor: '#8b5cf6',
                   fontWeight: 700,
