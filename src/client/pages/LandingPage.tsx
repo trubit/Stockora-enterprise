@@ -56,9 +56,30 @@ import { ENTERPRISE_IMAGERY } from '../constants/imagery.ts';
 // Interactive demonstration catalog for the live POS terminal simulator
 const demoProducts = [
   { id: '1', name: 'Whole Milk 1L', category: 'Dairy', sku: 'DRY-0192', price: 2.49, inStock: 142 },
-  { id: '2', name: 'Sourdough Bread', category: 'Bakery', sku: 'BKY-4821', price: 3.99, inStock: 48 },
-  { id: '3', name: 'Espresso Coffee 500g', category: 'Beverages', sku: 'BEV-8820', price: 12.99, inStock: 89 },
-  { id: '4', name: 'Organic Honey 250g', category: 'Pantry', sku: 'PNT-3319', price: 7.5, inStock: 34 },
+  {
+    id: '2',
+    name: 'Sourdough Bread',
+    category: 'Bakery',
+    sku: 'BKY-4821',
+    price: 3.99,
+    inStock: 48,
+  },
+  {
+    id: '3',
+    name: 'Espresso Coffee 500g',
+    category: 'Beverages',
+    sku: 'BEV-8820',
+    price: 12.99,
+    inStock: 89,
+  },
+  {
+    id: '4',
+    name: 'Organic Honey 250g',
+    category: 'Pantry',
+    sku: 'PNT-3319',
+    price: 7.5,
+    inStock: 34,
+  },
 ];
 
 export const LandingPage: React.FC = () => {
@@ -75,7 +96,9 @@ export const LandingPage: React.FC = () => {
   const [featureSearch, setFeatureSearch] = useState('');
 
   // Interactive POS Simulator Cart state
-  const [cart, setCart] = useState<{ id: string; name: string; sku: string; price: number; qty: number }[]>([
+  const [cart, setCart] = useState<
+    { id: string; name: string; sku: string; price: number; qty: number }[]
+  >([
     { id: '1', name: 'Whole Milk 1L', sku: 'DRY-0192', price: 2.49, qty: 2 },
     { id: '3', name: 'Espresso Coffee 500g', sku: 'BEV-8820', price: 12.99, qty: 1 },
   ]);
@@ -90,7 +113,10 @@ export const LandingPage: React.FC = () => {
       if (existing) {
         return prev.map((item) => (item.id === product.id ? { ...item, qty: item.qty + 1 } : item));
       }
-      return [...prev, { id: product.id, name: product.name, sku: product.sku, price: product.price, qty: 1 }];
+      return [
+        ...prev,
+        { id: product.id, name: product.name, sku: product.sku, price: product.price, qty: 1 },
+      ];
     });
   };
 
@@ -181,7 +207,9 @@ export const LandingPage: React.FC = () => {
   );
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#030712', color: '#f8fafc', overflowX: 'hidden' }}>
+    <Box
+      sx={{ minHeight: '100vh', backgroundColor: '#030712', color: '#f8fafc', overflowX: 'hidden' }}
+    >
       {/* =========================================================================
           PHASE 2: REDESIGNED EDGE-TO-EDGE HERO SECTION
           ========================================================================= */}
@@ -337,43 +365,78 @@ export const LandingPage: React.FC = () => {
               >
                 <Button
                   href="#business-problems"
-                  sx={{ color: '#cbd5e1', fontWeight: 600, fontSize: '0.9rem', '&:hover': { color: '#ffffff' } }}
+                  sx={{
+                    color: '#cbd5e1',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    '&:hover': { color: '#ffffff' },
+                  }}
                 >
                   Why Stockora
                 </Button>
                 <Button
                   href="#how-it-works"
-                  sx={{ color: '#cbd5e1', fontWeight: 600, fontSize: '0.9rem', '&:hover': { color: '#ffffff' } }}
+                  sx={{
+                    color: '#cbd5e1',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    '&:hover': { color: '#ffffff' },
+                  }}
                 >
                   How It Works
                 </Button>
                 <Button
                   href="#features"
-                  sx={{ color: '#cbd5e1', fontWeight: 600, fontSize: '0.9rem', '&:hover': { color: '#ffffff' } }}
+                  sx={{
+                    color: '#cbd5e1',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    '&:hover': { color: '#ffffff' },
+                  }}
                 >
                   Core Features
                 </Button>
                 <Button
                   href="#pos-preview"
-                  sx={{ color: '#cbd5e1', fontWeight: 600, fontSize: '0.9rem', '&:hover': { color: '#ffffff' } }}
+                  sx={{
+                    color: '#cbd5e1',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    '&:hover': { color: '#ffffff' },
+                  }}
                 >
                   Live Simulator
                 </Button>
                 <Button
                   href="#who-its-for"
-                  sx={{ color: '#cbd5e1', fontWeight: 600, fontSize: '0.9rem', '&:hover': { color: '#ffffff' } }}
+                  sx={{
+                    color: '#cbd5e1',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    '&:hover': { color: '#ffffff' },
+                  }}
                 >
                   Solutions
                 </Button>
                 <Button
                   href="#security"
-                  sx={{ color: '#cbd5e1', fontWeight: 600, fontSize: '0.9rem', '&:hover': { color: '#ffffff' } }}
+                  sx={{
+                    color: '#cbd5e1',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    '&:hover': { color: '#ffffff' },
+                  }}
                 >
                   Security
                 </Button>
                 <Button
                   href="#pricing"
-                  sx={{ color: '#cbd5e1', fontWeight: 600, fontSize: '0.9rem', '&:hover': { color: '#ffffff' } }}
+                  sx={{
+                    color: '#cbd5e1',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    '&:hover': { color: '#ffffff' },
+                  }}
                 >
                   Pricing
                 </Button>
@@ -440,7 +503,9 @@ export const LandingPage: React.FC = () => {
             },
           }}
         >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}
+          >
             <Typography variant="h6" sx={{ fontWeight: 800, color: '#f8fafc' }}>
               Stockora Navigation
             </Typography>
@@ -469,7 +534,10 @@ export const LandingPage: React.FC = () => {
                     '&:hover': { backgroundColor: 'rgba(139, 92, 246, 0.12)' },
                   }}
                 >
-                  <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: 600, color: '#e2e8f0' }} />
+                  <ListItemText
+                    primary={item.label}
+                    primaryTypographyProps={{ fontWeight: 600, color: '#e2e8f0' }}
+                  />
                 </ListItemButton>
               </ListItem>
             ))}
@@ -586,8 +654,8 @@ export const LandingPage: React.FC = () => {
               textShadow: '0 2px 12px rgba(0, 0, 0, 0.6)',
             }}
           >
-            Manage inventory, track sales, control stock across your business, and understand your business
-            performance from one central platform.
+            Manage inventory, track sales, control stock across your business, and understand your
+            business performance from one central platform.
           </Typography>
 
           {/* Call-to-Action Group */}
@@ -676,17 +744,32 @@ export const LandingPage: React.FC = () => {
           >
             <Grid container spacing={2} alignItems="center" justifyContent="space-around">
               {[
-                { icon: <CheckCircleOutlineIcon sx={{ color: '#10b981' }} />, text: 'Multi-Warehouse Sync' },
+                {
+                  icon: <CheckCircleOutlineIcon sx={{ color: '#10b981' }} />,
+                  text: 'Multi-Warehouse Sync',
+                },
                 { icon: <SpeedIcon sx={{ color: '#38bdf8' }} />, text: 'Sub-Second Barcode POS' },
-                { icon: <ShieldOutlinedIcon sx={{ color: '#a78bfa' }} />, text: 'Tenant-Isolated RBAC' },
-                { icon: <ReceiptLongIcon sx={{ color: '#f59e0b' }} />, text: 'Offline Resilient Transactions' },
+                {
+                  icon: <ShieldOutlinedIcon sx={{ color: '#a78bfa' }} />,
+                  text: 'Tenant-Isolated RBAC',
+                },
+                {
+                  icon: <ReceiptLongIcon sx={{ color: '#f59e0b' }} />,
+                  text: 'Offline Resilient Transactions',
+                },
               ].map((badge, idx) => (
                 <Grid item xs={6} sm={3} key={idx}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                  <Box
+                    sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}
+                  >
                     {badge.icon}
                     <Typography
                       variant="body2"
-                      sx={{ fontWeight: 700, color: '#e2e8f0', fontSize: { xs: '0.78rem', sm: '0.85rem' } }}
+                      sx={{
+                        fontWeight: 700,
+                        color: '#e2e8f0',
+                        fontSize: { xs: '0.78rem', sm: '0.85rem' },
+                      }}
                     >
                       {badge.text}
                     </Typography>
@@ -725,16 +808,26 @@ export const LandingPage: React.FC = () => {
           <Box sx={{ textAlign: 'center', maxWidth: 800, mx: 'auto', mb: 8 }}>
             <Typography
               variant="overline"
-              sx={{ color: '#ef4444', fontWeight: 800, letterSpacing: '0.12em', display: 'block', mb: 1 }}
+              sx={{
+                color: '#ef4444',
+                fontWeight: 800,
+                letterSpacing: '0.12em',
+                display: 'block',
+                mb: 1,
+              }}
             >
               OPERATIONAL BOTTLENECKS
             </Typography>
             <Typography variant="h2" sx={{ fontWeight: 800, color: '#f8fafc', mb: 2 }}>
               The Everyday Challenges of Growing Commerce
             </Typography>
-            <Typography variant="body1" sx={{ color: '#94a3af', fontSize: '1.05rem', lineHeight: 1.7 }}>
-              Without a synchronized system, retail storefronts and warehouse hubs operate in disconnected silos,
-              leaking profit through stockouts, inventory discrepancies, and slow checkout registers.
+            <Typography
+              variant="body1"
+              sx={{ color: '#94a3af', fontSize: '1.05rem', lineHeight: 1.7 }}
+            >
+              Without a synchronized system, retail storefronts and warehouse hubs operate in
+              disconnected silos, leaking profit through stockouts, inventory discrepancies, and
+              slow checkout registers.
             </Typography>
           </Box>
 
@@ -809,11 +902,17 @@ export const LandingPage: React.FC = () => {
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.75 }}>
                       <CheckCircleIcon sx={{ color: '#10b981', fontSize: 18 }} />
-                      <Typography variant="caption" sx={{ color: '#34d399', fontWeight: 800, letterSpacing: '0.05em' }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: '#34d399', fontWeight: 800, letterSpacing: '0.05em' }}
+                      >
                         THE STOCKORA SOLUTION
                       </Typography>
                     </Box>
-                    <Typography variant="body2" sx={{ color: '#e2e8f0', fontWeight: 500, fontSize: '0.85rem' }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: '#e2e8f0', fontWeight: 500, fontSize: '0.85rem' }}
+                    >
                       {item.solution}
                     </Typography>
                   </Box>
@@ -840,16 +939,25 @@ export const LandingPage: React.FC = () => {
           <Box sx={{ textAlign: 'center', maxWidth: 800, mx: 'auto', mb: 8 }}>
             <Typography
               variant="overline"
-              sx={{ color: '#8b5cf6', fontWeight: 800, letterSpacing: '0.12em', display: 'block', mb: 1 }}
+              sx={{
+                color: '#8b5cf6',
+                fontWeight: 800,
+                letterSpacing: '0.12em',
+                display: 'block',
+                mb: 1,
+              }}
             >
               HOW STOCKORA WORKS
             </Typography>
             <Typography variant="h2" sx={{ fontWeight: 800, color: '#f8fafc', mb: 2 }}>
               From Setup to Daily Scale in 4 Simple Steps
             </Typography>
-            <Typography variant="body1" sx={{ color: '#94a3af', fontSize: '1.05rem', lineHeight: 1.7 }}>
-              Discover how Stockora Enterprise Pro structures your daily commerce workflow, protecting accuracy at
-              every operational step.
+            <Typography
+              variant="body1"
+              sx={{ color: '#94a3af', fontSize: '1.05rem', lineHeight: 1.7 }}
+            >
+              Discover how Stockora Enterprise Pro structures your daily commerce workflow,
+              protecting accuracy at every operational step.
             </Typography>
           </Box>
 
@@ -912,7 +1020,8 @@ export const LandingPage: React.FC = () => {
                         width: 48,
                         height: 48,
                         borderRadius: '12px',
-                        background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(16, 185, 129, 0.2) 100%)',
+                        background:
+                          'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(16, 185, 129, 0.2) 100%)',
                         border: '1px solid rgba(139, 92, 246, 0.4)',
                         display: 'flex',
                         alignItems: 'center',
@@ -938,7 +1047,10 @@ export const LandingPage: React.FC = () => {
                       borderTop: '1px solid rgba(255,255,255,0.06)',
                     }}
                   >
-                    <Typography variant="caption" sx={{ color: '#a78bfa', fontWeight: 600, display: 'block', mb: 1.5 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: '#a78bfa', fontWeight: 600, display: 'block', mb: 1.5 }}
+                    >
                       {stepItem.highlight}
                     </Typography>
                     <Button
@@ -985,16 +1097,25 @@ export const LandingPage: React.FC = () => {
           <Box sx={{ textAlign: 'center', maxWidth: 800, mx: 'auto', mb: 5 }}>
             <Typography
               variant="overline"
-              sx={{ color: '#10b981', fontWeight: 800, letterSpacing: '0.12em', display: 'block', mb: 1 }}
+              sx={{
+                color: '#10b981',
+                fontWeight: 800,
+                letterSpacing: '0.12em',
+                display: 'block',
+                mb: 1,
+              }}
             >
               VERIFIED PLATFORM CAPABILITIES
             </Typography>
             <Typography variant="h2" sx={{ fontWeight: 800, color: '#f8fafc', mb: 2 }}>
               Everything Your Operations Require
             </Typography>
-            <Typography variant="body1" sx={{ color: '#94a3af', fontSize: '1.05rem', lineHeight: 1.7 }}>
-              Every feature listed below is verified in the active codebase and ready to deploy for your multi-location
-              business.
+            <Typography
+              variant="body1"
+              sx={{ color: '#94a3af', fontSize: '1.05rem', lineHeight: 1.7 }}
+            >
+              Every feature listed below is verified in the active codebase and ready to deploy for
+              your multi-location business.
             </Typography>
 
             {/* Quick Filter Search Input */}
@@ -1040,7 +1161,14 @@ export const LandingPage: React.FC = () => {
                   }}
                 >
                   <Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        mb: 2,
+                      }}
+                    >
                       <Box
                         sx={{
                           p: 1,
@@ -1063,7 +1191,10 @@ export const LandingPage: React.FC = () => {
                         }}
                       />
                     </Box>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#f8fafc', mb: 1, lineHeight: 1.3 }}>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{ fontWeight: 800, color: '#f8fafc', mb: 1, lineHeight: 1.3 }}
+                    >
                       {f.title}
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#94a3af', lineHeight: 1.6, mb: 2 }}>
@@ -1104,16 +1235,25 @@ export const LandingPage: React.FC = () => {
           <Box sx={{ textAlign: 'center', maxWidth: 800, mx: 'auto', mb: 5 }}>
             <Typography
               variant="overline"
-              sx={{ color: '#38bdf8', fontWeight: 800, letterSpacing: '0.12em', display: 'block', mb: 1 }}
+              sx={{
+                color: '#38bdf8',
+                fontWeight: 800,
+                letterSpacing: '0.12em',
+                display: 'block',
+                mb: 1,
+              }}
             >
               INTERACTIVE DEMONSTRATION
             </Typography>
             <Typography variant="h2" sx={{ fontWeight: 800, color: '#f8fafc', mb: 2 }}>
               Experience the Stockora Platform
             </Typography>
-            <Typography variant="body1" sx={{ color: '#94a3af', fontSize: '1.05rem', lineHeight: 1.7 }}>
-              Test our live POS terminal simulator directly below, or switch tabs to explore verified workflows from
-              inventory, sales telemetry, and warehouse operations.
+            <Typography
+              variant="body1"
+              sx={{ color: '#94a3af', fontSize: '1.05rem', lineHeight: 1.7 }}
+            >
+              Test our live POS terminal simulator directly below, or switch tabs to explore
+              verified workflows from inventory, sales telemetry, and warehouse operations.
             </Typography>
 
             {/* Workflow Switcher Tabs */}
@@ -1174,7 +1314,11 @@ export const LandingPage: React.FC = () => {
                     sx={{ fontWeight: 700 }}
                   />
                   {cart.length > 0 && (
-                    <Button size="small" onClick={clearCart} sx={{ color: '#ef4444', fontSize: '0.75rem' }}>
+                    <Button
+                      size="small"
+                      onClick={clearCart}
+                      sx={{ color: '#ef4444', fontSize: '0.75rem' }}
+                    >
                       Clear Cart
                     </Button>
                   )}
@@ -1224,10 +1368,20 @@ export const LandingPage: React.FC = () => {
                                 <AddShoppingCartIcon sx={{ fontSize: 18, color: '#10b981' }} />
                               </Box>
                             </Box>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#f8fafc' }}>
+                            <Typography
+                              variant="subtitle2"
+                              sx={{ fontWeight: 700, color: '#f8fafc' }}
+                            >
                               {p.name}
                             </Typography>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mt: 1 }}>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'baseline',
+                                mt: 1,
+                              }}
+                            >
                               <Typography variant="h6" sx={{ fontWeight: 800, color: '#34d399' }}>
                                 {formatAmount(p.price)}
                               </Typography>
@@ -1257,22 +1411,43 @@ export const LandingPage: React.FC = () => {
                     }}
                   >
                     <Box>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          mb: 2,
+                        }}
+                      >
                         <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#f8fafc' }}>
                           Current Transaction Cart
                         </Typography>
                         <Chip
                           label={`${cart.reduce((a, c) => a + c.qty, 0)} Items`}
                           size="small"
-                          sx={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34d399', fontWeight: 700 }}
+                          sx={{
+                            backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                            color: '#34d399',
+                            fontWeight: 700,
+                          }}
                         />
                       </Box>
 
                       {/* Items list */}
-                      <Box sx={{ minHeight: '140px', maxHeight: '200px', overflowY: 'auto', pr: 0.5, mb: 2 }}>
+                      <Box
+                        sx={{
+                          minHeight: '140px',
+                          maxHeight: '200px',
+                          overflowY: 'auto',
+                          pr: 0.5,
+                          mb: 2,
+                        }}
+                      >
                         {cart.length === 0 ? (
                           <Box sx={{ textAlign: 'center', py: 4, color: '#64748b' }}>
-                            <Typography variant="body2">Cart is empty. Click a product to add it.</Typography>
+                            <Typography variant="body2">
+                              Cart is empty. Click a product to add it.
+                            </Typography>
                           </Box>
                         ) : (
                           cart.map((item) => (
@@ -1287,7 +1462,10 @@ export const LandingPage: React.FC = () => {
                               }}
                             >
                               <Box>
-                                <Typography variant="body2" sx={{ fontWeight: 600, color: '#f8fafc' }}>
+                                <Typography
+                                  variant="body2"
+                                  sx={{ fontWeight: 600, color: '#f8fafc' }}
+                                >
                                   {item.name}
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: '#94a3af' }}>
@@ -1295,7 +1473,10 @@ export const LandingPage: React.FC = () => {
                                 </Typography>
                               </Box>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography variant="body2" sx={{ fontWeight: 700, color: '#34d399' }}>
+                                <Typography
+                                  variant="body2"
+                                  sx={{ fontWeight: 700, color: '#34d399' }}
+                                >
                                   {formatAmount(item.price * item.qty)}
                                 </Typography>
                                 <IconButton
@@ -1386,16 +1567,41 @@ export const LandingPage: React.FC = () => {
                     </Typography>
                   </Box>
                   <Typography variant="body1" sx={{ color: '#94a3af', lineHeight: 1.7, mb: 3 }}>
-                    The stock engine coordinates items across multiple branches with automated safety stock thresholds.
-                    Receive notifications whenever an item dips below safe levels before it hits zero.
+                    The stock engine coordinates items across multiple branches with automated
+                    safety stock thresholds. Receive notifications whenever an item dips below safe
+                    levels before it hits zero.
                   </Typography>
 
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                     {[
-                      { sku: 'DRY-0192', name: 'Whole Milk 1L', stock: '142 units', status: 'In Stock', color: '#10b981' },
-                      { sku: 'BKY-4821', name: 'Sourdough Bread', stock: '8 units', status: 'Low Stock Alert', color: '#f59e0b' },
-                      { sku: 'BEV-8820', name: 'Espresso Coffee 500g', stock: '89 units', status: 'In Stock', color: '#10b981' },
-                      { sku: 'PNT-3319', name: 'Organic Honey 250g', stock: '3 units', status: 'Reorder Required', color: '#ef4444' },
+                      {
+                        sku: 'DRY-0192',
+                        name: 'Whole Milk 1L',
+                        stock: '142 units',
+                        status: 'In Stock',
+                        color: '#10b981',
+                      },
+                      {
+                        sku: 'BKY-4821',
+                        name: 'Sourdough Bread',
+                        stock: '8 units',
+                        status: 'Low Stock Alert',
+                        color: '#f59e0b',
+                      },
+                      {
+                        sku: 'BEV-8820',
+                        name: 'Espresso Coffee 500g',
+                        stock: '89 units',
+                        status: 'In Stock',
+                        color: '#10b981',
+                      },
+                      {
+                        sku: 'PNT-3319',
+                        name: 'Organic Honey 250g',
+                        stock: '3 units',
+                        status: 'Reorder Required',
+                        color: '#ef4444',
+                      },
                     ].map((row, idx) => (
                       <Paper
                         key={idx}
@@ -1479,16 +1685,36 @@ export const LandingPage: React.FC = () => {
                     </Typography>
                   </Box>
                   <Typography variant="body1" sx={{ color: '#94a3af', lineHeight: 1.7, mb: 3 }}>
-                    Know your gross profit margins, daily register turnover, and top-moving product categories at a
-                    glance without waiting for end-of-quarter financial audits.
+                    Know your gross profit margins, daily register turnover, and top-moving product
+                    categories at a glance without waiting for end-of-quarter financial audits.
                   </Typography>
 
                   <Grid container spacing={2}>
                     {[
-                      { label: "Today's Gross Sales", val: '$4,892.40', sub: '+18.2% vs yesterday', color: '#10b981' },
-                      { label: 'Avg Margin %', val: '38.4%', sub: 'Healthy target range', color: '#38bdf8' },
-                      { label: 'Active Terminals', val: '6 Terminals', sub: 'Zero latency detected', color: '#a78bfa' },
-                      { label: 'Stockout Risk Items', val: '2 SKUs', sub: 'Automated reorders drafted', color: '#f59e0b' },
+                      {
+                        label: "Today's Gross Sales",
+                        val: '$4,892.40',
+                        sub: '+18.2% vs yesterday',
+                        color: '#10b981',
+                      },
+                      {
+                        label: 'Avg Margin %',
+                        val: '38.4%',
+                        sub: 'Healthy target range',
+                        color: '#38bdf8',
+                      },
+                      {
+                        label: 'Active Terminals',
+                        val: '6 Terminals',
+                        sub: 'Zero latency detected',
+                        color: '#a78bfa',
+                      },
+                      {
+                        label: 'Stockout Risk Items',
+                        val: '2 SKUs',
+                        sub: 'Automated reorders drafted',
+                        color: '#f59e0b',
+                      },
                     ].map((kpi, idx) => (
                       <Grid item xs={6} key={idx}>
                         <Paper
@@ -1502,10 +1728,16 @@ export const LandingPage: React.FC = () => {
                           <Typography variant="caption" sx={{ color: '#94a3af', fontWeight: 600 }}>
                             {kpi.label}
                           </Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 800, color: kpi.color, my: 0.5 }}>
+                          <Typography
+                            variant="h6"
+                            sx={{ fontWeight: 800, color: kpi.color, my: 0.5 }}
+                          >
                             {kpi.val}
                           </Typography>
-                          <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem' }}>
+                          <Typography
+                            variant="caption"
+                            sx={{ color: '#64748b', fontSize: '0.7rem' }}
+                          >
                             {kpi.sub}
                           </Typography>
                         </Paper>
@@ -1555,15 +1787,25 @@ export const LandingPage: React.FC = () => {
                     </Typography>
                   </Box>
                   <Typography variant="body1" sx={{ color: '#94a3af', lineHeight: 1.7, mb: 3 }}>
-                    Coordinate physical store branches and warehouse hubs with inter-location stock transfer orders.
-                    Track dispatch status, receiving verification, and branch-level inventory value seamlessly.
+                    Coordinate physical store branches and warehouse hubs with inter-location stock
+                    transfer orders. Track dispatch status, receiving verification, and branch-level
+                    inventory value seamlessly.
                   </Typography>
 
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                     {[
-                      { step: 'Branch Stock Request', detail: 'Store #2 requests 50 units of Whole Milk 1L' },
-                      { step: 'Central Hub Dispatch', detail: 'Warehouse verifies picking & generates transfer manifest' },
-                      { step: 'Receiving Scan Verification', detail: 'Store manager scans barcodes upon delivery to intake stock' },
+                      {
+                        step: 'Branch Stock Request',
+                        detail: 'Store #2 requests 50 units of Whole Milk 1L',
+                      },
+                      {
+                        step: 'Central Hub Dispatch',
+                        detail: 'Warehouse verifies picking & generates transfer manifest',
+                      },
+                      {
+                        step: 'Receiving Scan Verification',
+                        detail: 'Store manager scans barcodes upon delivery to intake stock',
+                      },
                     ].map((step, idx) => (
                       <Paper
                         key={idx}
@@ -1671,11 +1913,17 @@ export const LandingPage: React.FC = () => {
         </DialogTitle>
         <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.08)' }}>
           <Box sx={{ mb: 2 }}>
-            <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>
+            <Typography
+              variant="caption"
+              sx={{ color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}
+            >
               Itemized Receipt Line Items:
             </Typography>
             {cart.map((item) => (
-              <Box key={item.id} sx={{ display: 'flex', justifyContent: 'space-between', my: 0.75 }}>
+              <Box
+                key={item.id}
+                sx={{ display: 'flex', justifyContent: 'space-between', my: 0.75 }}
+              >
                 <Typography variant="body2" sx={{ color: '#f8fafc' }}>
                   {item.name} × {item.qty}
                 </Typography>
@@ -1743,16 +1991,25 @@ export const LandingPage: React.FC = () => {
           <Box sx={{ textAlign: 'center', maxWidth: 800, mx: 'auto', mb: 8 }}>
             <Typography
               variant="overline"
-              sx={{ color: '#8b5cf6', fontWeight: 800, letterSpacing: '0.12em', display: 'block', mb: 1 }}
+              sx={{
+                color: '#8b5cf6',
+                fontWeight: 800,
+                letterSpacing: '0.12em',
+                display: 'block',
+                mb: 1,
+              }}
             >
               TAILORED SOLUTIONS
             </Typography>
             <Typography variant="h2" sx={{ fontWeight: 800, color: '#f8fafc', mb: 2 }}>
               Built for High-Volume Operating Environments
             </Typography>
-            <Typography variant="body1" sx={{ color: '#94a3af', fontSize: '1.05rem', lineHeight: 1.7 }}>
-              Stockora Enterprise Pro is designed for commercial operators where fast checkout and stock precision
-              directly drive revenue and customer satisfaction.
+            <Typography
+              variant="body1"
+              sx={{ color: '#94a3af', fontSize: '1.05rem', lineHeight: 1.7 }}
+            >
+              Stockora Enterprise Pro is designed for commercial operators where fast checkout and
+              stock precision directly drive revenue and customer satisfaction.
             </Typography>
           </Box>
 
@@ -1826,7 +2083,10 @@ export const LandingPage: React.FC = () => {
                           mb: 1.5,
                         }}
                       />
-                      <Typography variant="h6" sx={{ fontWeight: 800, color: '#f8fafc', mb: 1, fontSize: '1rem' }}>
+                      <Typography
+                        variant="h6"
+                        sx={{ fontWeight: 800, color: '#f8fafc', mb: 1, fontSize: '1rem' }}
+                      >
                         {persona.title}
                       </Typography>
                       <Typography variant="body2" sx={{ color: '#94a3af', lineHeight: 1.6 }}>
@@ -1857,16 +2117,25 @@ export const LandingPage: React.FC = () => {
           <Box sx={{ textAlign: 'center', maxWidth: 800, mx: 'auto', mb: 8 }}>
             <Typography
               variant="overline"
-              sx={{ color: '#10b981', fontWeight: 800, letterSpacing: '0.12em', display: 'block', mb: 1 }}
+              sx={{
+                color: '#10b981',
+                fontWeight: 800,
+                letterSpacing: '0.12em',
+                display: 'block',
+                mb: 1,
+              }}
             >
               DATA INTEGRITY & PRIVACY
             </Typography>
             <Typography variant="h2" sx={{ fontWeight: 800, color: '#f8fafc', mb: 2 }}>
               Enterprise Security & Tenant Isolation
             </Typography>
-            <Typography variant="body1" sx={{ color: '#94a3af', fontSize: '1.05rem', lineHeight: 1.7 }}>
-              Stockora enforces strict architectural controls to ensure your commercial records remain confidential,
-              audit-logged, and isolated from other companies.
+            <Typography
+              variant="body1"
+              sx={{ color: '#94a3af', fontSize: '1.05rem', lineHeight: 1.7 }}
+            >
+              Stockora enforces strict architectural controls to ensure your commercial records
+              remain confidential, audit-logged, and isolated from other companies.
             </Typography>
           </Box>
 
@@ -1933,16 +2202,25 @@ export const LandingPage: React.FC = () => {
           <Box sx={{ textAlign: 'center', maxWidth: 800, mx: 'auto', mb: 8 }}>
             <Typography
               variant="overline"
-              sx={{ color: '#8b5cf6', fontWeight: 800, letterSpacing: '0.12em', display: 'block', mb: 1 }}
+              sx={{
+                color: '#8b5cf6',
+                fontWeight: 800,
+                letterSpacing: '0.12em',
+                display: 'block',
+                mb: 1,
+              }}
             >
               TRANSPARENT PRICING
             </Typography>
             <Typography variant="h2" sx={{ fontWeight: 800, color: '#f8fafc', mb: 2 }}>
               Scalable Plans for Every Growth Stage
             </Typography>
-            <Typography variant="body1" sx={{ color: '#94a3af', fontSize: '1.05rem', lineHeight: 1.7 }}>
-              Predictable monthly pricing with no surprise transaction fees. Upgrade as your storefront footprint
-              expands.
+            <Typography
+              variant="body1"
+              sx={{ color: '#94a3af', fontSize: '1.05rem', lineHeight: 1.7 }}
+            >
+              Predictable monthly pricing with no surprise transaction fees. Upgrade as your
+              storefront footprint expands.
             </Typography>
           </Box>
 
@@ -2003,7 +2281,9 @@ export const LandingPage: React.FC = () => {
                     justifyContent: 'space-between',
                     borderRadius: '20px',
                     borderColor: plan.highlight ? '#8b5cf6 !important' : 'rgba(255,255,255,0.08)',
-                    boxShadow: plan.highlight ? '0 12px 40px rgba(139, 92, 246, 0.35) !important' : 'none',
+                    boxShadow: plan.highlight
+                      ? '0 12px 40px rgba(139, 92, 246, 0.35) !important'
+                      : 'none',
                     position: 'relative',
                   }}
                 >
@@ -2044,8 +2324,13 @@ export const LandingPage: React.FC = () => {
 
                     <Box sx={{ mb: 4 }}>
                       {plan.features.map((feat, fIdx) => (
-                        <Box key={fIdx} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
-                          <CheckCircleIcon sx={{ color: plan.highlight ? '#34d399' : '#8b5cf6', fontSize: 18 }} />
+                        <Box
+                          key={fIdx}
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}
+                        >
+                          <CheckCircleIcon
+                            sx={{ color: plan.highlight ? '#34d399' : '#8b5cf6', fontSize: 18 }}
+                          />
                           <Typography variant="body2" sx={{ color: '#e2e8f0', fontWeight: 500 }}>
                             {feat}
                           </Typography>
@@ -2062,7 +2347,9 @@ export const LandingPage: React.FC = () => {
                       py: 1.4,
                       fontWeight: 800,
                       borderRadius: '12px',
-                      background: plan.highlight ? 'linear-gradient(135deg, #8b5cf6 0%, #10b981 100%)' : 'transparent',
+                      background: plan.highlight
+                        ? 'linear-gradient(135deg, #8b5cf6 0%, #10b981 100%)'
+                        : 'transparent',
                     }}
                   >
                     {plan.buttonText}
@@ -2078,7 +2365,8 @@ export const LandingPage: React.FC = () => {
             sx={{
               p: { xs: 4, md: 6 },
               borderRadius: '24px',
-              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%)',
+              background:
+                'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%)',
               border: '1px solid rgba(139, 92, 246, 0.3)',
               textAlign: 'center',
               boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
@@ -2089,10 +2377,17 @@ export const LandingPage: React.FC = () => {
             </Typography>
             <Typography
               variant="body1"
-              sx={{ color: '#cbd5e1', maxWidth: 680, mx: 'auto', mb: 4, fontSize: '1.1rem', lineHeight: 1.7 }}
+              sx={{
+                color: '#cbd5e1',
+                maxWidth: 680,
+                mx: 'auto',
+                mb: 4,
+                fontSize: '1.1rem',
+                lineHeight: 1.7,
+              }}
             >
-              Join retail and warehouse leaders using Stockora Enterprise Pro to take complete control of their
-              inventory, accelerate POS checkouts, and protect their margins.
+              Join retail and warehouse leaders using Stockora Enterprise Pro to take complete
+              control of their inventory, accelerate POS checkouts, and protect their margins.
             </Typography>
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
               <Button
@@ -2183,9 +2478,12 @@ export const LandingPage: React.FC = () => {
                   </Typography>
                 </Typography>
               </Box>
-              <Typography variant="body2" sx={{ color: '#9ca3af', lineHeight: 1.6, mb: 3, maxWidth: 300 }}>
-                Mission-critical inventory management, point-of-sale, and multi-branch operations platform for modern
-                commerce leaders.
+              <Typography
+                variant="body2"
+                sx={{ color: '#9ca3af', lineHeight: 1.6, mb: 3, maxWidth: 300 }}
+              >
+                Mission-critical inventory management, point-of-sale, and multi-branch operations
+                platform for modern commerce leaders.
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Box

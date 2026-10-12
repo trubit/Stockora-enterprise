@@ -316,7 +316,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
                 letterSpacing: '0.14em',
                 color: '#c084fc',
                 textTransform: 'uppercase',
-                fontFamily: "sans-serif",
+                fontFamily: 'sans-serif',
               }}
             >
               ENTERPRISE PRO
