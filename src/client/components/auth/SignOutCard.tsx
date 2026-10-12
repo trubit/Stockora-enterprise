@@ -136,7 +136,7 @@ export const SignOutCard: React.FC<SignOutCardProps> = ({ variant = 'standalone'
                     background: 'linear-gradient(90deg, #ffffff 0%, #c4b5fd 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
-                    fontFamily: '"Outfit", sans-serif',
+                    fontFamily: "'Inter', sans-serif",
                   }}
                 >
                   STOCKORA

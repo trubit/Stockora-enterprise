@@ -43,7 +43,7 @@ const baseTheme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Outfit", "Inter", "Helvetica Neue", Arial, sans-serif',
+    fontFamily: '"Inter", "Helvetica Neue", Arial, sans-serif',
     h1: {
       fontWeight: 800,
       fontSize: '2.5rem',

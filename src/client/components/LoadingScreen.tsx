@@ -273,7 +273,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
           <Typography
             component="h1"
             sx={{
-              fontFamily: "'Outfit', 'Inter', sans-serif",
+              fontFamily: "'Inter', sans-serif",
               fontSize: { xs: '1.45rem', sm: '1.65rem' },
               fontWeight: 900,
               letterSpacing: '0.2em',
@@ -316,7 +316,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
                 letterSpacing: '0.14em',
                 color: '#c084fc',
                 textTransform: 'uppercase',
-                fontFamily: "'Outfit', sans-serif",
+                fontFamily: "sans-serif",
               }}
             >
               ENTERPRISE PRO
