@@ -52,6 +52,13 @@ describe('Phase 48: Enterprise Security Hardening & Zero-Trust Verification', ()
       Branch.deleteMany({}),
     ]);
 
+    try {
+      await Transaction.collection.dropIndex('tenantId_1_idempotencyKey_1');
+    } catch {}
+    try {
+      await Transaction.syncIndexes();
+    } catch {}
+
     // Seed default roles
     const roles = [
       { name: 'Super Administrator', permissions: ['*'] },

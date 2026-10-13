@@ -384,6 +384,7 @@ export class POSService {
       companyTaxId: tenantInfo?.taxConfig?.taxId || companyInfo?.taxId,
       receiptHeader: tenantInfo?.branding?.receiptHeader,
       receiptFooter: tenantInfo?.branding?.receiptFooter,
+      ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
       transactionNumber: orderNumber,
       type: 'SALE',
       status: 'COMPLETED',

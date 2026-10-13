@@ -57,7 +57,7 @@ const TransactionItemSchema = new Schema<ITransactionItem>({
 const TransactionSchema = new Schema<ITransaction>(
   {
     tenantId: { type: String, default: 'default', index: true },
-    idempotencyKey: { type: String, index: true, sparse: true },
+    idempotencyKey: { type: String, sparse: true },
     pricingMode: { type: String, enum: ['RETAIL', 'WHOLESALE', 'MIXED'], default: 'RETAIL' },
     transactionNumber: { type: String, required: true, unique: true, index: true },
     type: { type: String, required: true, enum: ['SALE', 'RETURN', 'TRANSFER'], default: 'SALE' },

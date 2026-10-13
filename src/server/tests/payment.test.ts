@@ -19,6 +19,12 @@ describe('Secure Multi-Provider Payment Gateway & Zero-Trust Verification Tests'
     }
     await Product.deleteMany({ sku: 'SKU-CARD-PAY-1' });
     await Transaction.deleteMany({ transactionNumber: { $regex: /^TX-PAY-/ } });
+    try {
+      await Transaction.collection.dropIndex('tenantId_1_idempotencyKey_1');
+    } catch {}
+    try {
+      await Transaction.syncIndexes();
+    } catch {}
 
     // Create a catalog test product
     const product = await Product.create({

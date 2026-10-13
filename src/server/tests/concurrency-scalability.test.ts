@@ -17,6 +17,12 @@ describe('Enterprise Concurrency, Scalability & Anti-Overselling Verification Su
       await mongoose.disconnect();
     }
     await mongoose.connect('mongodb://127.0.0.1:27017/stockora_test_concurrency');
+    try {
+      await Transaction.collection.dropIndex('tenantId_1_idempotencyKey_1');
+    } catch {}
+    try {
+      await Transaction.syncIndexes();
+    } catch {}
   });
 
   afterAll(async () => {

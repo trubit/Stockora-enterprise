@@ -8,7 +8,7 @@ export class POSController {
    */
   public static async checkout(req: Request, res: Response) {
     try {
-      const tenantId = (req as any).tenantId || (req as any).user?.tenantId || req.body.tenantId;
+      const tenantId = (req as any).tenantId || (req as any).user?.tenantId;
       const order = await POSService.checkout({
         ...req.body,
         tenantId,

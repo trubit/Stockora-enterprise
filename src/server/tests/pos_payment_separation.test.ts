@@ -15,6 +15,7 @@ import { posRouter } from '../routes/pos.routes.js';
 import { billingRouter } from '../routes/billing.routes.js';
 import { errorHandler } from '../errors/handlers.js';
 import { AuthService } from '../services/auth.service.js';
+import { PaymentGatewayFactory } from '../services/payment/gateway.factory.js';
 
 let app: Express;
 let testTenant: any;
@@ -38,6 +39,63 @@ describe('POS Payment Separation & Architecture Boundary Tests', () => {
     app.use('/api/v1/billing', billingRouter);
     app.use('/api/v1', apiRouter);
     app.use(errorHandler);
+
+    PaymentGatewayFactory.registerAdapter('PAYSTACK', {
+      provider: 'PAYSTACK',
+      initializePayment: async (opts) => ({
+        success: true,
+        reference: opts.reference,
+        amount: opts.amount,
+        currency: opts.currency,
+        provider: 'PAYSTACK',
+        authorizationUrl: `https://checkout.paystack.com/${opts.reference}`,
+        gatewayTransactionId: 'test_access_code',
+      }),
+      verifyPayment: async (ref, amount, currency) => ({
+        success: true,
+        reference: ref,
+        amount,
+        currency,
+        provider: 'PAYSTACK',
+        status: 'COMPLETED',
+        paidAt: new Date(),
+      }),
+      refundPayment: async (opts) => ({
+        success: true,
+        refundId: `ref_mock_${Date.now()}`,
+        amount: opts.amount,
+        provider: 'PAYSTACK',
+        status: 'PROCESSED',
+      }),
+    });
+
+    PaymentGatewayFactory.registerAdapter('STRIPE', {
+      provider: 'STRIPE',
+      initializePayment: async (opts) => ({
+        success: true,
+        reference: opts.reference,
+        amount: opts.amount,
+        currency: opts.currency,
+        provider: 'STRIPE',
+        clientSecret: `pi_mock_secret_${opts.reference}`,
+      }),
+      verifyPayment: async (ref, amount, currency) => ({
+        success: true,
+        reference: ref,
+        amount,
+        currency,
+        provider: 'STRIPE',
+        status: 'COMPLETED',
+        paidAt: new Date(),
+      }),
+      refundPayment: async (opts) => ({
+        success: true,
+        refundId: `re_mock_${Date.now()}`,
+        amount: opts.amount,
+        provider: 'STRIPE',
+        status: 'PROCESSED',
+      }),
+    });
 
     // Clean test data
     await Promise.all([

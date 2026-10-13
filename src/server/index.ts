@@ -81,11 +81,11 @@ if (config.isProduction) {
   const distPath = path.join(process.cwd(), 'dist');
   app.use(express.static(distPath, { maxAge: '1d', etag: true }));
 
-  // SPA catch-all — serve index.html for any non-API route
-  app.get('*', (req, res) => {
-    // Don't catch API routes
+  // SPA catch-all — serve index.html for any non-API route (Express 5 / path-to-regexp v8 syntax)
+  app.get('/{*path}', (req, res, next) => {
+    // Don't catch API routes; delegate to notFoundHandler
     if (req.path.startsWith('/api/')) {
-      return;
+      return next();
     }
     res.sendFile(path.join(distPath, 'index.html'));
   });

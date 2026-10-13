@@ -359,7 +359,7 @@ apiRouter.post(
         companyTaxId: resolvedCompanyTaxId,
         receiptHeader: resolvedReceiptHeader,
         receiptFooter: resolvedReceiptFooter,
-        idempotencyKey,
+        ...(idempotencyKey ? { idempotencyKey } : {}),
         transactionNumber: uniqueTxNumber,
         type: 'SALE',
         status: 'COMPLETED',
