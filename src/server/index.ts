@@ -77,9 +77,20 @@ async function startWorkerServer(): Promise<void> {
   app.use('/api/v1', apiRouter);
   app.use('/api', apiRouter);
 
-  // ── Production Frontend Serving ─────────────────────────────────────────────
   if (config.isProduction) {
     const distPath = path.join(process.cwd(), 'dist');
+    const distAssetsPath = path.join(distPath, 'assets');
+
+    // High-performance immutable static serving for hashed frontend assets
+    app.use(
+      '/assets',
+      express.static(distAssetsPath, {
+        maxAge: '1y',
+        immutable: true,
+        etag: true,
+      })
+    );
+
     app.use(express.static(distPath, { maxAge: '1d', etag: true }));
 
     // SPA catch-all — serve index.html for any non-API route (Express 5 / path-to-regexp v8 syntax)

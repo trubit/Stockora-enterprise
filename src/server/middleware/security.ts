@@ -9,40 +9,86 @@ import { config } from '../../config/environment.js';
 export const securityMiddleware = Router();
 
 // Build the CORS origin allowlist. In development, allow localhost/127.0.0.1 and local network LAN/Wi-Fi IPs.
-// In production, only the explicit CORS_ORIGIN is allowed.
-const isDevOriginAllowed = (origin: string): boolean => {
-  return (
-    origin.startsWith('http://localhost') ||
-    origin.startsWith('http://127.0.0.1') ||
-    /^https?:\/\/192\.168\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin) ||
-    /^https?:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin) ||
-    /^https?:\/\/172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin) ||
-    /^https?:\/\/.*\.local(:\d+)?$/.test(origin)
-  );
+export const normalizeOrigin = (urlStr: string): string => {
+  return urlStr.trim().replace(/\/+$/, '').toLowerCase();
 };
 
-const buildCorsOriginMatcher = () => {
-  const allowedOrigin = config.corsOrigin;
+/**
+ * Validates whether an incoming HTTP or WebSocket origin is permitted.
+ * Supports:
+ * - Direct server-to-server / non-browser requests (no origin header)
+ * - Development LAN, localhost, and loopback addresses
+ * - Configured production origins (CORS_ORIGIN, RENDER_EXTERNAL_URL, APP_URL, FRONTEND_URL)
+ * - Safe onrender.com hostnames matching the deployment
+ */
+export const isOriginAllowed = (origin: string | undefined): boolean => {
+  if (!origin) return true; // Allow server-to-server / non-browser requests
 
+  if (config.isDevelopment) {
+    if (
+      origin.startsWith('http://localhost') ||
+      origin.startsWith('http://127.0.0.1') ||
+      /^https?:\/\/192\.168\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin) ||
+      /^https?:\/\/10\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin) ||
+      /^https?:\/\/172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin) ||
+      /^https?:\/\/.*\.local(:\d+)?$/.test(origin)
+    ) {
+      return true;
+    }
+  }
+
+  const normalized = normalizeOrigin(origin);
+
+  const allowedOrigins = [
+    config.corsOrigin,
+    process.env.CORS_ORIGIN,
+    process.env.RENDER_EXTERNAL_URL,
+    process.env.APP_URL,
+    process.env.FRONTEND_URL,
+    process.env.PUBLIC_FRONTEND_URL,
+  ]
+    .filter((v): v is string => Boolean(v && v.trim()))
+    .map(normalizeOrigin);
+
+  if (allowedOrigins.includes(normalized)) {
+    return true;
+  }
+
+  try {
+    const parsed = new URL(origin);
+    if (
+      parsed.hostname === 'stockora-enterprise.onrender.com' ||
+      (parsed.hostname.endsWith('.onrender.com') && parsed.hostname.includes('stockora'))
+    ) {
+      return true;
+    }
+    if (
+      process.env.RENDER_EXTERNAL_HOSTNAME &&
+      parsed.hostname === process.env.RENDER_EXTERNAL_HOSTNAME.trim().toLowerCase()
+    ) {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
+};
+
+export const buildCorsOriginMatcher = () => {
   return (
     origin: string | undefined,
     callback: (err: Error | null, allow?: boolean) => void
   ): void => {
-    // Allow server-to-server requests (no Origin header)
-    if (!origin) return callback(null, true);
-
-    // In development: allow any localhost, LAN IP, or mobile device during development
-    if (config.isDevelopment) {
+    if (isOriginAllowed(origin)) {
       return callback(null, true);
     }
 
-    // Always allow the explicitly configured CORS origin in production
-    if (origin === allowedOrigin) {
-      return callback(null, true);
-    }
-
-    // Block everything else — do NOT fall through with callback(null, true)
-    callback(new Error(`CORS: Origin [${origin}] is not allowed.`));
+    // According to W3C/WHATWG CORS specifications and the cors library standard,
+    // unauthorized origins should simply not receive the Access-Control-Allow-Origin header.
+    // Passing callback(null, false) cleanly disallows cross-origin resource sharing
+    // without throwing an unhandled internal error that crashes the request into an HTTP 500.
+    callback(null, false);
   };
 };
 

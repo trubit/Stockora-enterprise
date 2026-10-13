@@ -3,36 +3,14 @@ import { Server as SocketServer, Socket } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { redis } from '../database/redis.js';
 import { logger } from '../logger.js';
-import { config } from '../../config/environment.js';
 import jwt from 'jsonwebtoken';
+import { config } from '../../config/environment.js';
+import { isOriginAllowed } from '../middleware/security.js';
 
 interface JwtTokenPayload {
   id: string;
   roleName: string;
   tenantId?: string;
-}
-
-/**
- * Validates a Socket.IO origin against the configured CORS allowlist.
- * Mirrors the HTTP CORS logic in security.ts for consistency.
- */
-function isOriginAllowed(origin: string | undefined): boolean {
-  if (!origin) return true; // Allow server-to-server / no-origin requests
-
-  if (config.isDevelopment) {
-    if (
-      origin.startsWith('http://localhost') ||
-      origin.startsWith('http://127.0.0.1') ||
-      /^https?:\/\/192\.168\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin) ||
-      /^https?:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin) ||
-      /^https?:\/\/172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin) ||
-      /^https?:\/\/.*\.local(:\d+)?$/.test(origin)
-    ) {
-      return true;
-    }
-  }
-
-  return origin === config.corsOrigin;
 }
 
 export class SocketManager {
