@@ -20,162 +20,161 @@ import {
 } from './database/seeder.js';
 import { initializeBackgroundWorkers } from './queue/jobs.worker.js';
 
-const app = express();
-const httpServer = createServer(app);
+async function startWorkerServer(): Promise<void> {
+  const app = express();
+  const httpServer = createServer(app);
 
-// Initialize Socket.IO lifecycle manager (must be done before routes)
-const socketManager = SocketManager.getInstance();
-socketManager.initialize(httpServer);
+  // Initialize Socket.IO lifecycle manager (must be done before routes)
+  const socketManager = SocketManager.getInstance();
+  socketManager.initialize(httpServer);
 
-// ── Security Middleware ─────────────────────────────────────────────────────
-// Includes: Helmet, CORS, rate-limiting, compression, cookie-parser
-// NOTE: compression() is applied ONCE here inside securityMiddleware.
-// Do NOT add it again below.
-app.use(securityMiddleware);
+  // ── Security Middleware ─────────────────────────────────────────────────────
+  // Includes: Helmet, CORS, rate-limiting, compression, cookie-parser
+  // NOTE: compression() is applied ONCE here inside securityMiddleware.
+  // Do NOT add it again below.
+  app.use(securityMiddleware);
 
-// ── Body Parsers with Size Limits ───────────────────────────────────────────
-// Limits prevent DoS attacks via oversized request payloads.
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
-app.use(mongoSanitizeMiddleware);
+  // ── Body Parsers with Size Limits ───────────────────────────────────────────
+  // Limits prevent DoS attacks via oversized request payloads.
+  app.use(express.json({ limit: '1mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+  app.use(mongoSanitizeMiddleware);
 
-// ── Static Assets ───────────────────────────────────────────────────────────
-// Serve uploaded files from configured runtime storage directory.
-// NOTE: Express.static serves with long-lived cache headers in production.
-const runtimeUploadsDir = path.resolve(process.cwd(), config.uploadDir || 'uploads');
-app.use(
-  '/uploads',
-  express.static(runtimeUploadsDir, {
-    maxAge: config.isProduction ? '7d' : 0,
-    etag: true,
-  })
-);
-app.use(
-  '/uploads',
-  express.static(path.join(process.cwd(), 'public', 'uploads'), {
-    maxAge: config.isProduction ? '7d' : 0,
-    etag: true,
-  })
-);
-app.use(
-  express.static(path.join(process.cwd(), 'public'), {
-    maxAge: config.isProduction ? '1d' : 0,
-    etag: true,
-  })
-);
-
-// ── HTTP Request Logging & Telemetry ────────────────────────────────────────
-app.use((req, _res, next) => {
-  logger.http(`${req.method} ${req.url} - IP: ${req.ip} (PID: ${process.pid})`);
-  next();
-});
-app.use(telemetryMiddleware);
-
-// ── Versioned API Routes ─────────────────────────────────────────────────────
-// Mount under both /api/v1 and /api for maximum compatibility across client endpoints.
-app.use('/api/v1', apiRouter);
-app.use('/api', apiRouter);
-
-// ── Production Frontend Serving ─────────────────────────────────────────────
-if (config.isProduction) {
-  const distPath = path.join(process.cwd(), 'dist');
-  app.use(express.static(distPath, { maxAge: '1d', etag: true }));
-
-  // SPA catch-all — serve index.html for any non-API route (Express 5 / path-to-regexp v8 syntax)
-  app.get('/{*path}', (req, res, next) => {
-    // Don't catch API routes; delegate to notFoundHandler
-    if (req.path.startsWith('/api/')) {
-      return next();
-    }
-    res.sendFile(path.join(distPath, 'index.html'));
-  });
-} else {
-  // Development: graceful welcome message at API root
-  app.get('/', (_req, res) => {
-    res.json({
-      message:
-        'Stockora Enterprise API (Development Mode). Navigate to the frontend dev server port.',
-      endpoints: {
-        health: '/api/v1/health',
-        products: '/api/v1/products',
-        transactions: '/api/v1/transactions',
-        auth: '/api/v1/auth',
-      },
-    });
-  });
-}
-
-// ── 404 & Error Handlers ─────────────────────────────────────────────────────
-app.use(notFoundHandler);
-app.use(errorHandler);
-
-// ── Graceful Shutdown ─────────────────────────────────────────────────────────
-const dbManager = DBConnectionManager.getInstance();
-
-let isShuttingDown = false;
-
-async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
-  if (isShuttingDown) return;
-  isShuttingDown = true;
-
-  logger.warn(
-    `Shutdown signal [${signal}] received on worker [${process.pid}]. Initiating graceful shutdown...`
+  // ── Static Assets ───────────────────────────────────────────────────────────
+  // Serve uploaded files from configured runtime storage directory.
+  // NOTE: Express.static serves with long-lived cache headers in production.
+  const runtimeUploadsDir = path.resolve(process.cwd(), config.uploadDir || 'uploads');
+  app.use(
+    '/uploads',
+    express.static(runtimeUploadsDir, {
+      maxAge: config.isProduction ? '7d' : 0,
+      etag: true,
+    })
+  );
+  app.use(
+    '/uploads',
+    express.static(path.join(process.cwd(), 'public', 'uploads'), {
+      maxAge: config.isProduction ? '7d' : 0,
+      etag: true,
+    })
+  );
+  app.use(
+    express.static(path.join(process.cwd(), 'public'), {
+      maxAge: config.isProduction ? '1d' : 0,
+      etag: true,
+    })
   );
 
-  // Stop accepting new HTTP connections first
-  await new Promise<void>((resolve) => {
-    if (httpServer.listening) {
-      httpServer.close(() => {
-        logger.info(`HTTP server closed on worker [${process.pid}].`);
-        resolve();
+  // ── HTTP Request Logging & Telemetry ────────────────────────────────────────
+  app.use((req, _res, next) => {
+    logger.http(`${req.method} ${req.url} - IP: ${req.ip} (PID: ${process.pid})`);
+    next();
+  });
+  app.use(telemetryMiddleware);
+
+  // ── Versioned API Routes ─────────────────────────────────────────────────────
+  // Mount under both /api/v1 and /api for maximum compatibility across client endpoints.
+  app.use('/api/v1', apiRouter);
+  app.use('/api', apiRouter);
+
+  // ── Production Frontend Serving ─────────────────────────────────────────────
+  if (config.isProduction) {
+    const distPath = path.join(process.cwd(), 'dist');
+    app.use(express.static(distPath, { maxAge: '1d', etag: true }));
+
+    // SPA catch-all — serve index.html for any non-API route (Express 5 / path-to-regexp v8 syntax)
+    app.get('/{*path}', (req, res, next) => {
+      // Don't catch API routes; delegate to notFoundHandler
+      if (req.path.startsWith('/api/')) {
+        return next();
+      }
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  } else {
+    // Development: graceful welcome message at API root
+    app.get('/', (_req, res) => {
+      res.json({
+        message:
+          'Stockora Enterprise API (Development Mode). Navigate to the frontend dev server port.',
+        endpoints: {
+          health: '/api/v1/health',
+          products: '/api/v1/products',
+          transactions: '/api/v1/transactions',
+          auth: '/api/v1/auth',
+        },
       });
-    } else {
-      resolve();
+    });
+  }
+
+  // ── 404 & Error Handlers ─────────────────────────────────────────────────────
+  app.use(notFoundHandler);
+  app.use(errorHandler);
+
+  // ── Graceful Shutdown ─────────────────────────────────────────────────────────
+  const dbManager = DBConnectionManager.getInstance();
+  let isShuttingDown = false;
+
+  async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
+    logger.warn(
+      `Shutdown signal [${signal}] received on worker [${process.pid}]. Initiating graceful shutdown...`
+    );
+
+    // Stop accepting new HTTP connections first
+    await new Promise<void>((resolve) => {
+      if (httpServer.listening) {
+        httpServer.close(() => {
+          logger.info(`HTTP server closed on worker [${process.pid}].`);
+          resolve();
+        });
+      } else {
+        resolve();
+      }
+    });
+
+    // Close queues, sockets, and database connections
+    await Promise.allSettled([QueueManager.getInstance().shutdown(), socketManager.shutdown()]);
+
+    await dbManager.disconnect();
+
+    try {
+      const { redisManager } = await import('./database/redis.js');
+      await redisManager.disconnect();
+    } catch (err) {
+      logger.error('Error disconnecting Redis client during shutdown:', err);
     }
+
+    logger.warn(`Stockora Worker [${process.pid}] stopped cleanly.`);
+    process.exit(exitCode);
+  }
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM', 0));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT', 0));
+
+  // Catch unhandled promise rejections — log and trigger graceful shutdown safely
+  process.on('unhandledRejection', (reason: any) => {
+    const reasonStr = String(reason?.message || reason);
+    if (reasonStr.includes('Connection is closed')) {
+      logger.warn(`[Redis Connection Alert] ${reasonStr}`);
+      return;
+    }
+
+    if (isShuttingDown) return;
+
+    logger.error(`[FATAL] Unhandled Promise Rejection: ${reasonStr}`);
+    gracefulShutdown('unhandledRejection', 1).catch(() => process.exit(1));
   });
 
-  // Close queues, sockets, and database connections
-  await Promise.allSettled([QueueManager.getInstance().shutdown(), socketManager.shutdown()]);
+  // Catch uncaught exceptions — log and trigger graceful shutdown safely
+  process.on('uncaughtException', (err) => {
+    if (isShuttingDown) return;
+    logger.error(`[FATAL] Uncaught Exception: ${err.message}`, err);
+    gracefulShutdown('uncaughtException', 1).catch(() => process.exit(1));
+  });
 
-  await dbManager.disconnect();
-
-  try {
-    const { redisManager } = await import('./database/redis.js');
-    await redisManager.disconnect();
-  } catch (err) {
-    logger.error('Error disconnecting Redis client during shutdown:', err);
-  }
-
-  logger.warn(`Stockora Worker [${process.pid}] stopped cleanly.`);
-  process.exit(exitCode);
-}
-
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM', 0));
-process.on('SIGINT', () => gracefulShutdown('SIGINT', 0));
-
-// Catch unhandled promise rejections — log and trigger graceful shutdown safely
-process.on('unhandledRejection', (reason: any) => {
-  const reasonStr = String(reason?.message || reason);
-  if (reasonStr.includes('Connection is closed')) {
-    logger.warn(`[Redis Connection Alert] ${reasonStr}`);
-    return;
-  }
-
-  if (isShuttingDown) return;
-
-  logger.error(`[FATAL] Unhandled Promise Rejection: ${reasonStr}`);
-  gracefulShutdown('unhandledRejection', 1).catch(() => process.exit(1));
-});
-
-// Catch uncaught exceptions — log and trigger graceful shutdown safely
-process.on('uncaughtException', (err) => {
-  if (isShuttingDown) return;
-  logger.error(`[FATAL] Uncaught Exception: ${err.message}`, err);
-  gracefulShutdown('uncaughtException', 1).catch(() => process.exit(1));
-});
-
-// ── Server Start ──────────────────────────────────────────────────────────────
-async function startServer(): Promise<void> {
+  // ── Server Start ──────────────────────────────────────────────────────────────
   try {
     // 1. Connect to MongoDB first and ensure database is ready
     await dbManager.connect();
@@ -212,7 +211,7 @@ async function startServer(): Promise<void> {
 
       httpServer.listen(config.port, '0.0.0.0', () => {
         logger.info(
-          `Stockora Worker (PID: ${process.pid}) running in [${config.env}] mode on http://0.0.0.0:${config.port}`
+          `Stockora Server (PID: ${process.pid}) running in [${config.env}] mode on http://0.0.0.0:${config.port}`
         );
         resolve();
       });
@@ -224,29 +223,61 @@ async function startServer(): Promise<void> {
   }
 }
 
-// ── Cluster Mode (Production) ─────────────────────────────────────────────────
-// Spawns one worker per CPU core for maximum horizontal throughput.
-if (config.isProduction) {
-  if (cluster.isPrimary) {
-    const numCPUs = os.cpus().length;
-    logger.info(
-      `Stockora Primary Process (PID: ${process.pid}). Forking ${numCPUs} cluster workers...`
-    );
-
-    for (let i = 0; i < numCPUs; i++) {
-      cluster.fork();
-    }
-
-    cluster.on('exit', (worker, code, signal) => {
-      logger.warn(
-        `Worker ${worker.process.pid} exited (code: ${code}, signal: ${signal}). Spawning replacement...`
-      );
-      cluster.fork();
-    });
-  } else {
-    startServer();
+// ── Process Concurrency & Cluster Management ──────────────────────────────────
+/**
+ * Resolves the optimal number of cluster worker processes.
+ * Respects standard cloud container limits (WEB_CONCURRENCY set by Render, Heroku, etc.).
+ * Defaults to 1 for memory-constrained container environments (<= 1GB RAM) to prevent OOM kills.
+ */
+function getWorkerCount(): number {
+  if (process.env.WEB_CONCURRENCY) {
+    const parsed = parseInt(process.env.WEB_CONCURRENCY, 10);
+    if (!isNaN(parsed) && parsed > 0) return parsed;
   }
+  if (process.env.CLUSTER_WORKERS) {
+    const parsed = parseInt(process.env.CLUSTER_WORKERS, 10);
+    if (!isNaN(parsed) && parsed > 0) return parsed;
+  }
+  if (process.env.CLUSTER_MODE === 'false' || process.env.CLUSTER_MODE === '0') {
+    return 1;
+  }
+  // Fallback for memory-constrained hosts (e.g. Render 512MB / 1GB tiers)
+  const totalMemMb = Math.round(os.totalmem() / 1024 / 1024);
+  if (totalMemMb <= 1024) {
+    return 1;
+  }
+  return Math.min(os.cpus().length, 2);
+}
+
+const workerCount = getWorkerCount();
+const isClusterEnabled = config.isProduction && workerCount > 1;
+
+if (isClusterEnabled && cluster.isPrimary) {
+  logger.info(
+    `Stockora Primary Process (PID: ${process.pid}). Forking ${workerCount} cluster workers (WEB_CONCURRENCY=${process.env.WEB_CONCURRENCY || 'unset'})...`
+  );
+
+  for (let i = 0; i < workerCount; i++) {
+    cluster.fork();
+  }
+
+  cluster.on('exit', (worker, code, signal) => {
+    logger.warn(
+      `Worker ${worker.process.pid} exited (code: ${code}, signal: ${signal}). Spawning replacement...`
+    );
+    cluster.fork();
+  });
+
+  const shutdownPrimary = (signal: string) => {
+    logger.info(`Primary process received ${signal}. Terminating cluster workers...`);
+    for (const id in cluster.workers) {
+      cluster.workers[id]?.process.kill();
+    }
+    process.exit(0);
+  };
+  process.on('SIGTERM', () => shutdownPrimary('SIGTERM'));
+  process.on('SIGINT', () => shutdownPrimary('SIGINT'));
 } else {
-  // Single-process for developer debugging ease in development/test
-  startServer();
+  // Single-process mode (Render 512MB / low memory container / dev) or cluster worker process
+  startWorkerServer();
 }

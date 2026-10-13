@@ -11,7 +11,7 @@
     "build:client": "tsc -b tsconfig.app.json && vite build",
     "build:server": "tsc -p tsconfig.server.json",
     "build": "npm run build:client && npm run build:server",
-    "start": "node dist/server/src/server/index.js",
+    "start": "node --max-old-space-size=400 dist/server/src/server/index.js",
     "preview": "vite preview",
     "lint": "eslint .",
     "lint:ci": "eslint . --quiet",
